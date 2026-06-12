@@ -4,7 +4,7 @@ import Hls from 'hls.js';
 import { 
   ChevronLeft, Play, Pause, RotateCcw, Volume2, VolumeX, Maximize2, 
   Settings, Download, Heart, Share2, Copy, SkipBack, SkipForward,
-  HelpCircle, Check 
+  HelpCircle, Check, AlertCircle 
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://terabridge-api.onrender.com';
@@ -39,6 +39,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [isUsingFallback, setIsUsingFallback] = useState(false);
   const [qualities, setQualities] = useState([]);
+  const [videoError, setVideoError] = useState(null);
   
   const controlsTimeoutRef = useRef(null);
   const actionTimeoutRef = useRef(null);
@@ -55,6 +56,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     setHlsCheckMessage('');
     setIsInitialLoading(true);
     setActiveResolution('');
+    setVideoError(null);
   }, [video.id]);
 
   const checkHlsStatus = async (isBackground = false) => {
@@ -516,10 +518,32 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     
     console.error("Video element error:", videoElement.error);
     
+    let errorMsg = "Failed to load video stream.";
+    if (videoElement.error) {
+      switch (videoElement.error.code) {
+        case 1: // MEDIA_ERR_ABORTED
+          errorMsg = "Playback aborted by user.";
+          break;
+        case 2: // MEDIA_ERR_NETWORK
+          errorMsg = "Network error while loading video. The proxy server may be unreachable.";
+          break;
+        case 3: // MEDIA_ERR_DECODE
+          errorMsg = "Video playback aborted due to a corruption problem or unsupported format.";
+          break;
+        case 4: // MEDIA_ERR_SRC_NOT_SUPPORTED
+          errorMsg = "The video format is not supported, or the proxy server returned an error (e.g. invalid cookie/session).";
+          break;
+        default:
+          break;
+      }
+    }
+    
     if (video.videoUrl && video.downloadUrl && video.videoUrl !== video.downloadUrl && !isUsingFallback) {
       console.warn("Video play error. Switching to direct download link stream...");
       setIsUsingFallback(true);
     } else {
+      setVideoError(errorMsg);
+      setIsBuffering(false);
       setIsInitialLoading(false);
     }
   };
@@ -593,6 +617,33 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
             <p className="text-sm font-semibold tracking-wide text-fg">
               {bufferingResolution ? `Optimizing buffer for ${bufferingResolution}...` : 'Buffering stream...'}
             </p>
+          </div>
+        )}
+
+        {/* Video Load Error Overlay */}
+        {videoError && (
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center gap-4 animate-fade-in">
+            <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 grid place-items-center text-rose-400 select-none">
+              <AlertCircle size={24} />
+            </div>
+            <div className="select-none">
+              <h4 className="font-bold text-fg mb-1 text-sm md:text-base">Stream Loading Failed</h4>
+              <p className="text-xs text-muted max-w-xs leading-relaxed">{videoError}</p>
+            </div>
+            {video.originalUrl && (
+              <button 
+                onClick={() => {
+                  setVideoError(null);
+                  setIsInitialLoading(true);
+                  if (videoRef.current) {
+                    videoRef.current.load();
+                  }
+                }}
+                className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 text-white font-semibold rounded-xl text-xs transition-all cursor-pointer select-none"
+              >
+                Retry Playback
+              </button>
+            )}
           </div>
         )}
 
