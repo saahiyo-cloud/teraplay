@@ -12,7 +12,7 @@ import HistoryView from './components/HistoryView';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://terabridge.vercel.app';
 
-// Synchronously apply theme from localStorage to avoid styling flashes on reload
+// Synchronously apply theme and migrate/clear mock data from localStorage
 (() => {
   const saved = localStorage.getItem('teraplay_accent');
   if (saved) {
@@ -24,163 +24,34 @@ const API_BASE = import.meta.env.VITE_API_BASE || 'https://terabridge.vercel.app
       console.error('Failed to parse theme color on boot: ', e);
     }
   }
+
+  // Clean up old mock template data from local storage once
+  if (!localStorage.getItem('teraplay_mock_cleaned_v2')) {
+    localStorage.removeItem('teraplay_videos');
+    localStorage.removeItem('teraplay_downloads');
+    localStorage.removeItem('teraplay_history');
+    localStorage.setItem('teraplay_mock_cleaned_v2', 'true');
+  }
 })();
 
-const INITIAL_VIDEOS = [
-  {
-    id: '1',
-    title: 'The Future of Design Systems: Architecture & Scaling',
-    description: 'In this comprehensive session, we explore the evolving landscape of design systems. We\'ll cover atomic components, tokens, and how to scale for global products while maintaining visual consistency and developer efficiency.',
-    size: '2.4 GB',
-    duration: '12:45',
-    progress: 65,
-    favorite: false,
-    timeLeft: '45 mins left',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=600',
-    relativeTime: '2 days ago',
-    addedDate: '2026-06-10T12:00:00.000Z',
-    resolution: '4K Ultra HD'
-  },
-  {
-    id: '2',
-    title: 'Interstellar Cinematic Journey 4K (Official Version)',
-    description: 'A visual journey through deep space, traversing black holes and alien solar systems in stunning high fidelity. Audio engineered with binaural ambient waves.',
-    size: '12.8 GB',
-    duration: '15:00',
-    progress: 15,
-    favorite: false,
-    timeLeft: '1h 55m left',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-    thumbnail: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?auto=format&fit=crop&q=80&w=600',
-    relativeTime: '5 days ago',
-    addedDate: '2026-06-07T14:30:00.000Z',
-    resolution: '4K Ultra HD'
-  },
-  {
-    id: '3',
-    title: 'Node.js Performance Optimization Workshop',
-    description: 'Learn how to benchmark Node.js backends, identify memory leaks, tune garbage collection, and write highly optimized asynchronous pipelines.',
-    size: '850 MB',
-    duration: '45:20',
-    progress: 0,
-    favorite: false,
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-    thumbnail: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&q=80&w=600',
-    relativeTime: '1 week ago',
-    addedDate: '2026-06-05T09:00:00.000Z',
-    resolution: '1080P Full HD'
-  },
-  {
-    id: '4',
-    title: 'Nature\'s Serenity — 8K Drone Footage',
-    description: 'Immersive scenic views of cascading waterfalls, dense forest canopies, and rugged coastal cliffs. Best paired with headphones.',
-    size: '4.2 GB',
-    duration: '18:10',
-    progress: 0,
-    favorite: false,
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    thumbnail: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=600',
-    relativeTime: '2 weeks ago',
-    addedDate: '2026-05-29T17:00:00.000Z',
-    resolution: '8K Ultra HD'
-  },
-  {
-    id: '5',
-    title: 'Retro Computing Documentary Part 1: The Silicon Valley Boom',
-    description: 'A nostalgic look at the early days of personal computers, highlighting the garage builds, retro interfaces, and legendary microprocessor battles.',
-    size: '1.1 GB',
-    duration: '08:45',
-    progress: 0,
-    favorite: false,
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-    thumbnail: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=600',
-    relativeTime: '3 weeks ago',
-    addedDate: '2026-05-22T08:15:00.000Z',
-    resolution: '1080P'
-  },
-  {
-    id: '6',
-    title: 'Tech Evolution: Silicon Valley & The Web',
-    description: 'An analysis of how micro-chip manufacturing hubs evolved into the digital software companies that run our modern web pipelines.',
-    size: '1.5 GB',
-    duration: '24:30',
-    progress: 0,
-    favorite: false,
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    thumbnail: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=600',
-    relativeTime: '1 month ago',
-    addedDate: '2026-05-12T11:45:00.000Z',
-    resolution: '1080P'
-  }
-];
+const INITIAL_VIDEOS = [];
 
-const INITIAL_DOWNLOADS = [
-  {
-    id: 'd1',
-    title: 'Interstellar Cinematic Journey 4K.mp4',
-    totalBytes: 13743895347, // 12.8 GB
-    loadedBytes: 4509715456, // 4.2 GB
-    speed: '4.5 MB/s',
-    speedBytes: 4718592, // 4.5 MB
-    timeLeft: '12 mins remaining',
-    progress: 35,
-    status: 'downloading',
-    addedDate: '2026-06-12T14:00:00.000Z',
-    videoId: '2'
-  },
-  {
-    id: 'd2',
-    title: 'Node.js Performance Optimization Workshop.mp4',
-    totalBytes: 891289600, // 850 MB
-    loadedBytes: 713031680, // 680 MB
-    speed: '2.1 MB/s',
-    speedBytes: 2202009, // 2.1 MB
-    timeLeft: '1 min remaining',
-    progress: 80,
-    status: 'downloading',
-    addedDate: '2026-06-12T14:10:00.000Z',
-    videoId: '3'
-  },
-  {
-    id: 'd3',
-    title: 'The Future of Design Systems 2026.mp4',
-    totalBytes: 2576980377, // 2.4 GB
-    loadedBytes: 2576980377,
-    speed: '0 MB/s',
-    speedBytes: 0,
-    timeLeft: 'Completed',
-    progress: 100,
-    status: 'completed',
-    addedDate: '2026-06-12T11:00:00.000Z',
-    videoId: '1'
-  },
-  {
-    id: 'd4',
-    title: 'Nature\'s Serenity — 8K Drone Footage.mp4',
-    totalBytes: 4509715456, // 4.2 GB
-    loadedBytes: 1073741824, // 1 GB
-    speed: '0 MB/s',
-    speedBytes: 0,
-    timeLeft: 'Failed',
-    progress: 23,
-    status: 'failed',
-    addedDate: '2026-06-11T16:30:00.000Z',
-    videoId: '4'
-  }
-];
+const INITIAL_DOWNLOADS = [];
 
 function AppShell() {
   const navigate = useNavigate();
   const [videos, setVideos] = useState(() => {
+    if (!localStorage.getItem('teraplay_mock_cleaned_v3')) return [];
     const saved = localStorage.getItem('teraplay_videos');
     return saved ? JSON.parse(saved) : INITIAL_VIDEOS;
   });
   const [downloads, setDownloads] = useState(() => {
+    if (!localStorage.getItem('teraplay_mock_cleaned_v3')) return [];
     const saved = localStorage.getItem('teraplay_downloads');
     return saved ? JSON.parse(saved) : INITIAL_DOWNLOADS;
   });
   const [history, setHistory] = useState(() => {
+    if (!localStorage.getItem('teraplay_mock_cleaned_v3')) return [];
     const saved = localStorage.getItem('teraplay_history');
     return saved ? JSON.parse(saved) : [];
   });
@@ -188,6 +59,19 @@ function AppShell() {
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState(null);
   const [fetchStep, setFetchStep] = useState('');
+
+  // Clean up old mock template data from memory and local storage once
+  useEffect(() => {
+    if (!localStorage.getItem('teraplay_mock_cleaned_v3')) {
+      localStorage.removeItem('teraplay_videos');
+      localStorage.removeItem('teraplay_downloads');
+      localStorage.removeItem('teraplay_history');
+      localStorage.setItem('teraplay_mock_cleaned_v3', 'true');
+      setVideos([]);
+      setDownloads([]);
+      setHistory([]);
+    }
+  }, []);
 
   // Persist states to local storage
   useEffect(() => {

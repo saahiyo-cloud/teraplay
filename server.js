@@ -838,7 +838,7 @@ app.get("/api/stream/segment", async (req, res) => {
     return res.status(400).send("Missing segment URL");
   }
 
-  const targetUrl = decodeURIComponent(urlParam);
+  const targetUrl = urlParam;
 
   if (!checkAuth(req) && !verifySignature(targetUrl, "", "", sig)) {
     return res.status(401).send("Unauthorized: Invalid signature or API key.");
@@ -936,7 +936,7 @@ app.get(["/api/thumbnail", "/api/stream/thumbnail"], async (req, res) => {
 
   let targetUrl = "";
   if (urlParam) {
-    targetUrl = decodeURIComponent(urlParam);
+    targetUrl = urlParam;
   } else {
     const shareUrl = `https://1024terabox.com/s/${surl}`;
     let cachedRes = cache.get(shareUrl, "d", false) || cache.get(shareUrl, "l", false);

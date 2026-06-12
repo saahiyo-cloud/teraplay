@@ -30,13 +30,18 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   // New features state
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [bufferingResolution, setBufferingResolution] = useState('');
   const [currentResolution, setCurrentResolution] = useState(video.resolution || 'Auto');
+  const [activeResolution, setActiveResolution] = useState('');
+  const [clickAction, setClickAction] = useState(null); // 'play' or 'pause'
+  const [ping, setPing] = useState(null);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [isUsingFallback, setIsUsingFallback] = useState(false);
   const [qualities, setQualities] = useState([]);
   
   const controlsTimeoutRef = useRef(null);
+  const actionTimeoutRef = useRef(null);
   const hlsRef = useRef(null);
 
   // Sync resolution when active video changes
@@ -48,6 +53,8 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     setIsUsingFallback(false);
     setIsCheckingHls(false);
     setHlsCheckMessage('');
+    setIsInitialLoading(true);
+    setActiveResolution('');
   }, [video.id]);
 
   const checkHlsStatus = async (isBackground = false) => {
@@ -133,6 +140,39 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     };
   }, [isUsingFallback, video.id, video.originalUrl, video.streamReady]);
 
+  // Measure latency (ping) to the API gateway in the background
+  useEffect(() => {
+    let active = true;
+    const measurePing = async () => {
+      const start = performance.now();
+      try {
+        await fetch(`${API_BASE}/`, { method: 'HEAD', cache: 'no-store' });
+        const end = performance.now();
+        if (active) {
+          setPing(Math.round(end - start));
+        }
+      } catch (e) {
+        try {
+          await fetch(`${API_BASE}/`, { cache: 'no-store' });
+          const end = performance.now();
+          if (active) {
+            setPing(Math.round(end - start));
+          }
+        } catch (err) {
+          if (active) setPing(-1); // server is offline or unreachable
+        }
+      }
+    };
+
+    measurePing();
+    const interval = setInterval(measurePing, 5000); // Check latency state every 5s
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, []);
+
   // Keyboard Shortcuts Hook Listener
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -154,33 +194,9 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           e.preventDefault();
           skip(-10);
           break;
-        case 'arrowup':
-          e.preventDefault();
-          const newVolUp = Math.min(1, volume + 0.1);
-          setVolume(newVolUp);
-          setIsMuted(false);
-          if (videoRef.current) {
-            videoRef.current.volume = newVolUp;
-            videoRef.current.muted = false;
-          }
-          break;
-        case 'arrowdown':
-          e.preventDefault();
-          const newVolDown = Math.max(0, volume - 0.1);
-          setVolume(newVolDown);
-          setIsMuted(newVolDown === 0);
-          if (videoRef.current) {
-            videoRef.current.volume = newVolDown;
-            videoRef.current.muted = newVolDown === 0;
-          }
-          break;
         case 'f':
           e.preventDefault();
           toggleFullscreen();
-          break;
-        case 'm':
-          e.preventDefault();
-          toggleMute();
           break;
         case '?':
         case '/':
@@ -203,6 +219,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
 
     let hls = null;
     setIsPlaying(false);
+    setIsInitialLoading(true);
 
     if (isUsingFallback) {
       // Standard video streaming fallback using direct download link
@@ -230,17 +247,22 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           setQualities([{ id: -1, name: "Auto" }, ...levels]);
           setCurrentResolution("Auto");
           
+          const initialLevel = hls.levels[hls.currentLevel];
+          if (initialLevel) {
+            setActiveResolution(initialLevel.name || (initialLevel.height ? `${initialLevel.height}p` : ''));
+          }
+          
           videoElement.play()
             .then(() => setIsPlaying(true))
             .catch(err => console.log("Auto-play blocked: ", err));
         });
 
         hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
-          if (hls.autoLevelEnabled) {
-            const currentLevel = hls.levels[data.level];
-            if (currentLevel) {
-              const name = currentLevel.name || (currentLevel.height ? `${currentLevel.height}p` : `Auto`);
-              // Update bufferingResolution to show actual resolution under the hood if in Auto mode
+          const currentLevel = hls.levels[data.level];
+          if (currentLevel) {
+            const name = currentLevel.name || (currentLevel.height ? `${currentLevel.height}p` : '');
+            setActiveResolution(name);
+            if (hls.autoLevelEnabled) {
               setBufferingResolution(name);
             }
           }
@@ -311,6 +333,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     resetControlsTimer();
     return () => {
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+      if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
     };
   }, [isPlaying]);
 
@@ -319,11 +342,21 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     if (isPlaying) {
       videoRef.current.pause();
       setIsPlaying(false);
+      triggerClickAction('pause');
     } else {
       videoRef.current.play();
       setIsPlaying(true);
+      triggerClickAction('play');
     }
     resetControlsTimer();
+  };
+
+  const triggerClickAction = (action) => {
+    setClickAction(action);
+    if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
+    actionTimeoutRef.current = setTimeout(() => {
+      setClickAction(null);
+    }, 500);
   };
 
   const handleTimeUpdate = () => {
@@ -337,6 +370,9 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       setDuration(videoRef.current.duration);
+      if (!hlsRef.current && videoRef.current.videoHeight) {
+        setActiveResolution(`${videoRef.current.videoHeight}p`);
+      }
     }
   };
 
@@ -346,27 +382,6 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     const newTime = (clickPercent / 100) * duration;
     videoRef.current.currentTime = newTime;
     setCurrentTime(newTime);
-    resetControlsTimer();
-  };
-
-  const handleVolumeChange = (e) => {
-    const val = parseFloat(e.target.value);
-    setVolume(val);
-    setIsMuted(val === 0);
-    if (videoRef.current) {
-      videoRef.current.volume = val;
-      videoRef.current.muted = val === 0;
-    }
-    resetControlsTimer();
-  };
-
-  const toggleMute = () => {
-    const nextMute = !isMuted;
-    setIsMuted(nextMute);
-    if (videoRef.current) {
-      videoRef.current.muted = nextMute;
-      videoRef.current.volume = nextMute ? 0 : volume;
-    }
     resetControlsTimer();
   };
 
@@ -432,40 +447,57 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     navigate(`/player/${relVideo.id}`);
   };
 
-  // Video Quality Switcher (Simulated Buffer loader)
+  // Video Quality Switcher (Leverages HLS seamless switching or brief fallback simulation)
   const handleQualityChange = (quality) => {
     const qName = typeof quality === 'string' ? quality : quality.name;
     if (qName === currentResolution) return;
     
-    setIsBuffering(true);
     setBufferingResolution(qName);
     setShowQualityMenu(false);
     
-    const timeSnapshot = videoRef.current ? videoRef.current.currentTime : 0;
-    const wasPlaying = isPlaying;
-    
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
-
-    setTimeout(() => {
+    if (hlsRef.current && typeof quality === 'object' && quality.id !== undefined) {
+      hlsRef.current.currentLevel = quality.id;
       setCurrentResolution(qName);
-      setIsBuffering(false);
-      
-      if (hlsRef.current && typeof quality === 'object' && quality.id !== undefined) {
-        hlsRef.current.currentLevel = quality.id;
-      }
+    } else {
+      // Non-HLS or direct stream fallback path: simulate quality switch briefly
+      setIsBuffering(true);
+      const timeSnapshot = videoRef.current ? videoRef.current.currentTime : 0;
+      const wasPlaying = isPlaying;
       
       if (videoRef.current) {
-        // Restore time and playback states
-        videoRef.current.currentTime = timeSnapshot;
-        if (wasPlaying) {
-          videoRef.current.play()
-             .then(() => setIsPlaying(true))
-             .catch(e => console.log(e));
-        }
+        videoRef.current.pause();
       }
-    }, 800);
+
+      setTimeout(() => {
+        setCurrentResolution(qName);
+        setIsBuffering(false);
+        
+        if (videoRef.current) {
+          videoRef.current.currentTime = timeSnapshot;
+          if (wasPlaying) {
+            videoRef.current.play()
+               .then(() => setIsPlaying(true))
+               .catch(e => console.log(e));
+          }
+        }
+      }, 500);
+    }
+  };
+
+  const handleWaiting = () => {
+    setIsBuffering(true);
+    setBufferingResolution(''); // Clear quality-specific text for standard network buffering
+  };
+
+  const handlePlaying = () => {
+    setIsBuffering(false);
+  };
+
+  const handleLoadedData = () => {
+    setIsInitialLoading(false);
+    if (!hlsRef.current && videoRef.current && videoRef.current.videoHeight) {
+      setActiveResolution(`${videoRef.current.videoHeight}p`);
+    }
   };
 
   const handleVideoError = (e) => {
@@ -477,6 +509,8 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     if (video.videoUrl && video.downloadUrl && video.videoUrl !== video.downloadUrl && !isUsingFallback) {
       console.warn("Video play error. Switching to direct download link stream...");
       setIsUsingFallback(true);
+    } else {
+      setIsInitialLoading(false);
     }
   };
 
@@ -509,13 +543,45 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           onLoadedMetadata={handleLoadedMetadata}
           onEnded={() => setIsPlaying(false)}
           onError={handleVideoError}
+          onWaiting={handleWaiting}
+          onPlaying={handlePlaying}
+          onSeeking={handleWaiting}
+          onSeeked={handlePlaying}
+          onCanPlay={handlePlaying}
+          onLoadedData={handleLoadedData}
         />
 
-        {/* simulated quality buffer loader overlay */}
+        {/* Play/Pause HUD Animation Indicator */}
+        {clickAction && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none select-none">
+            <div className="w-20 h-20 rounded-full bg-black/55 backdrop-blur-md border border-white/10 flex items-center justify-center text-white animate-hud-ping">
+              {clickAction === 'play' ? <Play fill="currentColor" size={32} className="ml-1" /> : <Pause fill="currentColor" size={32} />}
+            </div>
+          </div>
+        )}
+
+        {/* Initial loading screen with thumbnail cover and center spinner */}
+        {isInitialLoading && video.thumbnail && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-black animate-fade-in">
+            <img 
+              src={video.thumbnail} 
+              alt={video.title} 
+              className="w-full h-full object-contain pointer-events-none" 
+            />
+            <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-14 h-14 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          </div>
+        )}
+
+        {/* buffering loader overlay */}
         {isBuffering && (
           <div className="absolute inset-0 bg-black/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center gap-4 animate-fade-in text-center">
             <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-sm font-semibold tracking-wide text-fg">Optimizing buffer for {bufferingResolution}...</p>
+            <p className="text-sm font-semibold tracking-wide text-fg">
+              {bufferingResolution ? `Optimizing buffer for ${bufferingResolution}...` : 'Buffering stream...'}
+            </p>
           </div>
         )}
 
@@ -537,8 +603,6 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
                 <div className="flex justify-between items-center"><span className="text-muted">Play / Pause</span><kbd className="bg-surface-elevated border border-custom-border px-2 py-0.5 rounded-md text-xs font-mono">Space</kbd></div>
                 <div className="flex justify-between items-center"><span className="text-muted">Skip Forward 10s</span><kbd className="bg-surface-elevated border border-custom-border px-2 py-0.5 rounded-md text-xs font-mono">➡ Arrow</kbd></div>
                 <div className="flex justify-between items-center"><span className="text-muted">Skip Backward 10s</span><kbd className="bg-surface-elevated border border-custom-border px-2 py-0.5 rounded-md text-xs font-mono">⬅ Arrow</kbd></div>
-                <div className="flex justify-between items-center"><span className="text-muted">Volume Up / Down</span><kbd className="bg-surface-elevated border border-custom-border px-2 py-0.5 rounded-md text-xs font-mono">⬆ / ⬇ Arrows</kbd></div>
-                <div className="flex justify-between items-center"><span className="text-muted">Toggle Mute</span><kbd className="bg-surface-elevated border border-custom-border px-2 py-0.5 rounded-md text-xs font-mono">M</kbd></div>
                 <div className="flex justify-between items-center"><span className="text-muted">Toggle Fullscreen</span><kbd className="bg-surface-elevated border border-custom-border px-2 py-0.5 rounded-md text-xs font-mono">F</kbd></div>
                 <div className="flex justify-between items-center"><span className="text-muted">Toggle Shortcuts Map</span><kbd className="bg-surface-elevated border border-custom-border px-2 py-0.5 rounded-md text-xs font-mono">?</kbd></div>
               </div>
@@ -590,22 +654,19 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
             </div>
 
             <div className="flex items-center gap-6 relative">
-              {/* Volume sliders */}
-              <div className="flex items-center gap-2">
-                <button onClick={toggleMute} className="text-white hover:text-accent transition-all cursor-pointer" aria-label="Volume">
-                  {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                </button>
-                <input 
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={isMuted ? 0 : volume}
-                  onChange={handleVolumeChange}
-                  className="w-14 md:w-16 accent-accent cursor-pointer hidden md:block"
-                  aria-label="Volume slider"
-                />
-              </div>
+              {/* Ping latency status badge */}
+              {ping !== null && (
+                <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold select-none cursor-help" title="Latency to stream bridge API server">
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    ping === -1 ? 'bg-rose-500 animate-pulse' :
+                    ping < 100 ? 'bg-emerald-400' :
+                    ping < 220 ? 'bg-amber-400' : 'bg-rose-400'
+                  }`}></span>
+                  <span className="text-white/60">
+                    {ping === -1 ? 'Offline' : `${ping}ms`}
+                  </span>
+                </div>
+              )}
 
               {/* Resolution selection overlay selector */}
               <div className="relative">
@@ -614,7 +675,9 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
                   className="text-white hover:text-accent text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 select-none cursor-pointer"
                   aria-label="Quality selection"
                 >
-                  {currentResolution.split(' ')[0]}
+                  {currentResolution === 'Auto' 
+                    ? `Auto${activeResolution ? ` (${activeResolution.split(' ')[0]})` : ''}` 
+                    : currentResolution.split(' ')[0]}
                 </button>
                 {showQualityMenu && (
                   <div className="absolute bottom-9 right-0 bg-surface-elevated border border-custom-border rounded-xl p-1 shadow-glass z-30 flex flex-col w-36">

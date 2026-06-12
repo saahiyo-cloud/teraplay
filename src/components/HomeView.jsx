@@ -196,37 +196,51 @@ export default function HomeView({ videos, onVideoSelect, onFetch }) {
           <h2 className="text-xl md:text-2xl font-bold tracking-tight text-fg">Recently Added</h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {recentlyAdded.map(video => (
-            <div 
-              key={video.id} 
-              className="glass-card group cursor-pointer overflow-hidden rounded-2xl flex flex-col border border-custom-border" 
-              onClick={() => handleCardClick(video)}
-            >
-              <div className="aspect-video bg-surface-elevated relative overflow-hidden shrink-0">
-                <img src={video.thumbnail} alt={video.title} loading="lazy" className="w-full h-full object-cover opacity-85 transition-transform duration-500 ease-out group-hover:scale-105 group-hover:opacity-100" />
-                <div className="absolute bottom-3 right-3 bg-black/75 backdrop-blur-sm px-2 py-1 rounded-md text-[11px] font-mono font-semibold border border-white/10 text-fg">{video.duration}</div>
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="w-12 h-12 bg-accent rounded-full grid place-items-center text-bg scale-90 group-hover:scale-100 transition-transform duration-300 shadow-[0_4px_12px_var(--color-accent-muted)]">
-                    <Play fill="currentColor" size={20} className="ml-0.5" />
-                  </div>
-                </div>
-                {video.progress > 0 && (
-                  <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10">
-                    <div className="h-full bg-accent shadow-[0_0_8px_var(--color-accent)]" style={{ width: `${video.progress}%` }}></div>
-                  </div>
-                )}
-              </div>
-              <div className="p-5 flex-1 flex flex-col gap-3">
-                <h3 className="font-semibold text-base leading-snug line-clamp-2 text-fg group-hover:text-accent transition-colors duration-200">{video.title}</h3>
-                <div className="flex justify-between text-xs text-muted mt-auto font-medium">
-                  <span className="font-mono">{video.size}</span>
-                  <span>{video.relativeTime}</span>
-                </div>
-              </div>
+        {recentlyAdded.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-12 border border-dashed border-custom-border rounded-3xl bg-surface/50 text-center gap-4 animate-fade-in select-none">
+            <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/20 grid place-items-center text-accent">
+              <Play size={24} className="ml-0.5" />
             </div>
-          ))}
-        </div>
+            <div>
+              <h3 className="font-bold text-base text-fg">No Videos Imported Yet</h3>
+              <p className="text-xs text-muted max-w-sm mt-1">
+                Paste a valid TeraBox share link above to fetch, transcode, and stream your media instantly.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {recentlyAdded.map(video => (
+              <div 
+                key={video.id} 
+                className="glass-card group cursor-pointer overflow-hidden rounded-2xl flex flex-col border border-custom-border" 
+                onClick={() => handleCardClick(video)}
+              >
+                <div className="aspect-video bg-surface-elevated relative overflow-hidden shrink-0">
+                  <img src={video.thumbnail} alt={video.title} loading="lazy" className="w-full h-full object-cover opacity-85 transition-transform duration-500 ease-out group-hover:scale-105 group-hover:opacity-100" />
+                  <div className="absolute bottom-3 right-3 bg-black/75 backdrop-blur-sm px-2 py-1 rounded-md text-[11px] font-mono font-semibold border border-white/10 text-fg">{video.duration}</div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="w-12 h-12 bg-accent rounded-full grid place-items-center text-bg scale-90 group-hover:scale-100 transition-transform duration-300 shadow-[0_4px_12px_var(--color-accent-muted)]">
+                      <Play fill="currentColor" size={20} className="ml-0.5" />
+                    </div>
+                  </div>
+                  {video.progress > 0 && (
+                    <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10">
+                      <div className="h-full bg-accent shadow-[0_0_8px_var(--color-accent)]" style={{ width: `${video.progress}%` }}></div>
+                    </div>
+                  )}
+                </div>
+                <div className="p-5 flex-1 flex flex-col gap-3">
+                  <h3 className="font-semibold text-base leading-snug line-clamp-2 text-fg group-hover:text-accent transition-colors duration-200">{video.title}</h3>
+                  <div className="flex justify-between text-xs text-muted mt-auto font-medium">
+                    <span className="font-mono">{video.size}</span>
+                    <span>{video.relativeTime}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
