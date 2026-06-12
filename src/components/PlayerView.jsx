@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Hls from 'hls.js';
 import { 
@@ -6,8 +6,7 @@ import {
   Settings, Download, Heart, Share2, Copy, SkipBack, SkipForward,
   HelpCircle, Check, AlertCircle 
 } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://terabridge-api.onrender.com';
+import { API_BASE, API_KEY } from '../config';
 
 export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload, onUpdateVideo }) {
   const videoRef = useRef(null);
@@ -45,6 +44,14 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   const actionTimeoutRef = useRef(null);
   const hlsRef = useRef(null);
 
+  // Refs for keyboard handler — always point to the latest stable callback.
+  // The keyboard listener is registered once (empty deps) and calls through
+  // these refs, so it never suffers from stale closures over isPlaying,
+  // duration, or isFullscreen.
+  const handlePlayPauseRef = useRef(null);
+  const skipRef = useRef(null);
+  const toggleFullscreenRef = useRef(null);
+
   // Sync resolution when active video changes
   useEffect(() => {
     setCurrentResolution(video.resolution || 'Auto');
@@ -68,7 +75,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     }
     
     try {
-      const manifestUrl = `${API_BASE}/api/stream/manifest?url=${encodeURIComponent(video.originalUrl)}&index=${video.fileIndex || 0}&key=supercloudkey`;
+      const manifestUrl = `${API_BASE}/api/stream/manifest?url=${encodeURIComponent(video.originalUrl)}&index=${video.fileIndex || 0}&key=${API_KEY}`;
       const res = await fetch(manifestUrl);
       if (res.status === 200) {
         const text = await res.text();
@@ -167,7 +174,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     };
 
     measurePing();
-    const interval = setInterval(measurePing, 5000); // Check latency state every 5s
+    const interval = setInterval(measurePing, 30000); // Check latency every 30s
 
     return () => {
       active = false;
@@ -175,7 +182,17 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     };
   }, []);
 
-  // Keyboard Shortcuts Hook Listener
+  // Keep handler refs in sync with latest functions. Runs every render but
+  // no-op if nothing changed (ref assignment is cheap).
+  useEffect(() => {
+    handlePlayPauseRef.current = handlePlayPause;
+    skipRef.current = skip;
+    toggleFullscreenRef.current = toggleFullscreen;
+  });
+
+  // Keyboard Shortcuts — registered once, calls through refs so it always
+  // uses the latest handlePlayPause / skip / toggleFullscreen without
+  // re-registering the listener on every state change.
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Ignore keys inside inputs
@@ -186,19 +203,19 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
       switch (e.key.toLowerCase()) {
         case ' ':
           e.preventDefault();
-          handlePlayPause();
+          handlePlayPauseRef.current?.();
           break;
         case 'arrowright':
           e.preventDefault();
-          skip(10);
+          skipRef.current?.(10);
           break;
         case 'arrowleft':
           e.preventDefault();
-          skip(-10);
+          skipRef.current?.(-10);
           break;
         case 'f':
           e.preventDefault();
-          toggleFullscreen();
+          toggleFullscreenRef.current?.();
           break;
         case '?':
         case '/':
@@ -212,7 +229,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPlaying, volume, isMuted, isFullscreen, currentResolution]);
+  }, []); // Empty deps — register once, calls go through refs
 
   // Handle HLS stream loading or standard playback
   useEffect(() => {

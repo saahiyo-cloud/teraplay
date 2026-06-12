@@ -9,8 +9,7 @@ import DownloadsView from './components/DownloadsView';
 import ProfileView from './components/ProfileView';
 import SettingsView from './components/SettingsView';
 import HistoryView from './components/HistoryView';
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://terabridge-api.onrender.com';
+import { API_BASE, API_KEY } from './config';
 
 // Synchronously apply theme and migrate/clear mock data from localStorage
 (() => {
@@ -178,7 +177,7 @@ function AppShell() {
     setFetchStep('Connecting to TeraBridge...');
     
     try {
-      const response = await fetch(`${API_BASE}/api/resolve?url=${encodeURIComponent(url)}&key=supercloudkey&mode=stream`);
+      const response = await fetch(`${API_BASE}/api/resolve?url=${encodeURIComponent(url)}&key=${API_KEY}&mode=stream`);
       
       if (!response.ok) {
         throw new Error(`Server responded with status ${response.status}`);
@@ -206,7 +205,7 @@ function AppShell() {
         // Fallback to direct stream link if HLS manifest is not transcoded/ready yet on Terabox side
         const isHlsReady = file.stream_ready === true;
         const streamUrl = isHlsReady
-          ? `${API_BASE}/api/stream/manifest?url=${encodeURIComponent(url)}&index=${idx}&key=supercloudkey`
+          ? `${API_BASE}/api/stream/manifest?url=${encodeURIComponent(url)}&index=${idx}&key=${API_KEY}`
           : file.dlink;
         
         let detectedRes = '';
