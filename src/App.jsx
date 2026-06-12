@@ -285,14 +285,36 @@ function AppShell() {
       return;
     }
 
+    // Parse the size string to get bytes dynamically, defaulting to 50MB
+    let totalBytes = 50 * 1024 * 1024;
+    if (video.size) {
+      const sizeNum = parseFloat(video.size);
+      if (!isNaN(sizeNum)) {
+        if (video.size.includes('GB')) {
+          totalBytes = Math.round(sizeNum * 1024 * 1024 * 1024);
+        } else {
+          totalBytes = Math.round(sizeNum * 1024 * 1024);
+        }
+      }
+    }
+
+    const speedMbps = 3.5 + Math.random() * 6.0;
+    const speedBytes = Math.round(speedMbps * 1024 * 1024);
+    const secs = Math.ceil(totalBytes / speedBytes);
+    let timeLeftStr = `${secs}s remaining`;
+    if (secs > 60) {
+      const mins = Math.floor(secs / 60);
+      timeLeftStr = `${mins} min${mins > 1 ? 's' : ''} remaining`;
+    }
+
     const newTask = {
       id: `d_${Date.now()}`,
       title: `${video.title}.mp4`,
-      totalBytes: 1932735283,
+      totalBytes: totalBytes,
       loadedBytes: 0,
-      speed: '5.2 MB/s',
-      speedBytes: 5452595,
-      timeLeft: '6 mins remaining',
+      speed: `${speedMbps.toFixed(1)} MB/s`,
+      speedBytes: speedBytes,
+      timeLeft: timeLeftStr,
       progress: 0,
       status: 'downloading',
       addedDate: new Date().toISOString(),
@@ -456,7 +478,7 @@ function AppShell() {
             />
           } />
           <Route path="/profile" element={
-            <ProfileView />
+            <ProfileView videos={videos} history={history} downloads={downloads} />
           } />
           <Route path="/settings" element={
             <SettingsView onResetData={handleResetData} />

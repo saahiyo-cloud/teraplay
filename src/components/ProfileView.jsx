@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Shield, Check, Database, PlayCircle, Clock } from 'lucide-react';
 
-export default function ProfileView() {
+export default function ProfileView({ videos = [], history = [], downloads = [] }) {
   const [profile, setProfile] = useState(() => {
     const saved = localStorage.getItem('teraplay_profile');
     return saved ? JSON.parse(saved) : {
@@ -31,6 +31,64 @@ export default function ProfileView() {
     setTimeout(() => setSaveFeedback(false), 2000);
   };
 
+  // Helper to parse duration string to seconds
+  const parseDurationToSeconds = (durStr) => {
+    if (!durStr) return 0;
+    const parts = durStr.split(':').map(Number);
+    if (parts.some(isNaN)) return 0;
+    if (parts.length === 2) {
+      return parts[0] * 60 + parts[1]; // mm:ss
+    } else if (parts.length === 3) {
+      return parts[0] * 3600 + parts[1] * 60 + parts[2]; // hh:mm:ss
+    }
+    return 0;
+  };
+
+  // Dynamically calculate accumulated watched time in seconds
+  const totalPlaybackSeconds = history.reduce((sum, item) => {
+    const secs = parseDurationToSeconds(item.duration);
+    const progressFactor = (item.progress || 0) / 100;
+    return sum + Math.round(secs * progressFactor);
+  }, 0);
+
+  const formatPlaybackTime = (totalSecs) => {
+    if (totalSecs <= 0) return '0m';
+    const hrs = Math.floor(totalSecs / 3600);
+    const mins = Math.floor((totalSecs % 3600) / 60);
+    if (hrs > 0) {
+      return `${hrs}h ${mins}m`;
+    }
+    return `${mins}m`;
+  };
+
+  const formattedPlayback = formatPlaybackTime(totalPlaybackSeconds);
+
+  // Dynamically calculate storage space used from completed downloads (out of 100 GB)
+  const totalStorageBytes = downloads
+    .filter(d => d.status === 'completed')
+    .reduce((sum, d) => sum + (d.totalBytes || 0), 0);
+
+  const formatStorage = (bytes) => {
+    if (bytes <= 0) return '0.0 GB';
+    if (bytes >= 1024 * 1024 * 1024) {
+      return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+    }
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const storagePercentage = Math.max(0.5, Math.min(100, (totalStorageBytes / (100 * 1024 * 1024 * 1024)) * 100));
+
+  // Dynamically compute a renewal date (1 month from today)
+  const getNextRenewalDate = () => {
+    const nextDate = new Date();
+    nextDate.setMonth(nextDate.getMonth() + 1);
+    return nextDate.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
   return (
     <div className="animate-fade-in max-w-4xl">
       <header className="mb-10">
@@ -56,11 +114,11 @@ export default function ProfileView() {
           <div className="w-full pt-4 border-t border-custom-border text-left mt-auto">
             <div className="text-xs font-semibold text-muted uppercase tracking-wider mb-2 select-none">Storage Index</div>
             <div className="flex justify-between items-center text-xs font-mono mb-1 text-fg">
-              <span className="flex items-center gap-1"><Database size={12} /> 13.7 GB</span>
+              <span className="flex items-center gap-1"><Database size={12} /> {formatStorage(totalStorageBytes)}</span>
               <span className="opacity-60">100 GB Max</span>
             </div>
             <div className="w-full h-1.5 bg-custom-border rounded-full overflow-hidden">
-              <div className="h-full bg-accent rounded-full shadow-[0_0_8px_var(--color-accent)]" style={{ width: '13.7%' }}></div>
+              <div className="h-full bg-accent rounded-full shadow-[0_0_8px_var(--color-accent)]" style={{ width: `${storagePercentage}%` }}></div>
             </div>
           </div>
         </div>
@@ -72,7 +130,7 @@ export default function ProfileView() {
               <PlayCircle size={24} />
             </div>
             <div>
-              <div className="text-2xl font-mono font-bold text-fg leading-tight">24</div>
+              <div className="text-2xl font-mono font-bold text-fg leading-tight">{history.length}</div>
               <div className="text-xs text-muted font-medium mt-1">Total Videos Streamed</div>
             </div>
           </div>
@@ -82,7 +140,7 @@ export default function ProfileView() {
               <Clock size={24} />
             </div>
             <div>
-              <div className="text-2xl font-mono font-bold text-fg leading-tight">18h 45m</div>
+              <div className="text-2xl font-mono font-bold text-fg leading-tight">{formattedPlayback}</div>
               <div className="text-xs text-muted font-medium mt-1">Accumulated Playback Time</div>
             </div>
           </div>
@@ -100,7 +158,7 @@ export default function ProfileView() {
               </div>
               <div className="flex justify-between pb-1">
                 <span className="text-muted">Next Renewal</span>
-                <span className="text-fg">July 12, 2026</span>
+                <span className="text-fg">{getNextRenewalDate()}</span>
               </div>
             </div>
           </div>

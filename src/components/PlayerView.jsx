@@ -369,9 +369,19 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
 
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
-      setDuration(videoRef.current.duration);
+      const dur = videoRef.current.duration;
+      setDuration(dur);
       if (!hlsRef.current && videoRef.current.videoHeight) {
         setActiveResolution(`${videoRef.current.videoHeight}p`);
+      }
+      if (dur && onUpdateVideo) {
+        const formatted = formatTime(dur);
+        if (video.duration !== formatted) {
+          onUpdateVideo({
+            ...video,
+            duration: formatted
+          });
+        }
       }
     }
   };
@@ -514,6 +524,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     }
   };
 
+  const isHlsActive = !isUsingFallback && video.videoUrl && (video.videoUrl.includes('.m3u8') || video.videoUrl.includes('/api/stream/manifest'));
   const progressPercent = duration ? (currentTime / duration) * 100 : 0;
 
   return (
@@ -670,40 +681,48 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
 
               {/* Resolution selection overlay selector */}
               <div className="relative">
-                <button 
-                  onClick={() => setShowQualityMenu(!showQualityMenu)} 
-                  className="text-white hover:text-accent text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 select-none cursor-pointer"
-                  aria-label="Quality selection"
-                >
-                  {currentResolution === 'Auto' 
-                    ? `Auto${activeResolution ? ` (${activeResolution.split(' ')[0]})` : ''}` 
-                    : currentResolution.split(' ')[0]}
-                </button>
-                {showQualityMenu && (
-                  <div className="absolute bottom-9 right-0 bg-surface-elevated border border-custom-border rounded-xl p-1 shadow-glass z-30 flex flex-col w-36">
-                    {qualities.length > 0 ? (
-                      qualities.map(q => (
-                        <button 
-                          key={q.name} 
-                          onClick={() => handleQualityChange(q)}
-                          className={`px-3 py-2 text-left rounded-lg text-xs font-semibold hover:bg-white/5 cursor-pointer flex items-center justify-between ${currentResolution === q.name ? 'text-accent' : 'text-fg'}`}
-                        >
-                          <span>{q.name}</span>
-                          {currentResolution === q.name && <Check size={12} />}
-                        </button>
-                      ))
-                    ) : (
-                      ['Auto', '720p', '480p', '360p'].map(res => (
-                        <button 
-                          key={res} 
-                          onClick={() => handleQualityChange(res)}
-                          className={`px-3 py-2 text-left rounded-lg text-xs font-semibold hover:bg-white/5 cursor-pointer flex items-center justify-between ${currentResolution === res ? 'text-accent' : 'text-fg'}`}
-                        >
-                          <span>{res}</span>
-                          {currentResolution === res && <Check size={12} />}
-                        </button>
-                      ))
+                {isHlsActive ? (
+                  <>
+                    <button 
+                      onClick={() => setShowQualityMenu(!showQualityMenu)} 
+                      className="text-white hover:text-accent text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 select-none cursor-pointer"
+                      aria-label="Quality selection"
+                    >
+                      {currentResolution === 'Auto' 
+                        ? `Auto${activeResolution ? ` (${activeResolution.split(' ')[0]})` : ''}` 
+                        : currentResolution.split(' ')[0]}
+                    </button>
+                    {showQualityMenu && (
+                      <div className="absolute bottom-9 right-0 bg-surface-elevated border border-custom-border rounded-xl p-1 shadow-glass z-30 flex flex-col w-36">
+                        {qualities.length > 0 ? (
+                          qualities.map(q => (
+                            <button 
+                              key={q.name} 
+                              onClick={() => handleQualityChange(q)}
+                              className={`px-3 py-2 text-left rounded-lg text-xs font-semibold hover:bg-white/5 cursor-pointer flex items-center justify-between ${currentResolution === q.name ? 'text-accent' : 'text-fg'}`}
+                            >
+                              <span>{q.name}</span>
+                              {currentResolution === q.name && <Check size={12} />}
+                            </button>
+                          ))
+                        ) : (
+                          ['Auto', '720p', '480p', '360p'].map(res => (
+                            <button 
+                              key={res} 
+                              onClick={() => handleQualityChange(res)}
+                              className={`px-3 py-2 text-left rounded-lg text-xs font-semibold hover:bg-white/5 cursor-pointer flex items-center justify-between ${currentResolution === res ? 'text-accent' : 'text-fg'}`}
+                            >
+                              <span>{res}</span>
+                              {currentResolution === res && <Check size={12} />}
+                            </button>
+                          ))
+                        )}
+                      </div>
                     )}
+                  </>
+                ) : (
+                  <div className="text-white/60 text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-white/5 select-none cursor-default">
+                    {activeResolution ? activeResolution.split(' ')[0] : (video.resolution ? video.resolution.split(' ')[0] : 'Original')}
                   </div>
                 )}
               </div>
@@ -738,13 +757,13 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           <div className="flex gap-2 flex-wrap">
             <span className="text-[11px] font-bold text-muted bg-surface-elevated border border-custom-border rounded-lg px-2.5 py-1 tracking-wider uppercase">{video.resolution || '1080P'}</span>
             <span className="text-[11px] font-bold text-muted bg-surface-elevated border border-custom-border rounded-lg px-2.5 py-1 tracking-wider uppercase">{video.size}</span>
-            {video.streamReady && !isUsingFallback ? (
+            {isHlsActive ? (
               <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-2.5 py-1 tracking-wider uppercase">⚡ HLS Stream</span>
             ) : (
               <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-1 tracking-wider uppercase">🔗 Direct Link {isUsingFallback ? '(Fallback)' : ''}</span>
             )}
           </div>
-          {(isUsingFallback || (!video.streamReady && video.originalUrl)) && (
+          {!isHlsActive && video.originalUrl && (
             <div className="mt-3 flex flex-col gap-2 bg-amber-500/[0.03] border border-amber-500/10 rounded-xl p-3">
               <p className="text-[11px] text-amber-400/90 flex items-center gap-1.5 animate-pulse select-none font-semibold">
                 <span>⚠️ {isUsingFallback ? 'HLS Stream transcoding. Switched to Direct Link.' : 'Playing Direct Link. HLS stream may still be transcoding.'}</span>

@@ -216,20 +216,6 @@ export default function DownloadsView({
           </div>
         </section>
       )}
-
-      {/* Loading Skeleton */}
-      <section className="mt-12 opacity-45">
-        <div className="text-sm font-semibold text-muted uppercase tracking-wider mb-5">Task Template View</div>
-        <div className="flex flex-col gap-4">
-          <div className="card p-5 grid grid-cols-[auto_1fr_auto] gap-5 items-center border border-custom-border border-dashed rounded-2xl">
-            <div className="w-14 h-14 skeleton rounded-xl shrink-0"></div>
-            <div className="flex flex-col gap-2.5">
-              <div className="skeleton w-3/5 h-4"></div>
-              <div className="skeleton w-2/5 h-3"></div>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
