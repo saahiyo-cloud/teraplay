@@ -9,7 +9,7 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://terabridge.vercel.app';
 
-export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload }) {
+export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload, onUpdateVideo }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const navigate = useNavigate();
@@ -69,8 +69,14 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
             setHlsCheckMessage("Stream ready! Switching to HLS...");
           }
           
-          video.streamReady = true;
-          video.videoUrl = manifestUrl;
+          const updated = {
+            ...video,
+            streamReady: true,
+            videoUrl: manifestUrl
+          };
+          if (onUpdateVideo) {
+            onUpdateVideo(updated);
+          }
           setIsUsingFallback(false);
           
           if (!isBackground) {
@@ -102,22 +108,30 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
 
   // Background check for HLS transcoding completion
   useEffect(() => {
-    if (!isUsingFallback || !video.originalUrl) return;
+    if (!video.originalUrl) return;
+    
+    // Check if it's either in fallback state OR was imported as direct link originally
+    const needsCheck = isUsingFallback || !video.streamReady;
+    if (!needsCheck) return;
     
     let active = true;
+    
+    // Run background check on mount or ID change immediately
+    checkHlsStatus(true);
+    
     const interval = setInterval(async () => {
       if (!active) return;
       const ready = await checkHlsStatus(true);
       if (ready) {
         clearInterval(interval);
       }
-    }, 12000); // Check every 12 seconds
+    }, 15000); // Check every 15 seconds
     
     return () => {
       active = false;
       clearInterval(interval);
     };
-  }, [isUsingFallback, video.id, video.originalUrl]);
+  }, [isUsingFallback, video.id, video.originalUrl, video.streamReady]);
 
   // Keyboard Shortcuts Hook Listener
   useEffect(() => {
@@ -667,10 +681,10 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
               <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-1 tracking-wider uppercase">🔗 Direct Link {isUsingFallback ? '(Fallback)' : ''}</span>
             )}
           </div>
-          {isUsingFallback && (
+          {(isUsingFallback || (!video.streamReady && video.originalUrl)) && (
             <div className="mt-3 flex flex-col gap-2 bg-amber-500/[0.03] border border-amber-500/10 rounded-xl p-3">
               <p className="text-[11px] text-amber-400/90 flex items-center gap-1.5 animate-pulse select-none font-semibold">
-                <span>⚠️ HLS Stream transcoding. Switched to Direct Link.</span>
+                <span>⚠️ {isUsingFallback ? 'HLS Stream transcoding. Switched to Direct Link.' : 'Playing Direct Link. HLS stream may still be transcoding.'}</span>
               </p>
               {video.originalUrl && (
                 <button

@@ -484,6 +484,10 @@ function AppShell() {
     }
   };
 
+  const handleUpdateVideo = (updatedVideo) => {
+    setVideos(prev => prev.map(v => v.id === updatedVideo.id ? { ...v, ...updatedVideo } : v));
+  };
+
   const handleResetData = () => {
     localStorage.removeItem('teraplay_videos');
     localStorage.removeItem('teraplay_downloads');
@@ -533,6 +537,7 @@ function AppShell() {
               handleToggleFavorite={handleToggleFavorite}
               handleStartDownload={handleStartDownload}
               handleVideoSelect={handleVideoSelect}
+              handleUpdateVideo={handleUpdateVideo}
             />
           } />
           <Route path="/library" element={
@@ -619,7 +624,7 @@ function AppShell() {
   );
 }
 
-function PlayerRouteWrapper({ videos, handleToggleFavorite, handleStartDownload, handleVideoSelect }) {
+function PlayerRouteWrapper({ videos, handleToggleFavorite, handleStartDownload, handleVideoSelect, handleUpdateVideo }) {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -648,6 +653,7 @@ function PlayerRouteWrapper({ videos, handleToggleFavorite, handleStartDownload,
       onBack={() => navigate(-1)}
       onToggleFavorite={handleToggleFavorite}
       onStartDownload={handleStartDownload}
+      onUpdateVideo={handleUpdateVideo}
     />
   );
 }
