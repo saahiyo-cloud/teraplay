@@ -514,7 +514,11 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           <div className="flex gap-2 flex-wrap">
             <span className="text-[11px] font-bold text-muted bg-surface-elevated border border-custom-border rounded-lg px-2.5 py-1 tracking-wider uppercase">{video.resolution || '1080P'}</span>
             <span className="text-[11px] font-bold text-muted bg-surface-elevated border border-custom-border rounded-lg px-2.5 py-1 tracking-wider uppercase">{video.size}</span>
-            <span className="text-[11px] font-bold text-muted bg-surface-elevated border border-custom-border rounded-lg px-2.5 py-1 tracking-wider uppercase">TeraBox link</span>
+            {video.streamReady ? (
+              <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-2.5 py-1 tracking-wider uppercase">⚡ HLS Stream</span>
+            ) : (
+              <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-1 tracking-wider uppercase">🔗 Direct Link</span>
+            )}
           </div>
         </div>
 

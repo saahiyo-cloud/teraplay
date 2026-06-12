@@ -316,13 +316,18 @@ function AppShell() {
         
         const thumbUrl = file.thumbnails?.url2 || file.thumbnails?.url1 || file.thumbnails?.icon || 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=600';
         
-        // HLS Streaming Manifest Endpoint (highly optimized for streaming chunk recovery)
-        const streamUrl = `https://terabridge.vercel.app/api/stream/manifest?url=${encodeURIComponent(url)}&index=${idx}&key=supercloudkey`;
+        // Fallback to direct stream link if HLS manifest is not transcoded/ready yet on Terabox side
+        const isHlsReady = file.stream_ready === true;
+        const streamUrl = isHlsReady
+          ? `https://terabridge.vercel.app/api/stream/manifest?url=${encodeURIComponent(url)}&index=${idx}&key=supercloudkey`
+          : file.dlink;
         
         return {
           id: fileId,
           title: file.filename || `TeraBox Video #${fileId.substring(0, 6)}`,
-          description: `Imported from TeraBox URL. High-speed HLS stream proxied via TeraBridge. Original Path: ${file.path || '/'}`,
+          description: isHlsReady
+            ? `Imported from TeraBox URL. High-speed HLS stream proxied via TeraBridge. Original Path: ${file.path || '/'}`
+            : `Imported from TeraBox URL. Direct stream link. Original Path: ${file.path || '/'}`,
           size: sizeStr,
           duration: '02:00',
           progress: 0,
@@ -332,7 +337,8 @@ function AppShell() {
           thumbnail: thumbUrl,
           relativeTime: 'Just now',
           addedDate: new Date().toISOString(),
-          resolution: '1080P Full HD'
+          resolution: '1080P Full HD',
+          streamReady: isHlsReady
         };
       });
       
