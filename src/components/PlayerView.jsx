@@ -270,6 +270,21 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           if (initialLevel) {
             setActiveResolution(initialLevel.name || (initialLevel.height ? `${initialLevel.height}p` : ''));
           }
+
+          // ── Apply saved resolution preference ──
+          const savedRes = localStorage.getItem('settings_resolution') || 'auto';
+          const resHeightMap = { '4k': 2160, '1080p': 1080, '720p': 720 };
+          const targetHeight = resHeightMap[savedRes];
+          if (targetHeight) {
+            const matchIdx = hls.levels.findIndex(l => l.height && Math.abs(l.height - targetHeight) < targetHeight * 0.25);
+            if (matchIdx >= 0) {
+              hls.currentLevel = matchIdx;
+              const matched = hls.levels[matchIdx];
+              const mName = matched.name || `${matched.height}p`;
+              setCurrentResolution(mName);
+              setActiveResolution(mName);
+            }
+          }
           
           videoElement.play()
             .then(() => setIsPlaying(true))
@@ -329,6 +344,16 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     setCurrentTime(0);
 
     return () => {
+      // ── Save playback position before cleanup ──
+      if (videoElement && localStorage.getItem('settings_remember_progress') !== 'false') {
+        const ct = videoElement.currentTime;
+        const dur = videoElement.duration;
+        if (ct > 5 && dur > 0 && ct < dur * 0.95) {
+          localStorage.setItem(`progress_${video.id}`, ct.toString());
+        } else if (ct >= dur * 0.95) {
+          localStorage.removeItem(`progress_${video.id}`);
+        }
+      }
       if (hls) {
         hls.destroy();
         hlsRef.current = null;
@@ -370,6 +395,26 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     resetControlsTimer();
   };
 
+  // ── Autoplay: advance to the next video when the current one ends ──
+  const handleEnded = () => {
+    setIsPlaying(false);
+    // Clear saved progress — video finished
+    localStorage.removeItem(`progress_${video.id}`);
+
+    const autoplay = localStorage.getItem('settings_autoplay') !== 'false';
+    if (!autoplay || !relatedVideos || relatedVideos.length === 0) return;
+
+    // Find the next playable video after the current one
+    const currentIdx = relatedVideos.findIndex(v => v.id === video.id);
+    const after = relatedVideos.slice(currentIdx + 1);
+    const nextVideo = after.find(v => !v.is_directory) || relatedVideos.find(v => !v.is_directory && v.id !== video.id);
+
+    if (nextVideo && onVideoSelect) {
+      onVideoSelect(nextVideo);
+      navigate(`/player/${nextVideo.id}`);
+    }
+  };
+
   const triggerClickAction = (action) => {
     setClickAction(action);
     if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
@@ -400,6 +445,13 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
             ...video,
             duration: formatted
           });
+        }
+      }
+      // ── Restore saved playback position ──
+      if (localStorage.getItem('settings_remember_progress') !== 'false') {
+        const savedTime = parseFloat(localStorage.getItem(`progress_${video.id}`) || '0');
+        if (savedTime > 5 && savedTime < (dur || Infinity) * 0.95) {
+          videoRef.current.currentTime = savedTime;
         }
       }
     }
@@ -593,7 +645,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           onClick={handlePlayPause}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
-          onEnded={() => setIsPlaying(false)}
+          onEnded={handleEnded}
           onError={handleVideoError}
           onWaiting={handleWaiting}
           onPlaying={handlePlaying}

@@ -201,16 +201,10 @@ export default function SettingsView({ onResetData }) {
             </div>
 
             <div className="flex flex-col gap-2">
-              <label htmlFor="folder" className="font-semibold text-sm text-fg select-none">Default download directory</label>
-              <span className="text-xs text-muted">File path where MP4 streaming assets are compiled.</span>
-              <div className="bg-surface border border-custom-border px-4 py-2.5 rounded-xl text-fg text-sm flex items-center focus-within:border-accent transition-colors duration-200">
-                <input 
-                  type="text" 
-                  id="folder"
-                  value={downloadFolder}
-                  onChange={(e) => setDownloadFolder(e.target.value)}
-                  className="w-full bg-transparent border-none outline-none text-fg"
-                />
+              <label className="font-semibold text-sm text-fg select-none">Download location</label>
+              <span className="text-xs text-muted">Files are saved to your browser's default download folder. This is controlled by your browser settings and cannot be changed from the app.</span>
+              <div className="bg-surface border border-custom-border px-4 py-2.5 rounded-xl text-muted text-sm">
+                ~/Downloads (browser default)
               </div>
             </div>
           </div>

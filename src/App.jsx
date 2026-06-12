@@ -366,8 +366,25 @@ function AppShell() {
         ));
       } finally {
         downloadControllersRef.current.delete(taskId);
+        _processDownloadQueue();
       }
     })();
+  };
+
+  // ── Process download queue: start queued tasks when slots open ──
+  const _processDownloadQueue = () => {
+    const limit = parseInt(localStorage.getItem('settings_concurrent') || '2', 10);
+    setDownloads(prev => {
+      const active = prev.filter(d => d.status === 'downloading').length;
+      if (active >= limit) return prev;
+      const next = prev.find(d => d.status === 'queued');
+      if (!next) return prev;
+      // Start the download outside the state updater
+      const video = next._video;
+      const taskId = next.id;
+      setTimeout(() => _startRealDownload(video, taskId), 0);
+      return prev.map(d => d.id === taskId ? { ...d, status: 'downloading', speed: 'Connecting...', timeLeft: 'Starting...' } : d);
+    });
   };
 
   const handleStartDownload = (video) => {
@@ -377,24 +394,28 @@ function AppShell() {
       return;
     }
 
+    const limit = parseInt(localStorage.getItem('settings_concurrent') || '2', 10);
+    const active = downloads.filter(d => d.status === 'downloading').length;
+    const startNow = active < limit;
+
     const taskId = `d_${Date.now()}`;
     const newTask = {
       id: taskId,
       title: `${video.title}.mp4`,
       totalBytes: 0,
       loadedBytes: 0,
-      speed: 'Connecting...',
-      timeLeft: 'Starting...',
+      speed: startNow ? 'Connecting...' : 'Queued',
+      timeLeft: startNow ? 'Starting...' : 'Waiting for slot...',
       progress: 0,
-      status: 'downloading',
+      status: startNow ? 'downloading' : 'queued',
       addedDate: new Date().toISOString(),
       videoId: video.id,
-      _video: video,   // keep reference for resume/retry
+      _video: video,
     };
 
     setDownloads(prev => [newTask, ...prev]);
     navigate('/downloads');
-    _startRealDownload(video, taskId);
+    if (startNow) _startRealDownload(video, taskId);
   };
 
   const handlePauseDownload = (id) => {
@@ -430,6 +451,7 @@ function AppShell() {
     if (ctrl) ctrl.abort();
     downloadControllersRef.current.delete(id);
     setDownloads(prev => prev.filter(d => d.id !== id));
+    _processDownloadQueue();
   };
 
   const handleClearHistory = () => {

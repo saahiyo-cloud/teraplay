@@ -13,7 +13,7 @@ export default function DownloadsView({
   onRetryDownload,
   onPlayVideo 
 }) {
-  const activeTasks = downloads.filter(d => d.status === 'downloading' || d.status === 'paused');
+  const activeTasks = downloads.filter(d => d.status === 'downloading' || d.status === 'paused' || d.status === 'queued');
   const completedTasks = downloads.filter(d => d.status === 'completed' || d.status === 'failed');
 
   const formatSize = (bytes) => {
