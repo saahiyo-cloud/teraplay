@@ -806,7 +806,9 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
         <div>
           <h1 className="text-2xl font-bold leading-tight tracking-tight text-fg mb-4">{video.title}</h1>
           <div className="flex gap-2 flex-wrap">
-            <span className="text-[11px] font-bold text-muted bg-surface-elevated border border-custom-border rounded-lg px-2.5 py-1 tracking-wider uppercase">{video.resolution || '1080P'}</span>
+            <span className="text-[11px] font-bold text-muted bg-surface-elevated border border-custom-border rounded-lg px-2.5 py-1 tracking-wider uppercase">
+              {activeResolution ? activeResolution.toUpperCase() : (video.resolution || 'AUTO')}
+            </span>
             <span className="text-[11px] font-bold text-muted bg-surface-elevated border border-custom-border rounded-lg px-2.5 py-1 tracking-wider uppercase">{video.size}</span>
             {isHlsActive ? (
               <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-2.5 py-1 tracking-wider uppercase">⚡ HLS Stream</span>
@@ -869,7 +871,9 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
         </div>
 
         <p className="text-sm text-muted leading-relaxed font-normal">
-          {video.description || 'No description available for this TeraBox link.'}
+          {isHlsActive 
+            ? `Imported from TeraBox URL. High-speed HLS stream proxied via TeraBridge. Original Path: ${video.path || '/'}`
+            : `Imported from TeraBox URL. Direct stream link. Original Path: ${video.path || '/'}`}
         </p>
 
         <div className="border-t border-custom-border pt-6">

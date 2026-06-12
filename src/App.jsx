@@ -187,14 +187,12 @@ function AppShell() {
       setFetchStep('Parsing file details...');
       const data = await response.json();
       
-      if (data.status !== 'success' && data.status !== 'transcoding') {
-        throw new Error(data.message || 'Failed to resolve any files from the provided link.');
-      }
-      if (!data.files || data.files.length === 0) {
-        throw new Error('No files found in this share link.');
+      const videoFiles = (data.files || []).filter(file => !file.is_directory);
+      if (videoFiles.length === 0) {
+        throw new Error('No playable video files found in this share link.');
       }
       
-      const newVideos = data.files.map((file, idx) => {
+      const newVideos = videoFiles.map((file, idx) => {
         const fileId = file.fs_id || `${Date.now()}_${idx}`;
         let sizeStr = 'Unknown Size';
         if (file.size_mb) {
@@ -211,18 +209,28 @@ function AppShell() {
           ? `${API_BASE}/api/stream/manifest?url=${encodeURIComponent(url)}&index=${idx}&key=supercloudkey`
           : file.dlink;
         
-        let detectedRes = '1080P Full HD';
-        const nameLower = (file.filename || '').toLowerCase();
-        if (nameLower.includes('4k') || nameLower.includes('2160p')) {
-          detectedRes = '4K Ultra HD';
-        } else if (nameLower.includes('1080p') || nameLower.includes('fhd')) {
-          detectedRes = '1080P Full HD';
-        } else if (nameLower.includes('720p') || nameLower.includes('hdtc') || nameLower.includes('hdrip') || nameLower.includes('720')) {
-          detectedRes = '720P HD';
-        } else if (nameLower.includes('480p') || nameLower.includes('480')) {
-          detectedRes = '480P';
-        } else if (nameLower.includes('360p') || nameLower.includes('360')) {
-          detectedRes = '360P';
+        let detectedRes = '';
+        if (file.streams && Object.keys(file.streams).length > 0) {
+          if (file.streams['M3U8_AUTO_1080']) detectedRes = '1080P Full HD';
+          else if (file.streams['M3U8_AUTO_720']) detectedRes = '720P HD';
+          else if (file.streams['M3U8_AUTO_480']) detectedRes = '480P';
+          else if (file.streams['M3U8_AUTO_360']) detectedRes = '360P';
+        }
+        if (!detectedRes) {
+          const nameLower = (file.filename || '').toLowerCase();
+          if (nameLower.includes('4k') || nameLower.includes('2160p')) {
+            detectedRes = '4K Ultra HD';
+          } else if (nameLower.includes('1080p') || nameLower.includes('fhd')) {
+            detectedRes = '1080P Full HD';
+          } else if (nameLower.includes('720p') || nameLower.includes('hdtc') || nameLower.includes('hdrip') || nameLower.includes('720')) {
+            detectedRes = '720P HD';
+          } else if (nameLower.includes('480p') || nameLower.includes('480')) {
+            detectedRes = '480P';
+          } else if (nameLower.includes('360p') || nameLower.includes('360')) {
+            detectedRes = '360P';
+          } else {
+            detectedRes = 'Auto';
+          }
         }
 
         return {
@@ -232,7 +240,7 @@ function AppShell() {
             ? `Imported from TeraBox URL. High-speed HLS stream proxied via TeraBridge. Original Path: ${file.path || '/'}`
             : `Imported from TeraBox URL. Direct stream link. Original Path: ${file.path || '/'}`,
           size: sizeStr,
-          duration: '02:00',
+          duration: file.duration || '02:00',
           progress: 0,
           favorite: false,
           videoUrl: streamUrl,

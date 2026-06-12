@@ -320,8 +320,14 @@ async function resolveLink(link, action = "d", waitForTranscoding = false, strea
       error: null,
       thumbnails: item.thumbs,
       path: item.path,
-      is_directory: Boolean(item.isdir)
+      is_directory: String(item.isdir) === "1"
     };
+
+    if (fileRes.is_directory) {
+      fileRes.error = "File is a directory";
+      results.push(fileRes);
+      continue;
+    }
 
     if (action === "l") {
       results.push(fileRes);
@@ -517,6 +523,26 @@ async function resolveLink(link, action = "d", waitForTranscoding = false, strea
         } else if (allTranscoding) {
           fileRes.error = "transcoding_in_progress";
         }
+
+        // Parse stream duration if HLS is ready
+        if (fileRes.stream_ready && fileRes.stream_m3u8) {
+          let totalDuration = 0;
+          const lines = fileRes.stream_m3u8.split(/\r?\n/);
+          for (const line of lines) {
+            if (line.startsWith("#EXTINF:")) {
+              const val = parseFloat(line.split(":")[1].split(",")[0]);
+              if (!isNaN(val)) {
+                totalDuration += val;
+              }
+            }
+          }
+          if (totalDuration > 0) {
+            const mins = Math.floor(totalDuration / 60);
+            const secs = Math.floor(totalDuration % 60);
+            fileRes.duration = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+            fileRes.duration_seconds = totalDuration;
+          }
+        }
       }
     }
     // --- ACTION DOWNLOAD ---
@@ -698,13 +724,16 @@ app.all("/api/resolve", async (req, res) => {
         error: f.error,
         thumbnails: Object.keys(proxiedThumbs).length > 0 ? proxiedThumbs : null,
         path: f.path,
-        is_directory: f.is_directory
+        is_directory: f.is_directory,
+        duration: f.duration,
+        duration_seconds: f.duration_seconds
       };
 
       if (f.stream_ready) {
         fileInfo.stream_m3u8 = f.stream_m3u8;
         fileInfo.streams = f.streams;
       }
+      console.log(`[DEBUG RESOLVE] file=${fileInfo.filename} is_directory=${fileInfo.is_directory} raw_f_is_dir=${f.is_directory}`);
       responseData.files.push(fileInfo);
     }
 
