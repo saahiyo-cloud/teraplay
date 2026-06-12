@@ -10,6 +10,8 @@ import ProfileView from './components/ProfileView';
 import SettingsView from './components/SettingsView';
 import HistoryView from './components/HistoryView';
 
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
+
 // Synchronously apply theme from localStorage to avoid styling flashes on reload
 (() => {
   const saved = localStorage.getItem('teraplay_accent');
@@ -292,7 +294,7 @@ function AppShell() {
     setFetchStep('Connecting to TeraBridge...');
     
     try {
-      const response = await fetch(`https://terabridge.vercel.app/api/resolve?url=${encodeURIComponent(url)}&key=supercloudkey`);
+      const response = await fetch(`${API_BASE}/api/resolve?url=${encodeURIComponent(url)}&key=supercloudkey`);
       
       if (!response.ok) {
         throw new Error(`Server responded with status ${response.status}`);
@@ -319,7 +321,7 @@ function AppShell() {
         // Fallback to direct stream link if HLS manifest is not transcoded/ready yet on Terabox side
         const isHlsReady = file.stream_ready === true;
         const streamUrl = isHlsReady
-          ? `https://terabridge.vercel.app/api/stream/manifest?url=${encodeURIComponent(url)}&index=${idx}&key=supercloudkey`
+          ? `${API_BASE}/api/stream/manifest?url=${encodeURIComponent(url)}&index=${idx}&key=supercloudkey`
           : file.dlink;
         
         return {
