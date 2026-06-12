@@ -7,7 +7,7 @@ import {
   HelpCircle, Check 
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://terabridge.vercel.app';
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://terabridge-api.onrender.com';
 
 export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload, onUpdateVideo }) {
   const videoRef = useRef(null);

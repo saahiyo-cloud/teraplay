@@ -10,7 +10,7 @@ import ProfileView from './components/ProfileView';
 import SettingsView from './components/SettingsView';
 import HistoryView from './components/HistoryView';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://terabridge.vercel.app';
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://terabridge-api.onrender.com';
 
 // Synchronously apply theme and migrate/clear mock data from localStorage
 (() => {
@@ -211,6 +211,20 @@ function AppShell() {
           ? `${API_BASE}/api/stream/manifest?url=${encodeURIComponent(url)}&index=${idx}&key=supercloudkey`
           : file.dlink;
         
+        let detectedRes = '1080P Full HD';
+        const nameLower = (file.filename || '').toLowerCase();
+        if (nameLower.includes('4k') || nameLower.includes('2160p')) {
+          detectedRes = '4K Ultra HD';
+        } else if (nameLower.includes('1080p') || nameLower.includes('fhd')) {
+          detectedRes = '1080P Full HD';
+        } else if (nameLower.includes('720p') || nameLower.includes('hdtc') || nameLower.includes('hdrip') || nameLower.includes('720')) {
+          detectedRes = '720P HD';
+        } else if (nameLower.includes('480p') || nameLower.includes('480')) {
+          detectedRes = '480P';
+        } else if (nameLower.includes('360p') || nameLower.includes('360')) {
+          detectedRes = '360P';
+        }
+
         return {
           id: fileId,
           title: file.filename || `TeraBox Video #${fileId.substring(0, 6)}`,
@@ -226,7 +240,7 @@ function AppShell() {
           thumbnail: thumbUrl,
           relativeTime: 'Just now',
           addedDate: new Date().toISOString(),
-          resolution: '1080P Full HD',
+          resolution: detectedRes,
           streamReady: isHlsReady,
           originalUrl: url,
           fileIndex: idx
