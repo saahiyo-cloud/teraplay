@@ -31,15 +31,18 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [bufferingResolution, setBufferingResolution] = useState('');
-  const [currentResolution, setCurrentResolution] = useState(video.resolution || '1080P Full HD');
+  const [currentResolution, setCurrentResolution] = useState(video.resolution || 'Auto');
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [isUsingFallback, setIsUsingFallback] = useState(false);
+  const [qualities, setQualities] = useState([]);
   
   const controlsTimeoutRef = useRef(null);
+  const hlsRef = useRef(null);
 
   // Sync resolution when active video changes
   useEffect(() => {
-    setCurrentResolution(video.resolution || '1080P Full HD');
+    setCurrentResolution(video.resolution || 'Auto');
+    setQualities([]);
     setShowQualityMenu(false);
     setIsBuffering(false);
     setIsUsingFallback(false);
@@ -203,10 +206,30 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
         });
         hls.loadSource(video.videoUrl);
         hls.attachMedia(videoElement);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        hlsRef.current = hls;
+
+        hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+          const levels = hls.levels.map((level, index) => {
+            const name = level.name || (level.height ? `${level.height}p` : `Level ${index}`);
+            return { id: index, name };
+          });
+          setQualities([{ id: -1, name: "Auto" }, ...levels]);
+          setCurrentResolution("Auto");
+          
           videoElement.play()
             .then(() => setIsPlaying(true))
             .catch(err => console.log("Auto-play blocked: ", err));
+        });
+
+        hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
+          if (hls.autoLevelEnabled) {
+            const currentLevel = hls.levels[data.level];
+            if (currentLevel) {
+              const name = currentLevel.name || (currentLevel.height ? `${currentLevel.height}p` : `Auto`);
+              // Update bufferingResolution to show actual resolution under the hood if in Auto mode
+              setBufferingResolution(name);
+            }
+          }
         });
         hls.on(Hls.Events.ERROR, (event, data) => {
           if (data.fatal) {
@@ -253,6 +276,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     return () => {
       if (hls) {
         hls.destroy();
+        hlsRef.current = null;
       }
     };
   }, [video.videoUrl, video.id, isUsingFallback]);
@@ -395,10 +419,12 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   };
 
   // Video Quality Switcher (Simulated Buffer loader)
-  const handleQualityChange = (res) => {
-    if (res === currentResolution) return;
+  const handleQualityChange = (quality) => {
+    const qName = typeof quality === 'string' ? quality : quality.name;
+    if (qName === currentResolution) return;
+    
     setIsBuffering(true);
-    setBufferingResolution(res);
+    setBufferingResolution(qName);
     setShowQualityMenu(false);
     
     const timeSnapshot = videoRef.current ? videoRef.current.currentTime : 0;
@@ -409,18 +435,23 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     }
 
     setTimeout(() => {
-      setCurrentResolution(res);
+      setCurrentResolution(qName);
       setIsBuffering(false);
+      
+      if (hlsRef.current && typeof quality === 'object' && quality.id !== undefined) {
+        hlsRef.current.currentLevel = quality.id;
+      }
+      
       if (videoRef.current) {
         // Restore time and playback states
         videoRef.current.currentTime = timeSnapshot;
         if (wasPlaying) {
           videoRef.current.play()
-            .then(() => setIsPlaying(true))
-            .catch(e => console.log(e));
+             .then(() => setIsPlaying(true))
+             .catch(e => console.log(e));
         }
       }
-    }, 1200);
+    }, 800);
   };
 
   const handleVideoError = (e) => {
@@ -573,16 +604,29 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
                 </button>
                 {showQualityMenu && (
                   <div className="absolute bottom-9 right-0 bg-surface-elevated border border-custom-border rounded-xl p-1 shadow-glass z-30 flex flex-col w-36">
-                    {['4K UHD', '1080P Full HD', '720P HD', '480P SD'].map(res => (
-                      <button 
-                        key={res} 
-                        onClick={() => handleQualityChange(res)}
-                        className={`px-3 py-2 text-left rounded-lg text-xs font-semibold hover:bg-white/5 cursor-pointer flex items-center justify-between ${currentResolution === res ? 'text-accent' : 'text-fg'}`}
-                      >
-                        <span>{res}</span>
-                        {currentResolution === res && <Check size={12} />}
-                      </button>
-                    ))}
+                    {qualities.length > 0 ? (
+                      qualities.map(q => (
+                        <button 
+                          key={q.name} 
+                          onClick={() => handleQualityChange(q)}
+                          className={`px-3 py-2 text-left rounded-lg text-xs font-semibold hover:bg-white/5 cursor-pointer flex items-center justify-between ${currentResolution === q.name ? 'text-accent' : 'text-fg'}`}
+                        >
+                          <span>{q.name}</span>
+                          {currentResolution === q.name && <Check size={12} />}
+                        </button>
+                      ))
+                    ) : (
+                      ['Auto', '720p', '480p', '360p'].map(res => (
+                        <button 
+                          key={res} 
+                          onClick={() => handleQualityChange(res)}
+                          className={`px-3 py-2 text-left rounded-lg text-xs font-semibold hover:bg-white/5 cursor-pointer flex items-center justify-between ${currentResolution === res ? 'text-accent' : 'text-fg'}`}
+                        >
+                          <span>{res}</span>
+                          {currentResolution === res && <Check size={12} />}
+                        </button>
+                      ))
+                    )}
                   </div>
                 )}
               </div>

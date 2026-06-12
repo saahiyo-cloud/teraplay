@@ -235,7 +235,7 @@ function parseSurl(url) {
 }
 
 // ─── Resolution Logic ────────────────────────────────────────────────
-async function resolveLink(link, action = "d", waitForTranscoding = false) {
+async function resolveLink(link, action = "d", waitForTranscoding = false, streamType = null) {
   try {
     const rMain = await fetchWithSession(`${BASE_API}/main`);
     const text = await rMain.text();
@@ -410,28 +410,42 @@ async function resolveLink(link, action = "d", waitForTranscoding = false) {
         myFilePath = ROOT_PATH.replace(/\/$/, "") + "/" + filename;
       }
       const encodedPath = encodeURIComponent(myFilePath);
-      const streamUrl = `${BASE_API}/api/streaming?${qp()}&path=${encodedPath}&type=M3U8_AUTO_720&bdstoken=${BDSTOKEN}`;
+      
+      const streamTypes = ["M3U8_AUTO_720", "M3U8_AUTO_480", "M3U8_AUTO_360"];
+      fileRes.streams = {};
 
-      const maxRetries = waitForTranscoding ? 6 : 1;
-      const retryDelay = 10000;
-
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const _tryStream = async (stype) => {
+        const streamUrl = `${BASE_API}/api/streaming?${qp()}&path=${encodedPath}&type=${stype}&bdstoken=${BDSTOKEN}`;
         try {
           const sr = await fetchWithSession(streamUrl);
           const srText = await sr.text();
           if (sr.status === 200 && srText.includes("#EXTM3U")) {
-            fileRes.stream_ready = true;
-            fileRes.stream_m3u8 = srText;
-            break;
+            return { ok: true, errno: 0, text: srText };
           }
-
           let errCode = null;
           try {
             const resJson = JSON.parse(srText);
             errCode = resJson.errno;
           } catch (e) {}
+          return { ok: false, errno: errCode, text: srText.slice(0, 200) };
+        } catch (e) {
+          return { ok: false, errno: -1, text: e.message };
+        }
+      };
 
-          if (errCode === 130) {
+      if (streamType) {
+        // Only try the requested stream type
+        const maxRetries = waitForTranscoding ? 6 : 1;
+        const retryDelay = 10000;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          const res = await _tryStream(streamType);
+          if (res.ok) {
+            fileRes.stream_ready = true;
+            fileRes.stream_m3u8 = res.text;
+            fileRes.streams[streamType] = res.text;
+            break;
+          }
+          if (res.errno === 130) {
             fileRes.error = "transcoding_in_progress";
             if (waitForTranscoding && attempt < maxRetries) {
               await new Promise(resolve => setTimeout(resolve, retryDelay));
@@ -439,12 +453,69 @@ async function resolveLink(link, action = "d", waitForTranscoding = false) {
               break;
             }
           } else {
-            fileRes.error = `Streaming API failed: ${srText.slice(0, 200)}`;
+            fileRes.error = `Streaming API failed: ${res.text}`;
             break;
           }
-        } catch (e) {
-          fileRes.error = `Streaming request exception: ${e.message}`;
-          break;
+        }
+      } else {
+        // PASS 1: Quick scan — try each resolution once to find any that's ready
+        let bestM3u8 = null;
+        let allTranscoding = true;
+        let fatalError = null;
+
+        for (const stype of streamTypes) {
+          const res = await _tryStream(stype);
+          if (res.ok) {
+            fileRes.streams[stype] = res.text;
+            if (!bestM3u8) {
+              bestM3u8 = { type: stype, text: res.text };
+            }
+            allTranscoding = false;
+          } else if (res.errno === 130) {
+            continue;
+          } else if (res.errno === 31066 || res.errno === 31341 || res.errno === 31023) {
+            fatalError = `Streaming error (errno ${res.errno})`;
+            allTranscoding = false;
+            break;
+          } else {
+            allTranscoding = false;
+            fileRes.error = `Streaming API failed (errno ${res.errno}): ${res.text}`;
+          }
+        }
+
+        if (bestM3u8) {
+          fileRes.stream_ready = true;
+          fileRes.stream_m3u8 = bestM3u8.text;
+          fileRes.error = null;
+        } else if (fatalError) {
+          fileRes.error = fatalError;
+        } else if (allTranscoding && waitForTranscoding) {
+          // PASS 2: Wait & retry
+          const maxRetries = 12;
+          const retryDelay = 10000;
+          console.log(`⏳ All resolutions transcoding, waiting...`);
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            for (const stype of streamTypes) {
+              const res = await _tryStream(stype);
+              if (res.ok) {
+                fileRes.streams[stype] = res.text;
+                if (!fileRes.stream_ready) {
+                  fileRes.stream_ready = true;
+                  fileRes.stream_m3u8 = res.text;
+                  fileRes.error = null;
+                }
+              }
+            }
+            if (fileRes.stream_ready) {
+              break;
+            }
+          }
+          if (!fileRes.stream_ready) {
+            fileRes.error = "transcoding_in_progress";
+          }
+        } else if (allTranscoding) {
+          fileRes.error = "transcoding_in_progress";
         }
       }
     }
@@ -632,6 +703,7 @@ app.all("/api/resolve", async (req, res) => {
 
       if (f.stream_ready) {
         fileInfo.stream_m3u8 = f.stream_m3u8;
+        fileInfo.streams = f.streams;
       }
       responseData.files.push(fileInfo);
     }
@@ -665,6 +737,7 @@ app.get(["/api/stream/manifest", "/api/stream/playlist.m3u8"], async (req, res) 
 
   const link = req.query.url || req.query.link || "";
   const waitForTranscoding = req.query.wait === "true" || req.query.wait === "1";
+  const streamType = req.query.type || null;
   let fileIndex = parseInt(req.query.index || "0", 10);
   if (isNaN(fileIndex)) fileIndex = 0;
 
@@ -673,7 +746,7 @@ app.get(["/api/stream/manifest", "/api/stream/playlist.m3u8"], async (req, res) 
   }
 
   try {
-    const result = await resolveLink(link, "s", waitForTranscoding);
+    const result = await resolveLink(link, "s", waitForTranscoding, streamType);
     if (result.errno !== 0) {
       return res.status(400).json({ status: "error", message: result.error || "Unknown resolution error occurred." });
     }
@@ -697,6 +770,37 @@ app.get(["/api/stream/manifest", "/api/stream/playlist.m3u8"], async (req, res) 
     }
 
     const targetFile = streamableFiles[fileIndex];
+
+    // If no type is requested, return a master playlist referencing the available stream resolutions.
+    if (!streamType) {
+      const host = `${req.protocol}://${req.get("host")}`;
+      const urlEscaped = encodeURIComponent(link);
+      const keyParam = req.query.key || req.query.api_key || "supercloudkey";
+
+      const resMeta = [
+        { type: "M3U8_AUTO_720", bandwidth: 2800000, resolution: "1280x720", name: "720p" },
+        { type: "M3U8_AUTO_480", bandwidth: 1400000, resolution: "854x480", name: "480p" },
+        { type: "M3U8_AUTO_360", bandwidth: 800000, resolution: "640x360", name: "360p" }
+      ];
+
+      let masterPlaylist = "#EXTM3U\n#EXT-X-VERSION:3\n";
+      let hasStreams = false;
+
+      for (const meta of resMeta) {
+        if (targetFile.streams && targetFile.streams[meta.type]) {
+          const streamUrl = `${host}/api/stream/manifest?url=${urlEscaped}&index=${fileIndex}&type=${meta.type}&key=${keyParam}`;
+          masterPlaylist += `#EXT-X-STREAM-INF:BANDWIDTH=${meta.bandwidth},RESOLUTION=${meta.resolution},NAME="${meta.name}"\n${streamUrl}\n`;
+          hasStreams = true;
+        }
+      }
+
+      if (hasStreams) {
+        res.setHeader("Content-Type", "application/vnd.apple.mpegurl");
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        return res.send(masterPlaylist);
+      }
+    }
+
     const rawM3u8 = targetFile.stream_m3u8 || "";
 
     if (!rawM3u8) {
