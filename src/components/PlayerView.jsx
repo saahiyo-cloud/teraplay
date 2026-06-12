@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Hls from 'hls.js';
 import { 
   ChevronLeft, Play, Pause, RotateCcw, Volume2, VolumeX, Maximize2, 
   Settings, Download, Heart, Share2, Copy, SkipBack, SkipForward,
@@ -101,15 +102,69 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isPlaying, volume, isMuted, isFullscreen, currentResolution]);
 
-  // Auto-play when video changes
+  // Handle HLS stream loading or standard playback
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.load();
-      videoRef.current.play()
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
+
+    let hls = null;
+    setIsPlaying(false);
+
+    if (video.videoUrl && (video.videoUrl.includes('.m3u8') || video.videoUrl.includes('/api/stream/manifest'))) {
+      if (Hls.isSupported()) {
+        hls = new Hls({
+          maxMaxBufferLength: 30, // Keep buffer efficient for high speeds
+          enableWorker: true,
+          lowLatencyMode: false
+        });
+        hls.loadSource(video.videoUrl);
+        hls.attachMedia(videoElement);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          videoElement.play()
+            .then(() => setIsPlaying(true))
+            .catch(err => console.log("Auto-play blocked: ", err));
+        });
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          if (data.fatal) {
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                console.warn("HLS fatal network error, trying to recover...", data);
+                hls.startLoad();
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                console.warn("HLS fatal media error, recovering...", data);
+                hls.recoverMediaError();
+                break;
+              default:
+                console.error("HLS fatal unrecoverable error:", data);
+                break;
+            }
+          }
+        });
+      } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+        // Native support (Safari / iOS)
+        videoElement.src = video.videoUrl;
+        videoElement.load();
+        videoElement.play()
+          .then(() => setIsPlaying(true))
+          .catch(err => console.log("Native auto-play blocked: ", err));
+      }
+    } else {
+      // Standard video streaming fallback
+      videoElement.src = video.videoUrl;
+      videoElement.load();
+      videoElement.play()
         .then(() => setIsPlaying(true))
-        .catch(err => console.log("Auto-play blocked, user interaction required: ", err));
+        .catch(err => console.log("Standard auto-play blocked: ", err));
     }
+
     setCurrentTime(0);
+
+    return () => {
+      if (hls) {
+        hls.destroy();
+      }
+    };
   }, [video]);
 
   const resetControlsTimer = () => {

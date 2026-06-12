@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createHashRouter, RouterProvider, Routes, Route, useNavigate, useParams, Link } from 'react-router-dom';
-import { Play, History, User, Settings } from 'lucide-react';
+import { Play, History, User, Settings, Loader2, AlertCircle, X } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import HomeView from './components/HomeView';
 import PlayerView from './components/PlayerView';
@@ -183,6 +183,10 @@ function AppShell() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [isFetching, setIsFetching] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
+  const [fetchStep, setFetchStep] = useState('');
+
   // Persist states to local storage
   useEffect(() => {
     localStorage.setItem('teraplay_videos', JSON.stringify(videos));
@@ -282,42 +286,85 @@ function AppShell() {
     }));
   };
 
-  const handleFetch = (url) => {
-    const id = Date.now().toString();
-    const title = url.split('/').pop().substring(0, 40) || `TeraBox Video #${id.substring(8)}`;
-    const freshVideo = {
-      id,
-      title: title.includes('.') ? title : `${title}.mp4`,
-      description: `This cinematic media link was dynamically imported from the TeraBox URL: ${url}. Available with high definition buffer rendering.`,
-      size: '1.8 GB',
-      duration: '09:56',
-      progress: 0,
-      favorite: false,
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-      thumbnail: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=600',
-      relativeTime: 'Just now',
-      addedDate: new Date().toISOString(),
-      resolution: '1080P Full HD'
-    };
-
-    setVideos(prev => [freshVideo, ...prev]);
+  const handleFetch = async (url) => {
+    setIsFetching(true);
+    setFetchError(null);
+    setFetchStep('Connecting to TeraBridge...');
     
-    // Add to history right away as a blank record
-    setHistory(prev => [
-      {
-        id: `h_${Date.now()}`,
-        videoId: id,
-        title: freshVideo.title,
-        size: freshVideo.size,
-        duration: freshVideo.duration,
-        thumbnail: freshVideo.thumbnail,
-        progress: 0,
-        watchedAt: new Date().toISOString()
-      },
-      ...prev
-    ]);
-
-    navigate(`/player/${id}`);
+    try {
+      const response = await fetch(`https://terabridge.vercel.app/api/resolve?url=${encodeURIComponent(url)}&key=supercloudkey`);
+      
+      if (!response.ok) {
+        throw new Error(`Server responded with status ${response.status}`);
+      }
+      
+      setFetchStep('Parsing file details...');
+      const data = await response.json();
+      
+      if (data.status !== 'success' || !data.files || data.files.length === 0) {
+        throw new Error(data.message || 'Failed to resolve any files from the provided link.');
+      }
+      
+      const newVideos = data.files.map((file, idx) => {
+        const fileId = file.fs_id || `${Date.now()}_${idx}`;
+        let sizeStr = 'Unknown Size';
+        if (file.size_mb) {
+          sizeStr = `${file.size_mb.toFixed(1)} MB`;
+        } else if (file.size_bytes) {
+          sizeStr = `${(file.size_bytes / (1024 * 1024)).toFixed(1)} MB`;
+        }
+        
+        const thumbUrl = file.thumbnails?.url2 || file.thumbnails?.url1 || file.thumbnails?.icon || 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=600';
+        
+        // HLS Streaming Manifest Endpoint (highly optimized for streaming chunk recovery)
+        const streamUrl = `https://terabridge.vercel.app/api/stream/manifest?url=${encodeURIComponent(url)}&index=${idx}&key=supercloudkey`;
+        
+        return {
+          id: fileId,
+          title: file.filename || `TeraBox Video #${fileId.substring(0, 6)}`,
+          description: `Imported from TeraBox URL. High-speed HLS stream proxied via TeraBridge. Original Path: ${file.path || '/'}`,
+          size: sizeStr,
+          duration: '02:00',
+          progress: 0,
+          favorite: false,
+          videoUrl: streamUrl,
+          downloadUrl: file.dlink,
+          thumbnail: thumbUrl,
+          relativeTime: 'Just now',
+          addedDate: new Date().toISOString(),
+          resolution: '1080P Full HD'
+        };
+      });
+      
+      setVideos(prev => {
+        const existingIds = new Set(prev.map(v => v.id));
+        const filteredNew = newVideos.filter(nv => !existingIds.has(nv.id));
+        return [...filteredNew, ...prev];
+      });
+      
+      setHistory(prev => {
+        const historyRecords = newVideos.map(nv => ({
+          id: `h_${Date.now()}_${nv.id}`,
+          videoId: nv.id,
+          title: nv.title,
+          size: nv.size,
+          duration: nv.duration,
+          thumbnail: nv.thumbnail,
+          progress: 0,
+          watchedAt: new Date().toISOString()
+        }));
+        return [...historyRecords, ...prev];
+      });
+      
+      const firstFileId = newVideos[0].id;
+      navigate(`/player/${firstFileId}`);
+      
+    } catch (err) {
+      console.error('API Resolve Error:', err);
+      setFetchError(err.message || 'An unexpected error occurred while resolving your link. Please try again.');
+    } finally {
+      setIsFetching(false);
+    }
   };
 
   const handleStartDownload = (video) => {
@@ -508,6 +555,53 @@ function AppShell() {
           } />
         </Routes>
       </main>
+
+      {/* Loading Overlay */}
+      {isFetching && (
+        <div className="fixed inset-0 bg-bg/85 backdrop-blur-md z-[9999] flex items-center justify-center animate-fade-in p-4">
+          <div className="glass-card p-8 rounded-2xl border border-custom-border max-w-sm w-full text-center flex flex-col items-center gap-6 shadow-glass animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative flex items-center justify-center w-16 h-16">
+              <Loader2 size={40} className="text-accent animate-spin" />
+              <div className="absolute inset-0 w-16 h-16 rounded-full border border-accent/20 animate-pulse"></div>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-fg mb-1">Resolving TeraBox URL</h3>
+              <p className="text-xs text-accent font-medium animate-pulse">{fetchStep}</p>
+            </div>
+            <p className="text-xs text-muted leading-relaxed">
+              We are connecting to the high-speed cache resolver to construct your direct media stream.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Error Overlay Modal */}
+      {fetchError && (
+        <div className="fixed inset-0 bg-bg/85 backdrop-blur-md z-[9999] flex items-center justify-center animate-fade-in p-4">
+          <div className="glass-card p-6 rounded-2xl border border-rose-500/20 max-w-md w-full shadow-glass relative flex flex-col items-center text-center gap-5 animate-in fade-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setFetchError(null)} 
+              className="absolute top-4 right-4 text-muted hover:text-fg rounded-full p-1 hover:bg-white/5 transition-all cursor-pointer"
+              aria-label="Dismiss error"
+            >
+              <X size={18} />
+            </button>
+            <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 grid place-items-center text-rose-400">
+              <AlertCircle size={24} />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-fg mb-2">Resolution Failed</h3>
+              <p className="text-sm text-muted leading-relaxed break-words">{fetchError}</p>
+            </div>
+            <button 
+              onClick={() => setFetchError(null)}
+              className="w-full py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 font-semibold rounded-xl text-xs transition-all cursor-pointer animate-out duration-200"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
