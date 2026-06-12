@@ -7,6 +7,8 @@ import {
   HelpCircle, Check 
 } from 'lucide-react';
 
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://terabridge.vercel.app';
+
 export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
@@ -22,6 +24,8 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   const [showControls, setShowControls] = useState(true);
   const [copiedFeedback, setCopiedFeedback] = useState(false);
   const [sharedFeedback, setSharedFeedback] = useState(false);
+  const [isCheckingHls, setIsCheckingHls] = useState(false);
+  const [hlsCheckMessage, setHlsCheckMessage] = useState('');
   
   // New features state
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -29,6 +33,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   const [bufferingResolution, setBufferingResolution] = useState('');
   const [currentResolution, setCurrentResolution] = useState(video.resolution || '1080P Full HD');
   const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const [isUsingFallback, setIsUsingFallback] = useState(false);
   
   const controlsTimeoutRef = useRef(null);
 
@@ -37,7 +42,79 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     setCurrentResolution(video.resolution || '1080P Full HD');
     setShowQualityMenu(false);
     setIsBuffering(false);
+    setIsUsingFallback(false);
+    setIsCheckingHls(false);
+    setHlsCheckMessage('');
   }, [video.id]);
+
+  const checkHlsStatus = async (isBackground = false) => {
+    if (!video.originalUrl) return;
+    
+    if (!isBackground) {
+      setIsCheckingHls(true);
+      setHlsCheckMessage("Checking stream status...");
+    }
+    
+    try {
+      const manifestUrl = `${API_BASE}/api/stream/manifest?url=${encodeURIComponent(video.originalUrl)}&index=${video.fileIndex || 0}&key=supercloudkey`;
+      const res = await fetch(manifestUrl);
+      if (res.status === 200) {
+        const text = await res.text();
+        if (text.includes("#EXTM3U")) {
+          // HLS is ready!
+          if (!isBackground) {
+            setHlsCheckMessage("Stream ready! Switching to HLS...");
+          }
+          
+          video.streamReady = true;
+          video.videoUrl = manifestUrl;
+          setIsUsingFallback(false);
+          
+          if (!isBackground) {
+            setTimeout(() => {
+              setIsCheckingHls(false);
+              setHlsCheckMessage("");
+            }, 1500);
+          }
+          return true;
+        }
+      }
+      if (!isBackground) {
+        setHlsCheckMessage("HLS stream is still transcoding. Playing direct link...");
+      }
+    } catch (e) {
+      console.error("Failed to check HLS status:", e);
+      if (!isBackground) {
+        setHlsCheckMessage("Connection check failed.");
+      }
+    }
+    
+    if (!isBackground) {
+      setTimeout(() => {
+        setIsCheckingHls(false);
+      }, 3000);
+    }
+    return false;
+  };
+
+  // Background check for HLS transcoding completion
+  useEffect(() => {
+    if (!isUsingFallback || !video.originalUrl) return;
+    
+    let active = true;
+    const interval = setInterval(async () => {
+      if (!active) return;
+      const ready = await checkHlsStatus(true);
+      if (ready) {
+        clearInterval(interval);
+      }
+    }, 12000); // Check every 12 seconds
+    
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [isUsingFallback, video.id, video.originalUrl]);
 
   // Keyboard Shortcuts Hook Listener
   useEffect(() => {
@@ -110,7 +187,14 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     let hls = null;
     setIsPlaying(false);
 
-    if (video.videoUrl && (video.videoUrl.includes('.m3u8') || video.videoUrl.includes('/api/stream/manifest'))) {
+    if (isUsingFallback) {
+      // Standard video streaming fallback using direct download link
+      videoElement.src = video.downloadUrl || video.videoUrl;
+      videoElement.load();
+      videoElement.play()
+        .then(() => setIsPlaying(true))
+        .catch(err => console.log("Fallback stream play blocked: ", err));
+    } else if (video.videoUrl && (video.videoUrl.includes('.m3u8') || video.videoUrl.includes('/api/stream/manifest'))) {
       if (Hls.isSupported()) {
         hls = new Hls({
           maxMaxBufferLength: 30, // Keep buffer efficient for high speeds
@@ -129,7 +213,12 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
             switch (data.type) {
               case Hls.ErrorTypes.NETWORK_ERROR:
                 console.warn("HLS fatal network error, trying to recover...", data);
-                hls.startLoad();
+                if (data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR) {
+                  console.warn("Manifest load error (possibly transcoding 202). Falling back to direct stream...");
+                  setIsUsingFallback(true);
+                } else {
+                  hls.startLoad();
+                }
                 break;
               case Hls.ErrorTypes.MEDIA_ERROR:
                 console.warn("HLS fatal media error, recovering...", data);
@@ -137,6 +226,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
                 break;
               default:
                 console.error("HLS fatal unrecoverable error:", data);
+                setIsUsingFallback(true);
                 break;
             }
           }
@@ -165,7 +255,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
         hls.destroy();
       }
     };
-  }, [video.videoUrl, video.id]);
+  }, [video.videoUrl, video.id, isUsingFallback]);
 
   const resetControlsTimer = () => {
     setShowControls(true);
@@ -333,6 +423,18 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     }, 1200);
   };
 
+  const handleVideoError = (e) => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
+    
+    console.error("Video element error:", videoElement.error);
+    
+    if (video.videoUrl && video.downloadUrl && video.videoUrl !== video.downloadUrl && !isUsingFallback) {
+      console.warn("Video play error. Switching to direct download link stream...");
+      setIsUsingFallback(true);
+    }
+  };
+
   const progressPercent = duration ? (currentTime / duration) * 100 : 0;
 
   return (
@@ -361,6 +463,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
           onEnded={() => setIsPlaying(false)}
+          onError={handleVideoError}
         />
 
         {/* simulated quality buffer loader overlay */}
@@ -514,12 +617,30 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           <div className="flex gap-2 flex-wrap">
             <span className="text-[11px] font-bold text-muted bg-surface-elevated border border-custom-border rounded-lg px-2.5 py-1 tracking-wider uppercase">{video.resolution || '1080P'}</span>
             <span className="text-[11px] font-bold text-muted bg-surface-elevated border border-custom-border rounded-lg px-2.5 py-1 tracking-wider uppercase">{video.size}</span>
-            {video.streamReady ? (
+            {video.streamReady && !isUsingFallback ? (
               <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-2.5 py-1 tracking-wider uppercase">⚡ HLS Stream</span>
             ) : (
-              <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-1 tracking-wider uppercase">🔗 Direct Link</span>
+              <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-1 tracking-wider uppercase">🔗 Direct Link {isUsingFallback ? '(Fallback)' : ''}</span>
             )}
           </div>
+          {isUsingFallback && (
+            <div className="mt-3 flex flex-col gap-2 bg-amber-500/[0.03] border border-amber-500/10 rounded-xl p-3">
+              <p className="text-[11px] text-amber-400/90 flex items-center gap-1.5 animate-pulse select-none font-semibold">
+                <span>⚠️ HLS Stream transcoding. Switched to Direct Link.</span>
+              </p>
+              {video.originalUrl && (
+                <button
+                  type="button"
+                  disabled={isCheckingHls}
+                  onClick={() => checkHlsStatus(false)}
+                  className="w-full mt-1 py-1.5 px-3 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 disabled:bg-amber-500/5 disabled:border-amber-500/10 text-amber-400 font-bold rounded-lg text-[10px] transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  {isCheckingHls && <div className="w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>}
+                  <span>{isCheckingHls ? (hlsCheckMessage || 'Checking...') : 'Check HLS stream status'}</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3 shrink-0">

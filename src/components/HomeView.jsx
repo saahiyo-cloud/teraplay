@@ -14,7 +14,11 @@ export default function HomeView({ videos, onVideoSelect, onFetch }) {
     if (!val.startsWith('http://') && !val.startsWith('https://')) {
       return false;
     }
-    return val.includes('terabox') || val.includes('dubox') || val.includes('1024tera') || val.includes('teraboxapp');
+    const teraboxDomains = [
+      'terabox', 'dubox', '1024tera', 'teraboxapp', 'terashare', 
+      'neotbx', 'freeterabox', 'tibianbox', 'momotbox', 'sharestb', 'mixtb'
+    ];
+    return teraboxDomains.some(domain => val.includes(domain));
   };
 
   useEffect(() => {

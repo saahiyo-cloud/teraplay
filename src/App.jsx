@@ -10,7 +10,7 @@ import ProfileView from './components/ProfileView';
 import SettingsView from './components/SettingsView';
 import HistoryView from './components/HistoryView';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://terabridge.vercel.app';
 
 // Synchronously apply theme from localStorage to avoid styling flashes on reload
 (() => {
@@ -294,7 +294,7 @@ function AppShell() {
     setFetchStep('Connecting to TeraBridge...');
     
     try {
-      const response = await fetch(`${API_BASE}/api/resolve?url=${encodeURIComponent(url)}&key=supercloudkey`);
+      const response = await fetch(`${API_BASE}/api/resolve?url=${encodeURIComponent(url)}&key=supercloudkey&mode=stream`);
       
       if (!response.ok) {
         throw new Error(`Server responded with status ${response.status}`);
@@ -303,8 +303,11 @@ function AppShell() {
       setFetchStep('Parsing file details...');
       const data = await response.json();
       
-      if (data.status !== 'success' || !data.files || data.files.length === 0) {
+      if (data.status !== 'success' && data.status !== 'transcoding') {
         throw new Error(data.message || 'Failed to resolve any files from the provided link.');
+      }
+      if (!data.files || data.files.length === 0) {
+        throw new Error('No files found in this share link.');
       }
       
       const newVideos = data.files.map((file, idx) => {
@@ -340,7 +343,9 @@ function AppShell() {
           relativeTime: 'Just now',
           addedDate: new Date().toISOString(),
           resolution: '1080P Full HD',
-          streamReady: isHlsReady
+          streamReady: isHlsReady,
+          originalUrl: url,
+          fileIndex: idx
         };
       });
       
