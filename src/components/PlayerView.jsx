@@ -37,7 +37,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     setCurrentResolution(video.resolution || '1080P Full HD');
     setShowQualityMenu(false);
     setIsBuffering(false);
-  }, [video]);
+  }, [video.id]);
 
   // Keyboard Shortcuts Hook Listener
   useEffect(() => {
@@ -165,7 +165,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
         hls.destroy();
       }
     };
-  }, [video]);
+  }, [video.videoUrl, video.id]);
 
   const resetControlsTimer = () => {
     setShowControls(true);
