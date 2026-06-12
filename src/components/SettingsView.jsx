@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Play, Check, Server, EyeOff, RefreshCw, Sliders, ChevronDown } from 'lucide-react';
+import { Settings, Play, Check, EyeOff, RefreshCw, Sliders, ChevronDown } from 'lucide-react';
 
 const ACCENT_COLORS = [
   { name: 'blue', value: 'oklch(65% 0.18 250)', muted: 'oklch(65% 0.18 250 / 0.15)', hex: '#3b82f6' },
@@ -31,12 +31,7 @@ export default function SettingsView({ onResetData }) {
   const [resolution, setResolution] = useState(() => {
     return localStorage.getItem('settings_resolution') || 'auto';
   });
-  const [concurrentDownloads, setConcurrentDownloads] = useState(() => {
-    return localStorage.getItem('settings_concurrent') || '2';
-  });
-  const [downloadFolder, setDownloadFolder] = useState(() => {
-    return localStorage.getItem('settings_folder') || 'C:\\Users\\Shakir\\Downloads\\teraplay\\downloads';
-  });
+
 
   const [resetFeedback, setResetFeedback] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState(false);
@@ -53,8 +48,7 @@ export default function SettingsView({ onResetData }) {
     localStorage.setItem('settings_autoplay', autoplay.toString());
     localStorage.setItem('settings_remember_progress', rememberProgress.toString());
     localStorage.setItem('settings_resolution', resolution);
-    localStorage.setItem('settings_concurrent', concurrentDownloads);
-    localStorage.setItem('settings_folder', downloadFolder);
+
 
     setSaveFeedback(true);
     setTimeout(() => setSaveFeedback(false), 2000);
@@ -171,44 +165,7 @@ export default function SettingsView({ onResetData }) {
           </div>
         </div>
 
-        {/* Download settings */}
-        <div className="glass-card p-6 border border-custom-border rounded-2xl">
-          <div className="flex items-center gap-3 mb-6 select-none text-fg font-bold text-lg border-b border-custom-border/50 pb-3">
-            <Server size={20} className="text-accent" />
-            <h2>Download Configs</h2>
-          </div>
 
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <label htmlFor="concurrent" className="font-semibold text-sm text-fg block select-none">Max concurrent tasks</label>
-                <span className="text-xs text-muted">Number of active offline download workers.</span>
-              </div>
-              <div className="relative w-full sm:w-48 bg-surface border border-custom-border rounded-xl text-sm text-fg px-3 py-2 flex items-center justify-between focus-within:border-accent">
-                <select 
-                  id="concurrent"
-                  value={concurrentDownloads}
-                  onChange={(e) => setConcurrentDownloads(e.target.value)}
-                  className="w-full bg-transparent border-none outline-none appearance-none pr-8 cursor-pointer text-fg"
-                >
-                  <option value="1" className="bg-surface">1 Task</option>
-                  <option value="2" className="bg-surface">2 Tasks</option>
-                  <option value="5" className="bg-surface">5 Tasks</option>
-                  <option value="99" className="bg-surface">Unlimited</option>
-                </select>
-                <ChevronDown size={16} className="text-muted absolute right-3 pointer-events-none" />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="font-semibold text-sm text-fg select-none">Download location</label>
-              <span className="text-xs text-muted">Files are saved to your browser's default download folder. This is controlled by your browser settings and cannot be changed from the app.</span>
-              <div className="bg-surface border border-custom-border px-4 py-2.5 rounded-xl text-muted text-sm">
-                ~/Downloads (browser default)
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Danger zone / resets */}
         <div className="glass-card p-6 border border-rose-500/20 bg-rose-500/[0.02] rounded-2xl">

@@ -5,7 +5,6 @@ import Sidebar from './components/Sidebar';
 import HomeView from './components/HomeView';
 import PlayerView from './components/PlayerView';
 import LibraryView from './components/LibraryView';
-import DownloadsView from './components/DownloadsView';
 import ProfileView from './components/ProfileView';
 import SettingsView from './components/SettingsView';
 import HistoryView from './components/HistoryView';
@@ -36,7 +35,7 @@ import { API_BASE, API_KEY } from './config';
 
 const INITIAL_VIDEOS = [];
 
-const INITIAL_DOWNLOADS = [];
+
 
 function AppShell() {
   const navigate = useNavigate();
@@ -45,11 +44,7 @@ function AppShell() {
     const saved = localStorage.getItem('teraplay_videos');
     return saved ? JSON.parse(saved) : INITIAL_VIDEOS;
   });
-  const [downloads, setDownloads] = useState(() => {
-    if (!localStorage.getItem('teraplay_mock_cleaned_v3')) return [];
-    const saved = localStorage.getItem('teraplay_downloads');
-    return saved ? JSON.parse(saved) : INITIAL_DOWNLOADS;
-  });
+
   const [history, setHistory] = useState(() => {
     if (!localStorage.getItem('teraplay_mock_cleaned_v3')) return [];
     const saved = localStorage.getItem('teraplay_history');
@@ -60,33 +55,23 @@ function AppShell() {
   const [fetchError, setFetchError] = useState(null);
   const [fetchStep, setFetchStep] = useState('');
 
-  // AbortController refs — cancels in-flight requests when superseded.
   const resolveAbortRef = useRef(null);          // for the /api/resolve call
-  const downloadControllersRef = useRef(new Map()); // taskId -> AbortController
 
   // Clean up old mock template data from memory and local storage once
-  useEffect(() => {
     if (!localStorage.getItem('teraplay_mock_cleaned_v3')) {
       localStorage.removeItem('teraplay_videos');
-      localStorage.removeItem('teraplay_downloads');
       localStorage.removeItem('teraplay_history');
       localStorage.setItem('teraplay_mock_cleaned_v3', 'true');
       setVideos([]);
-      setDownloads([]);
       setHistory([]);
     }
-  }, []);
 
   // Persist states to local storage
   useEffect(() => {
     localStorage.setItem('teraplay_videos', JSON.stringify(videos));
   }, [videos]);
 
-  useEffect(() => {
-    // Strip _video (non-serializable ref) before persisting
-    const serializable = downloads.map(({ _video, ...rest }) => rest);
-    localStorage.setItem('teraplay_downloads', JSON.stringify(serializable));
-  }, [downloads]);
+
 
   useEffect(() => {
     localStorage.setItem('teraplay_history', JSON.stringify(history));
@@ -257,238 +242,7 @@ function AppShell() {
     }
   };
 
-  // ─── Real download with streaming progress ─────────────────────────
-  const _startRealDownload = (video, taskId) => {
-    const downloadUrl = video.downloadUrl;
-    if (!downloadUrl) {
-      setDownloads(prev => prev.map(d =>
-        d.id === taskId ? { ...d, status: 'failed', error: 'No download URL available.', speed: '—' } : d
-      ));
-      return;
-    }
 
-    const controller = new AbortController();
-    downloadControllersRef.current.set(taskId, controller);
-
-    (async () => {
-      try {
-        const response = await fetch(downloadUrl, { signal: controller.signal });
-
-        if (!response.ok) {
-          throw new Error(`Server responded with ${response.status}`);
-        }
-
-        const contentLength = parseInt(response.headers.get('Content-Length') || '0', 10);
-        if (contentLength > 0) {
-          setDownloads(prev => prev.map(d =>
-            d.id === taskId ? { ...d, totalBytes: contentLength } : d
-          ));
-        }
-
-        const reader = response.body.getReader();
-        const chunks = [];
-        let loaded = 0;
-        let lastTime = Date.now();
-        let lastLoaded = 0;
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          chunks.push(value);
-          loaded += value.byteLength;
-
-          // Throttle UI updates to ~4/sec
-          const now = Date.now();
-          if (now - lastTime >= 250) {
-            const elapsed = (now - lastTime) / 1000;
-            const speedBytes = (loaded - lastLoaded) / elapsed;
-            const total = contentLength || 0;
-            const remaining = total > 0 ? total - loaded : 0;
-            const secs = speedBytes > 0 ? Math.ceil(remaining / speedBytes) : 0;
-
-            let timeLeftStr = total > 0 ? (secs > 60
-              ? `${Math.floor(secs / 60)} min remaining`
-              : `${secs}s remaining`
-            ) : 'Downloading...';
-
-            setDownloads(prev => prev.map(d => {
-              if (d.id !== taskId) return d;
-              return {
-                ...d,
-                loadedBytes: loaded,
-                totalBytes: total || d.totalBytes,
-                speed: `${(speedBytes / (1024 * 1024)).toFixed(1)} MB/s`,
-                timeLeft: timeLeftStr,
-                progress: total > 0 ? Math.floor((loaded / total) * 100) : 0,
-              };
-            }));
-
-            lastTime = now;
-            lastLoaded = loaded;
-          }
-        }
-
-        // Save file to disk
-        const blob = new Blob(chunks);
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = `${video.title}.mp4`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(blobUrl);
-
-        setDownloads(prev => prev.map(d =>
-          d.id === taskId ? {
-            ...d,
-            status: 'completed',
-            loadedBytes: loaded,
-            progress: 100,
-            speed: '0 MB/s',
-            timeLeft: 'Completed',
-          } : d
-        ));
-      } catch (err) {
-        if (err.name === 'AbortError') {
-          // Paused or cancelled — don't mark as failed
-          return;
-        }
-        setDownloads(prev => prev.map(d =>
-          d.id === taskId ? {
-            ...d,
-            status: 'failed',
-            error: err.message,
-            speed: '0 MB/s',
-            timeLeft: 'Failed',
-          } : d
-        ));
-      } finally {
-        downloadControllersRef.current.delete(taskId);
-        _processDownloadQueue();
-      }
-    })();
-  };
-
-  // ── Process download queue: start queued tasks when slots open ──
-  const _processDownloadQueue = () => {
-    const limit = parseInt(localStorage.getItem('settings_concurrent') || '2', 10);
-    setDownloads(prev => {
-      const active = prev.filter(d => d.status === 'downloading').length;
-      if (active >= limit) return prev;
-      const next = prev.find(d => d.status === 'queued');
-      if (!next) return prev;
-      // Start the download outside the state updater
-      const video = next._video;
-      const taskId = next.id;
-      setTimeout(() => _startRealDownload(video, taskId), 0);
-      return prev.map(d => d.id === taskId ? { ...d, status: 'downloading', speed: 'Connecting...', timeLeft: 'Starting...' } : d);
-    });
-  };
-
-  const handleStartDownload = (video) => {
-    const exists = downloads.find(d => d.videoId === video.id && d.status !== 'failed');
-    if (exists) {
-      navigate('/downloads');
-      return;
-    }
-
-    const limit = parseInt(localStorage.getItem('settings_concurrent') || '2', 10);
-    const active = downloads.filter(d => d.status === 'downloading').length;
-    const startNow = active < limit;
-
-    const taskId = `d_${Date.now()}`;
-    const newTask = {
-      id: taskId,
-      title: `${video.title}.mp4`,
-      totalBytes: 0,
-      loadedBytes: 0,
-      speed: startNow ? 'Connecting...' : 'Queued',
-      timeLeft: startNow ? 'Starting...' : 'Waiting for slot...',
-      progress: 0,
-      status: startNow ? 'downloading' : 'queued',
-      addedDate: new Date().toISOString(),
-      videoId: video.id,
-      _video: video,
-    };
-
-    setDownloads(prev => [newTask, ...prev]);
-    navigate('/downloads');
-    if (startNow) _startRealDownload(video, taskId);
-  };
-
-  const handlePauseDownload = (id) => {
-    const ctrl = downloadControllersRef.current.get(id);
-    if (ctrl) ctrl.abort();
-    setDownloads(prev => prev.map(d =>
-      d.id === id ? { ...d, status: 'paused', speed: 'Paused', timeLeft: 'Paused' } : d
-    ));
-  };
-
-  const handleResumeDownload = (id) => {
-    setDownloads(prev => prev.map(d => {
-      if (d.id !== id) return d;
-      const video = d._video;
-      // Reset progress and restart from scratch
-      const resumed = {
-        ...d,
-        status: 'downloading',
-        loadedBytes: 0,
-        totalBytes: 0,
-        progress: 0,
-        speed: 'Connecting...',
-        timeLeft: 'Starting...',
-      };
-      // Kick off the real download outside the state updater
-      setTimeout(() => _startRealDownload(video, id), 0);
-      return resumed;
-    }));
-  };
-
-  const handleCancelDownload = (id) => {
-    const ctrl = downloadControllersRef.current.get(id);
-    if (ctrl) ctrl.abort();
-    downloadControllersRef.current.delete(id);
-    setDownloads(prev => prev.filter(d => d.id !== id));
-    _processDownloadQueue();
-  };
-
-  const handleClearHistory = () => {
-    setDownloads(prev => prev.filter(d => d.status === 'downloading' || d.status === 'paused'));
-  };
-
-  const handleRetryDownload = (id) => {
-    const ctrl = downloadControllersRef.current.get(id);
-    if (ctrl) ctrl.abort();
-    setDownloads(prev => prev.map(d => {
-      if (d.id !== id) return d;
-      const video = d._video;
-      const retried = {
-        ...d,
-        status: 'downloading',
-        loadedBytes: 0,
-        totalBytes: 0,
-        progress: 0,
-        speed: 'Connecting...',
-        timeLeft: 'Starting...',
-        error: undefined,
-      };
-      setTimeout(() => _startRealDownload(video, id), 0);
-      return retried;
-    }));
-  };
-
-  const handlePlayDownloadedVideo = (filename) => {
-    const titleClean = filename.replace('.mp4', '');
-    const matched = videos.find(v => v.title.includes(titleClean));
-    if (matched) {
-      handleVideoSelect(matched);
-      navigate(`/player/${matched.id}`);
-    } else {
-      navigate('/');
-    }
-  };
 
   const handleClearAllHistory = () => {
     if (window.confirm("Are you sure you want to clear your complete watch history?")) {
@@ -517,10 +271,8 @@ function AppShell() {
 
   const handleResetData = () => {
     localStorage.removeItem('teraplay_videos');
-    localStorage.removeItem('teraplay_downloads');
     localStorage.removeItem('teraplay_history');
     setVideos(INITIAL_VIDEOS);
-    setDownloads(INITIAL_DOWNLOADS);
     setHistory([]);
   };
 
@@ -562,7 +314,6 @@ function AppShell() {
             <PlayerRouteWrapper 
               videos={videos} 
               handleToggleFavorite={handleToggleFavorite}
-              handleStartDownload={handleStartDownload}
               handleVideoSelect={handleVideoSelect}
               handleUpdateVideo={handleUpdateVideo}
             />
@@ -573,19 +324,8 @@ function AppShell() {
               onVideoSelect={handleVideoSelect}
             />
           } />
-          <Route path="/downloads" element={
-            <DownloadsView 
-              downloads={downloads}
-              onPauseDownload={handlePauseDownload}
-              onResumeDownload={handleResumeDownload}
-              onCancelDownload={handleCancelDownload}
-              onClearHistory={handleClearHistory}
-              onRetryDownload={handleRetryDownload}
-              onPlayVideo={handlePlayDownloadedVideo}
-            />
-          } />
           <Route path="/profile" element={
-            <ProfileView videos={videos} history={history} downloads={downloads} />
+            <ProfileView videos={videos} history={history} />
           } />
           <Route path="/settings" element={
             <SettingsView onResetData={handleResetData} />
@@ -651,7 +391,7 @@ function AppShell() {
   );
 }
 
-function PlayerRouteWrapper({ videos, handleToggleFavorite, handleStartDownload, handleVideoSelect, handleUpdateVideo }) {
+function PlayerRouteWrapper({ videos, handleToggleFavorite, handleVideoSelect, handleUpdateVideo }) {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -679,7 +419,6 @@ function PlayerRouteWrapper({ videos, handleToggleFavorite, handleStartDownload,
       onVideoSelect={handleVideoSelect}
       onBack={() => navigate(-1)}
       onToggleFavorite={handleToggleFavorite}
-      onStartDownload={handleStartDownload}
       onUpdateVideo={handleUpdateVideo}
     />
   );

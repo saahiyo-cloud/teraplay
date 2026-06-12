@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Play, Home, Layers, Clock, Download, Heart, History, User, Settings } from 'lucide-react';
+import { Play, Home, Layers, Clock, Heart, History, User, Settings } from 'lucide-react';
 
 export default function Sidebar() {
   const location = useLocation();
@@ -53,13 +53,7 @@ export default function Sidebar() {
             <Clock size={20} />
             <span>Recent Plays</span>
           </Link>
-          <Link 
-            to="/downloads" 
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 mb-1 font-medium ${location.pathname === '/downloads' ? 'bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent' : ''}`}
-          >
-            <Download size={20} />
-            <span>Downloads</span>
-          </Link>
+
         </nav>
 
         <nav className="mb-8">
@@ -121,13 +115,7 @@ export default function Sidebar() {
           <Heart size={22} />
           <span className="text-[10px]">Favorites</span>
         </Link>
-        <Link 
-          to="/downloads" 
-          className={`flex flex-col items-center justify-center gap-1 px-3 py-1.5 rounded-xl text-muted hover:text-fg transition-all duration-200 ${location.pathname === '/downloads' ? 'text-accent bg-accent-muted' : ''}`}
-        >
-          <Download size={22} />
-          <span className="text-[10px]">Downloads</span>
-        </Link>
+
       </div>
     </>
   );

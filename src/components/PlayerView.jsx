@@ -8,6 +8,53 @@ import {
 } from 'lucide-react';
 import { API_BASE, API_KEY } from '../config';
 
+class CustomLoader {
+  constructor(config) {
+    this.innerLoader = new Hls.DefaultConfig.loader(config);
+  }
+
+  load(context, config, callbacks) {
+    console.log("CustomLoader.load requested URL:", context.url);
+    if (context.url) {
+      try {
+        let urlObj;
+        try {
+          urlObj = new URL(context.url);
+        } catch {
+          urlObj = new URL(context.url, API_BASE);
+        }
+
+        // Rewrite to use the configured API_BASE protocol and host
+        const apiBaseUrl = new URL(API_BASE);
+        urlObj.protocol = apiBaseUrl.protocol;
+        urlObj.host = apiBaseUrl.host;
+
+        // Add API_KEY if missing
+        if (API_KEY && !urlObj.searchParams.has('key')) {
+          urlObj.searchParams.set('key', API_KEY);
+        }
+
+        const oldUrl = context.url;
+        context.url = urlObj.toString();
+        if (oldUrl !== context.url) {
+          console.log("CustomLoader.load modified URL to:", context.url);
+        }
+      } catch (e) {
+        console.error("Error customizing HLS request URL:", e);
+      }
+    }
+    this.innerLoader.load(context, config, callbacks);
+  }
+
+  abort() {
+    this.innerLoader.abort();
+  }
+
+  destroy() {
+    this.innerLoader.destroy();
+  }
+}
+
 export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload, onUpdateVideo }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
@@ -37,6 +84,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   const [ping, setPing] = useState(null);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [isUsingFallback, setIsUsingFallback] = useState(false);
+  const [hasHlsFailed, setHasHlsFailed] = useState(false);
   const [qualities, setQualities] = useState([]);
   const [videoError, setVideoError] = useState(null);
   
@@ -59,6 +107,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     setShowQualityMenu(false);
     setIsBuffering(false);
     setIsUsingFallback(false);
+    setHasHlsFailed(false);
     setIsCheckingHls(false);
     setHlsCheckMessage('');
     setIsInitialLoading(true);
@@ -124,7 +173,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
 
   // Background check for HLS transcoding completion
   useEffect(() => {
-    if (!video.originalUrl) return;
+    if (!video.originalUrl || hasHlsFailed) return;
     
     // Check if it's either in fallback state OR was imported as direct link originally
     const needsCheck = isUsingFallback || !video.streamReady;
@@ -147,7 +196,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
       active = false;
       clearInterval(interval);
     };
-  }, [isUsingFallback, video.id, video.originalUrl, video.streamReady]);
+  }, [isUsingFallback, video.id, video.originalUrl, video.streamReady, hasHlsFailed]);
 
   // Measure latency (ping) to the API gateway in the background
   useEffect(() => {
@@ -252,7 +301,10 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
         hls = new Hls({
           maxMaxBufferLength: 30, // Keep buffer efficient for high speeds
           enableWorker: true,
-          lowLatencyMode: false
+          lowLatencyMode: false,
+          loader: CustomLoader,
+          fLoader: CustomLoader,
+          pLoader: CustomLoader
         });
         hls.loadSource(video.videoUrl);
         hls.attachMedia(videoElement);
@@ -308,6 +360,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
                 console.warn("HLS fatal network error, trying to recover...", data);
                 if (data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR) {
                   console.warn("Manifest load error (possibly transcoding 202). Falling back to direct stream...");
+                  setHasHlsFailed(true);
                   setIsUsingFallback(true);
                 } else {
                   hls.startLoad();
@@ -319,6 +372,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
                 break;
               default:
                 console.error("HLS fatal unrecoverable error:", data);
+                setHasHlsFailed(true);
                 setIsUsingFallback(true);
                 break;
             }
@@ -587,6 +641,12 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     
     console.error("Video element error:", videoElement.error);
     
+    // If HLS.js is active, let it handle its own errors. The native video element
+    // often fires misleading format support errors during source transitions.
+    if (hlsRef.current) {
+      return;
+    }
+    
     let errorMsg = "Failed to load video stream.";
     if (videoElement.error) {
       switch (videoElement.error.code) {
@@ -740,10 +800,10 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
             </div>
           </div>
         )}
-
+ 
         {/* Custom HUD Player Controls */}
         <div 
-          className="absolute bottom-3 left-3 right-3 p-3 md:bottom-6 md:left-6 md:right-6 md:p-5 rounded-2xl flex flex-col gap-3 md:gap-4 bg-glass backdrop-blur-3xl border border-custom-border shadow-glass z-20"
+          className="absolute bottom-0 left-0 right-0 w-full p-2.5 md:p-4 pb-3 md:pb-5 flex flex-col gap-1.5 md:gap-2.5 bg-gradient-to-t from-black/95 via-black/55 to-transparent z-20"
           style={{ 
             opacity: showControls && !isBuffering ? 1 : 0, 
             pointerEvents: showControls && !isBuffering ? 'auto' : 'none',
@@ -751,7 +811,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           }}
         >
           {/* Timeline scrub */}
-          <div className="relative w-full flex items-center">
+          <div className="relative w-full flex items-center px-1">
             <input 
               type="range" 
               min="0" 
@@ -759,35 +819,35 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
               step="0.1"
               value={progressPercent}
               onChange={handleScrub}
-              className="progress-slider w-full cursor-pointer accent-accent h-1.5 rounded-full outline-none appearance-none"
+              className="progress-slider w-full cursor-pointer accent-accent h-1 rounded-full outline-none appearance-none hover:h-1.5 transition-all duration-150"
               style={{
                 background: `linear-gradient(to right, var(--color-accent) ${progressPercent}%, oklch(100% 0 0 / 0.1) ${progressPercent}%)`
               }}
               aria-label="Playback timeline"
             />
           </div>
-
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-6">
+ 
+          <div className="flex justify-between items-center w-full px-1">
+            <div className="flex items-center gap-3.5 md:gap-6">
               <button onClick={() => skip(-10)} className="text-white hover:text-accent hover:scale-110 active:scale-95 transition-all cursor-pointer" aria-label="Rewind 10s">
-                <RotateCcw size={20} />
+                <RotateCcw size={18} className="md:w-5 md:h-5" />
               </button>
               <button onClick={handlePlayPause} className="text-white hover:text-accent hover:scale-110 active:scale-95 transition-all cursor-pointer" aria-label={isPlaying ? 'Pause' : 'Play'}>
-                {isPlaying ? <Pause fill="currentColor" size={26} /> : <Play fill="currentColor" size={26} />}
+                {isPlaying ? <Pause fill="currentColor" size={22} className="md:w-6 md:h-6" /> : <Play fill="currentColor" size={22} className="md:w-6 md:h-6" />}
               </button>
               <button onClick={() => skip(10)} className="text-white hover:text-accent hover:scale-110 active:scale-95 transition-all cursor-pointer" aria-label="Forward 10s">
-                <SkipForward size={20} />
+                <SkipForward size={18} className="md:w-5 md:h-5" />
               </button>
               
-              <div className="text-xs md:text-sm font-mono text-white/80">
-                {formatTime(currentTime)} <span className="opacity-50">/</span> {formatTime(duration)}
+              <div className="text-xs md:text-sm font-mono text-white/95 whitespace-nowrap">
+                {formatTime(currentTime)} <span className="opacity-40">/</span> {formatTime(duration)}
               </div>
             </div>
-
-            <div className="flex items-center gap-6 relative">
-              {/* Ping latency status badge */}
+ 
+            <div className="flex items-center gap-4 md:gap-6 relative">
+              {/* Ping latency status badge (hidden on mobile/small viewports) */}
               {ping !== null && (
-                <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold select-none cursor-help" title="Latency to stream bridge API server">
+                <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-mono font-bold select-none cursor-help whitespace-nowrap" title="Latency to stream bridge API server">
                   <span className={`w-1.5 h-1.5 rounded-full ${
                     ping === -1 ? 'bg-rose-500 animate-pulse' :
                     ping < 100 ? 'bg-emerald-400' :
@@ -873,7 +933,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
       {/* Details Side Panel */}
       <aside className="p-5 md:p-8 lg:border-l border-t lg:border-t-0 border-custom-border bg-surface lg:overflow-y-auto flex flex-col gap-6 h-auto lg:h-full">
         <div>
-          <h1 className="text-2xl font-bold leading-tight tracking-tight text-fg mb-4">{video.title}</h1>
+          <h1 className="text-2xl font-bold leading-tight tracking-tight text-fg mb-4 break-words break-all">{video.title}</h1>
           <div className="flex gap-2 flex-wrap">
             <span className="text-[11px] font-bold text-muted bg-surface-elevated border border-custom-border rounded-lg px-2.5 py-1 tracking-wider uppercase">
               {activeResolution ? activeResolution.toUpperCase() : (video.resolution || 'AUTO')}
@@ -885,35 +945,21 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
               <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-1 tracking-wider uppercase">🔗 Direct Link {isUsingFallback ? '(Fallback)' : ''}</span>
             )}
           </div>
-          {!isHlsActive && video.originalUrl && (
-            <div className="mt-3 flex flex-col gap-2 bg-amber-500/[0.03] border border-amber-500/10 rounded-xl p-3">
-              <p className="text-[11px] text-amber-400/90 flex items-center gap-1.5 animate-pulse select-none font-semibold">
-                <span>⚠️ {isUsingFallback ? 'HLS Stream transcoding. Switched to Direct Link.' : 'Playing Direct Link. HLS stream may still be transcoding.'}</span>
-              </p>
-              {video.originalUrl && (
-                <button
-                  type="button"
-                  disabled={isCheckingHls}
-                  onClick={() => checkHlsStatus(false)}
-                  className="w-full mt-1 py-1.5 px-3 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 disabled:bg-amber-500/5 disabled:border-amber-500/10 text-amber-400 font-bold rounded-lg text-[10px] transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  {isCheckingHls && <div className="w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>}
-                  <span>{isCheckingHls ? (hlsCheckMessage || 'Checking...') : 'Check HLS stream status'}</span>
-                </button>
-              )}
-            </div>
-          )}
+
         </div>
 
         <div className="grid grid-cols-2 gap-3 shrink-0">
-          <button 
-            className="flex items-center justify-center gap-2 p-3 rounded-xl bg-accent text-bg font-semibold text-xs shadow-[0_4px_12px_var(--color-accent-muted)] hover:shadow-[0_8px_20px_var(--color-accent-muted)] hover:-translate-y-0.5 transition-all cursor-pointer"
-            onClick={() => onStartDownload(video)}
+          <a 
+            href={video.downloadUrl || video.videoUrl || ''}
+            download={`${video.title}.mp4`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 p-3 rounded-xl bg-accent text-bg font-semibold text-xs shadow-[0_4px_12px_var(--color-accent-muted)] hover:shadow-[0_8px_20px_var(--color-accent-muted)] hover:-translate-y-0.5 transition-all cursor-pointer text-center select-none"
           >
             <Download size={16} />
             <span>Download</span>
-          </button>
-          
+          </a>
+
           <button 
             className={`flex items-center justify-center gap-2 p-3 rounded-xl border border-custom-border bg-surface-elevated font-semibold text-xs text-fg hover:bg-custom-border hover:-translate-y-0.5 transition-all cursor-pointer ${video.favorite ? 'border-accent text-accent' : ''}`}
             onClick={() => onToggleFavorite(video.id)}
