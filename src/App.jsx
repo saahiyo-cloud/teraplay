@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createHashRouter, RouterProvider, Routes, Route, useNavigate, useParams, Link } from 'react-router-dom';
 import { Play, History, User, Settings, Loader2, AlertCircle, X } from 'lucide-react';
 import Sidebar from './components/Sidebar';
@@ -9,6 +9,7 @@ import DownloadsView from './components/DownloadsView';
 import ProfileView from './components/ProfileView';
 import SettingsView from './components/SettingsView';
 import HistoryView from './components/HistoryView';
+import ErrorBoundary from './components/ErrorBoundary';
 import { API_BASE, API_KEY } from './config';
 
 // Synchronously apply theme and migrate/clear mock data from localStorage
@@ -59,6 +60,10 @@ function AppShell() {
   const [fetchError, setFetchError] = useState(null);
   const [fetchStep, setFetchStep] = useState('');
 
+  // AbortController refs — cancels in-flight requests when superseded.
+  const resolveAbortRef = useRef(null);          // for the /api/resolve call
+  const downloadControllersRef = useRef(new Map()); // taskId -> AbortController
+
   // Clean up old mock template data from memory and local storage once
   useEffect(() => {
     if (!localStorage.getItem('teraplay_mock_cleaned_v3')) {
@@ -78,59 +83,16 @@ function AppShell() {
   }, [videos]);
 
   useEffect(() => {
-    localStorage.setItem('teraplay_downloads', JSON.stringify(downloads));
+    // Strip _video (non-serializable ref) before persisting
+    const serializable = downloads.map(({ _video, ...rest }) => rest);
+    localStorage.setItem('teraplay_downloads', JSON.stringify(serializable));
   }, [downloads]);
 
   useEffect(() => {
     localStorage.setItem('teraplay_history', JSON.stringify(history));
   }, [history]);
 
-  // Tick active downloads progress bar every second
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setDownloads(prevDownloads => {
-        const updated = prevDownloads.map(task => {
-          if (task.status !== 'downloading') return task;
-
-          const nextLoaded = task.loadedBytes + task.speedBytes;
-          if (nextLoaded >= task.totalBytes) {
-            return {
-              ...task,
-              loadedBytes: task.totalBytes,
-              progress: 100,
-              status: 'completed',
-              speed: '0 MB/s',
-              timeLeft: 'Completed'
-            };
-          }
-
-          const remainingBytes = task.totalBytes - nextLoaded;
-          const secs = Math.ceil(remainingBytes / task.speedBytes);
-          let timeLeftStr = `${secs}s remaining`;
-          if (secs > 60) {
-            const mins = Math.floor(secs / 60);
-            timeLeftStr = `${mins} min${mins > 1 ? 's' : ''} remaining`;
-          }
-
-          const variation = 0.9 + Math.random() * 0.2;
-          const newSpeedBytes = Math.round(task.speedBytes * variation);
-          const newSpeedStr = `${(newSpeedBytes / (1024 * 1024)).toFixed(1)} MB/s`;
-
-          return {
-            ...task,
-            loadedBytes: nextLoaded,
-            progress: Math.floor((nextLoaded / task.totalBytes) * 100),
-            speedBytes: newSpeedBytes,
-            speed: newSpeedStr,
-            timeLeft: timeLeftStr
-          };
-        });
-        return updated;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
+  // Download progress is now driven by real fetch streaming — no fake timer needed.
 
   const handleVideoSelect = (video) => {
     setVideos(prev => prev.map(v => {
@@ -172,12 +134,21 @@ function AppShell() {
   };
 
   const handleFetch = async (url) => {
+    // Abort any in-flight resolve request
+    if (resolveAbortRef.current) {
+      resolveAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    resolveAbortRef.current = controller;
+
     setIsFetching(true);
     setFetchError(null);
     setFetchStep('Connecting to TeraBridge...');
     
     try {
-      const response = await fetch(`${API_BASE}/api/resolve?url=${encodeURIComponent(url)}&key=${API_KEY}&mode=stream`);
+      const response = await fetch(`${API_BASE}/api/resolve?url=${encodeURIComponent(url)}&key=${API_KEY}&mode=stream`, {
+        signal: controller.signal,
+      });
       
       if (!response.ok) {
         throw new Error(`Server responded with status ${response.status}`);
@@ -278,11 +249,125 @@ function AppShell() {
       navigate(`/player/${firstFileId}`);
       
     } catch (err) {
+      if (err.name === 'AbortError') return; // User typed a new link — silently ignore
       console.error('API Resolve Error:', err);
       setFetchError(err.message || 'An unexpected error occurred while resolving your link. Please try again.');
     } finally {
       setIsFetching(false);
     }
+  };
+
+  // ─── Real download with streaming progress ─────────────────────────
+  const _startRealDownload = (video, taskId) => {
+    const downloadUrl = video.downloadUrl;
+    if (!downloadUrl) {
+      setDownloads(prev => prev.map(d =>
+        d.id === taskId ? { ...d, status: 'failed', error: 'No download URL available.', speed: '—' } : d
+      ));
+      return;
+    }
+
+    const controller = new AbortController();
+    downloadControllersRef.current.set(taskId, controller);
+
+    (async () => {
+      try {
+        const response = await fetch(downloadUrl, { signal: controller.signal });
+
+        if (!response.ok) {
+          throw new Error(`Server responded with ${response.status}`);
+        }
+
+        const contentLength = parseInt(response.headers.get('Content-Length') || '0', 10);
+        if (contentLength > 0) {
+          setDownloads(prev => prev.map(d =>
+            d.id === taskId ? { ...d, totalBytes: contentLength } : d
+          ));
+        }
+
+        const reader = response.body.getReader();
+        const chunks = [];
+        let loaded = 0;
+        let lastTime = Date.now();
+        let lastLoaded = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          chunks.push(value);
+          loaded += value.byteLength;
+
+          // Throttle UI updates to ~4/sec
+          const now = Date.now();
+          if (now - lastTime >= 250) {
+            const elapsed = (now - lastTime) / 1000;
+            const speedBytes = (loaded - lastLoaded) / elapsed;
+            const total = contentLength || 0;
+            const remaining = total > 0 ? total - loaded : 0;
+            const secs = speedBytes > 0 ? Math.ceil(remaining / speedBytes) : 0;
+
+            let timeLeftStr = total > 0 ? (secs > 60
+              ? `${Math.floor(secs / 60)} min remaining`
+              : `${secs}s remaining`
+            ) : 'Downloading...';
+
+            setDownloads(prev => prev.map(d => {
+              if (d.id !== taskId) return d;
+              return {
+                ...d,
+                loadedBytes: loaded,
+                totalBytes: total || d.totalBytes,
+                speed: `${(speedBytes / (1024 * 1024)).toFixed(1)} MB/s`,
+                timeLeft: timeLeftStr,
+                progress: total > 0 ? Math.floor((loaded / total) * 100) : 0,
+              };
+            }));
+
+            lastTime = now;
+            lastLoaded = loaded;
+          }
+        }
+
+        // Save file to disk
+        const blob = new Blob(chunks);
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `${video.title}.mp4`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+
+        setDownloads(prev => prev.map(d =>
+          d.id === taskId ? {
+            ...d,
+            status: 'completed',
+            loadedBytes: loaded,
+            progress: 100,
+            speed: '0 MB/s',
+            timeLeft: 'Completed',
+          } : d
+        ));
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          // Paused or cancelled — don't mark as failed
+          return;
+        }
+        setDownloads(prev => prev.map(d =>
+          d.id === taskId ? {
+            ...d,
+            status: 'failed',
+            error: err.message,
+            speed: '0 MB/s',
+            timeLeft: 'Failed',
+          } : d
+        ));
+      } finally {
+        downloadControllersRef.current.delete(taskId);
+      }
+    })();
   };
 
   const handleStartDownload = (video) => {
@@ -292,70 +377,58 @@ function AppShell() {
       return;
     }
 
-    // Parse the size string to get bytes dynamically, defaulting to 50MB
-    let totalBytes = 50 * 1024 * 1024;
-    if (video.size) {
-      const sizeNum = parseFloat(video.size);
-      if (!isNaN(sizeNum)) {
-        if (video.size.includes('GB')) {
-          totalBytes = Math.round(sizeNum * 1024 * 1024 * 1024);
-        } else {
-          totalBytes = Math.round(sizeNum * 1024 * 1024);
-        }
-      }
-    }
-
-    const speedMbps = 3.5 + Math.random() * 6.0;
-    const speedBytes = Math.round(speedMbps * 1024 * 1024);
-    const secs = Math.ceil(totalBytes / speedBytes);
-    let timeLeftStr = `${secs}s remaining`;
-    if (secs > 60) {
-      const mins = Math.floor(secs / 60);
-      timeLeftStr = `${mins} min${mins > 1 ? 's' : ''} remaining`;
-    }
-
+    const taskId = `d_${Date.now()}`;
     const newTask = {
-      id: `d_${Date.now()}`,
+      id: taskId,
       title: `${video.title}.mp4`,
-      totalBytes: totalBytes,
+      totalBytes: 0,
       loadedBytes: 0,
-      speed: `${speedMbps.toFixed(1)} MB/s`,
-      speedBytes: speedBytes,
-      timeLeft: timeLeftStr,
+      speed: 'Connecting...',
+      timeLeft: 'Starting...',
       progress: 0,
       status: 'downloading',
       addedDate: new Date().toISOString(),
-      videoId: video.id
+      videoId: video.id,
+      _video: video,   // keep reference for resume/retry
     };
 
     setDownloads(prev => [newTask, ...prev]);
     navigate('/downloads');
+    _startRealDownload(video, taskId);
   };
 
   const handlePauseDownload = (id) => {
-    setDownloads(prev => prev.map(d => {
-      if (d.id === id) {
-        return { ...d, status: 'paused', speed: '0 MB/s', speedBytes: 0 };
-      }
-      return d;
-    }));
+    const ctrl = downloadControllersRef.current.get(id);
+    if (ctrl) ctrl.abort();
+    setDownloads(prev => prev.map(d =>
+      d.id === id ? { ...d, status: 'paused', speed: 'Paused', timeLeft: 'Paused' } : d
+    ));
   };
 
   const handleResumeDownload = (id) => {
     setDownloads(prev => prev.map(d => {
-      if (d.id === id) {
-        return { 
-          ...d, 
-          status: 'downloading', 
-          speed: '3.8 MB/s', 
-          speedBytes: 3984588 
-        };
-      }
-      return d;
+      if (d.id !== id) return d;
+      const video = d._video;
+      // Reset progress and restart from scratch
+      const resumed = {
+        ...d,
+        status: 'downloading',
+        loadedBytes: 0,
+        totalBytes: 0,
+        progress: 0,
+        speed: 'Connecting...',
+        timeLeft: 'Starting...',
+      };
+      // Kick off the real download outside the state updater
+      setTimeout(() => _startRealDownload(video, id), 0);
+      return resumed;
     }));
   };
 
   const handleCancelDownload = (id) => {
+    const ctrl = downloadControllersRef.current.get(id);
+    if (ctrl) ctrl.abort();
+    downloadControllersRef.current.delete(id);
     setDownloads(prev => prev.filter(d => d.id !== id));
   };
 
@@ -364,18 +437,23 @@ function AppShell() {
   };
 
   const handleRetryDownload = (id) => {
+    const ctrl = downloadControllersRef.current.get(id);
+    if (ctrl) ctrl.abort();
     setDownloads(prev => prev.map(d => {
-      if (d.id === id) {
-        return { 
-          ...d, 
-          status: 'downloading', 
-          progress: 0, 
-          loadedBytes: 0,
-          speed: '4.8 MB/s', 
-          speedBytes: 5033164 
-        };
-      }
-      return d;
+      if (d.id !== id) return d;
+      const video = d._video;
+      const retried = {
+        ...d,
+        status: 'downloading',
+        loadedBytes: 0,
+        totalBytes: 0,
+        progress: 0,
+        speed: 'Connecting...',
+        timeLeft: 'Starting...',
+        error: undefined,
+      };
+      setTimeout(() => _startRealDownload(video, id), 0);
+      return retried;
     }));
   };
 
@@ -593,5 +671,9 @@ const router = createHashRouter([
 ]);
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <ErrorBoundary>
+      <RouterProvider router={router} />
+    </ErrorBoundary>
+  );
 }
