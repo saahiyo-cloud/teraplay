@@ -1,0 +1,229 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Link as LinkIcon, Clipboard, Zap, Info, Play, X } from 'lucide-react';
+
+export default function HomeView({ videos, onVideoSelect, onFetch }) {
+  const [url, setUrl] = useState('');
+  const [pasteFeedback, setPasteFeedback] = useState(false);
+  const [autoFetch, setAutoFetch] = useState(() => localStorage.getItem('teraplay_autofetch') !== 'false');
+  const navigate = useNavigate();
+
+  const isValidLink = (value) => {
+    if (!value) return null;
+    const val = value.trim().toLowerCase();
+    if (!val.startsWith('http://') && !val.startsWith('https://')) {
+      return false;
+    }
+    return val.includes('terabox') || val.includes('dubox') || val.includes('1024tera') || val.includes('teraboxapp');
+  };
+
+  useEffect(() => {
+    if (autoFetch && url) {
+      const valid = isValidLink(url);
+      if (valid) {
+        const timer = setTimeout(() => {
+          onFetch(url.trim());
+        }, 600); // 600ms debounce
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [url, autoFetch, onFetch]);
+
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setUrl(text);
+      setPasteFeedback(true);
+      setTimeout(() => setPasteFeedback(false), 800);
+    } catch (err) {
+      console.error('Failed to read clipboard: ', err);
+    }
+  };
+
+  const handleFetchSubmit = (e) => {
+    e.preventDefault();
+    if (url.trim()) {
+      onFetch(url.trim());
+    }
+  };
+
+  const handleCardClick = (video) => {
+    onVideoSelect(video);
+    navigate(`/player/${video.id}`);
+  };
+
+  const continueWatching = videos.filter(v => v.progress > 0 && v.progress < 100);
+  const recentlyAdded = [...videos].sort((a, b) => new Date(b.addedDate) - new Date(a.addedDate));
+
+  return (
+    <div className="animate-fade-in">
+      <header className="rounded-3xl p-6 md:p-10 mb-12 border border-custom-border bg-[radial-gradient(circle_at_100%_0%,var(--color-accent-muted),transparent_40%)] bg-surface shadow-glass relative overflow-hidden flex flex-col justify-center">
+        <p className="text-muted mb-6 text-sm font-medium">
+          Paste your TeraBox, Dubox, or Teraboxapp link below to stream instantly.
+        </p>
+        
+        <form onSubmit={handleFetchSubmit} className="w-full">
+          <div className="w-full max-w-2xl bg-white/5 border border-white/10 rounded-2xl md:rounded-full flex flex-col md:flex-row items-stretch md:items-center p-2.5 md:p-2 md:pl-5 md:pr-2 gap-3 shadow-glass transition-all duration-300 focus-within:border-accent/50 focus-within:bg-white/10">
+            <div className="flex items-center gap-2 flex-1 bg-white/5 border border-white/10 md:bg-transparent md:border-none rounded-xl md:rounded-none px-3 py-1.5 md:p-0">
+              <LinkIcon size={18} className="text-muted shrink-0" />
+              <input 
+                type="text" 
+                placeholder="Paste your TeraBox link here..." 
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                className="w-full bg-transparent border-none outline-none text-fg py-1.5 px-1 text-sm placeholder-white/30"
+                aria-label="TeraBox video link"
+              />
+              {url && (
+                <button
+                  type="button"
+                  onClick={() => setUrl('')}
+                  className="p-1.5 text-muted hover:text-fg hover:bg-white/10 rounded-full transition-all cursor-pointer shrink-0 mr-1"
+                  title="Clear input"
+                >
+                  <X size={15} />
+                </button>
+              )}
+              <button 
+                type="button"
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 hover:bg-white/10 rounded-lg transition-all text-xs font-semibold text-fg cursor-pointer shrink-0 select-none"
+                onClick={handlePaste}
+                style={{
+                  background: pasteFeedback ? 'oklch(65% 0.18 250 / 0.2)' : '',
+                  borderColor: pasteFeedback ? 'var(--color-accent)' : ''
+                }}
+              >
+                <Clipboard size={14} />
+                <span>{pasteFeedback ? 'Copied!' : 'Paste'}</span>
+              </button>
+            </div>
+            
+            <button 
+              type="submit" 
+              className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 md:py-2.5 bg-accent text-bg rounded-xl md:rounded-full font-bold text-sm shadow-[0_4px_12px_var(--color-accent-muted)] hover:-translate-y-0.5 hover:shadow-[0_8px_20px_var(--color-accent-muted)] transition-all cursor-pointer shrink-0"
+            >
+              <Zap size={16} fill="currentColor" />
+              <span>Fetch Video</span>
+            </button>
+          </div>
+
+          {/* Validation Status Message */}
+          {url && (
+            <div className="flex items-center gap-2 mt-3 text-xs pl-3 animate-fade-in">
+              {isValidLink(url) ? (
+                <span className="text-emerald-400 flex items-center gap-1.5 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Valid TeraBox link detected {autoFetch && "— Fetching automatically..."}
+                </span>
+              ) : (
+                <span className="text-amber-400/90 flex items-center gap-1.5 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  Please enter a valid TeraBox, Dubox, or Teraboxapp link (should start with http/https).
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Settings Toggle / Analyzing indicator */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mt-4 px-3 text-xs text-muted">
+            <label className="flex items-center gap-2 cursor-pointer group select-none">
+              <input 
+                type="checkbox" 
+                checked={autoFetch} 
+                onChange={(e) => {
+                  setAutoFetch(e.target.checked);
+                  localStorage.setItem('teraplay_autofetch', e.target.checked.toString());
+                }}
+                className="rounded border-white/20 bg-white/5 text-accent focus:ring-accent/50 w-3.5 h-3.5 cursor-pointer accent-accent"
+              />
+              <span className="group-hover:text-fg transition-colors">Auto-fetch valid links on paste</span>
+            </label>
+            
+            {autoFetch && url && isValidLink(url) && (
+              <div className="flex items-center gap-2 text-accent/80 font-medium">
+                <span className="w-2 h-2 rounded-full bg-accent animate-ping"></span>
+                <span>Analyzing URL...</span>
+              </div>
+            )}
+          </div>
+        </form>
+      </header>
+
+      {continueWatching.length > 0 && (
+        <section className="mb-12">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-fg">Continue Watching</h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {continueWatching.map(video => (
+              <div 
+                key={video.id} 
+                className="glass-card group cursor-pointer overflow-hidden rounded-2xl flex flex-col border border-custom-border" 
+                onClick={() => handleCardClick(video)}
+              >
+                <div className="aspect-video bg-surface-elevated relative overflow-hidden shrink-0">
+                  <img src={video.thumbnail} alt={video.title} loading="lazy" className="w-full h-full object-cover opacity-85 transition-transform duration-500 ease-out group-hover:scale-105 group-hover:opacity-100" />
+                  <div className="absolute bottom-3 right-3 bg-black/75 backdrop-blur-sm px-2 py-1 rounded-md text-[11px] font-mono font-semibold border border-white/10 text-fg">{video.duration}</div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="w-12 h-12 bg-accent rounded-full grid place-items-center text-bg scale-90 group-hover:scale-100 transition-transform duration-300 shadow-[0_4px_12px_var(--color-accent-muted)]">
+                      <Play fill="currentColor" size={20} className="ml-0.5" />
+                    </div>
+                  </div>
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10">
+                    <div className="h-full bg-accent shadow-[0_0_8px_var(--color-accent)]" style={{ width: `${video.progress}%` }}></div>
+                  </div>
+                </div>
+                <div className="p-5 flex-1 flex flex-col gap-3">
+                  <h3 className="font-semibold text-base leading-snug line-clamp-2 text-fg group-hover:text-accent transition-colors duration-200">{video.title}</h3>
+                  <div className="flex justify-between text-xs text-muted mt-auto font-medium">
+                    <span className="font-mono">{video.size}</span>
+                    <span className="text-accent">{video.timeLeft || 'In progress'}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="mb-12">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-fg">Recently Added</h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {recentlyAdded.map(video => (
+            <div 
+              key={video.id} 
+              className="glass-card group cursor-pointer overflow-hidden rounded-2xl flex flex-col border border-custom-border" 
+              onClick={() => handleCardClick(video)}
+            >
+              <div className="aspect-video bg-surface-elevated relative overflow-hidden shrink-0">
+                <img src={video.thumbnail} alt={video.title} loading="lazy" className="w-full h-full object-cover opacity-85 transition-transform duration-500 ease-out group-hover:scale-105 group-hover:opacity-100" />
+                <div className="absolute bottom-3 right-3 bg-black/75 backdrop-blur-sm px-2 py-1 rounded-md text-[11px] font-mono font-semibold border border-white/10 text-fg">{video.duration}</div>
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="w-12 h-12 bg-accent rounded-full grid place-items-center text-bg scale-90 group-hover:scale-100 transition-transform duration-300 shadow-[0_4px_12px_var(--color-accent-muted)]">
+                    <Play fill="currentColor" size={20} className="ml-0.5" />
+                  </div>
+                </div>
+                {video.progress > 0 && (
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10">
+                    <div className="h-full bg-accent shadow-[0_0_8px_var(--color-accent)]" style={{ width: `${video.progress}%` }}></div>
+                  </div>
+                )}
+              </div>
+              <div className="p-5 flex-1 flex flex-col gap-3">
+                <h3 className="font-semibold text-base leading-snug line-clamp-2 text-fg group-hover:text-accent transition-colors duration-200">{video.title}</h3>
+                <div className="flex justify-between text-xs text-muted mt-auto font-medium">
+                  <span className="font-mono">{video.size}</span>
+                  <span>{video.relativeTime}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
