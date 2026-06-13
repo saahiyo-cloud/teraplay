@@ -102,6 +102,7 @@ function AppShell() {
             if (parsed && parsed.length > 0) {
               set(dbVideosRef, parsed);
               setVideos(parsed);
+              localStorage.removeItem('teraplay_videos');
               return;
             }
           } catch (e) {
@@ -125,6 +126,7 @@ function AppShell() {
             if (parsed && parsed.length > 0) {
               set(dbHistoryRef, parsed);
               setHistory(parsed);
+              localStorage.removeItem('teraplay_history');
               return;
             }
           } catch (e) {
@@ -208,8 +210,19 @@ function AppShell() {
     setFetchStep('Connecting to TeraBridge...');
     
     try {
-      const response = await fetch(`${API_BASE}/api/resolve?url=${encodeURIComponent(url)}&key=${API_KEY}&mode=stream`, {
+      let headers = {};
+      if (currentUser) {
+        try {
+          const idToken = await currentUser.getIdToken();
+          headers['Authorization'] = `Bearer ${idToken}`;
+        } catch (e) {
+          console.error('Failed to get Firebase ID token: ', e);
+        }
+      }
+
+      const response = await fetch(`${API_BASE}/api/resolve?url=${encodeURIComponent(url)}&mode=stream`, {
         signal: controller.signal,
+        headers: headers
       });
       
       if (!response.ok) {
@@ -235,8 +248,8 @@ function AppShell() {
         
         const thumbUrl = file.thumbnails?.url2 || file.thumbnails?.url1 || file.thumbnails?.icon || 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=600';
         
-        // Always use HLS manifest URL for video streaming
-        const streamUrl = `${API_BASE}/api/stream/manifest?url=${encodeURIComponent(url)}&index=${idx}&key=${API_KEY}`;
+        // Use the backend-provided signed stream URL, fallback if unavailable
+        const streamUrl = file.stream_url || `${API_BASE}/api/stream/manifest?url=${encodeURIComponent(url)}&index=${idx}&key=${API_KEY}`;
         
         let detectedRes = '';
         if (file.streams && Object.keys(file.streams).length > 0) {

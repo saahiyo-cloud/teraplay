@@ -31,8 +31,8 @@ class CustomLoader extends Hls.DefaultConfig.loader {
         urlObj.protocol = apiBaseUrl.protocol;
         urlObj.host = apiBaseUrl.host;
 
-        // Add API_KEY if missing
-        if (API_KEY && !urlObj.searchParams.has('key')) {
+        // Add API_KEY if missing and the request is not already signed
+        if (API_KEY && !urlObj.searchParams.has('key') && !urlObj.searchParams.has('sig')) {
           urlObj.searchParams.set('key', API_KEY);
         }
 
