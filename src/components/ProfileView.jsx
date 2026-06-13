@@ -1,34 +1,62 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Shield, Check, PlayCircle, Clock } from 'lucide-react';
+import { auth, db } from '../firebase';
+import { updateProfile } from 'firebase/auth';
+import { ref, set, onValue } from 'firebase/database';
 
-export default function ProfileView({ videos = [], history = [] }) {
-  const [profile, setProfile] = useState(() => {
-    const saved = localStorage.getItem('teraplay_profile');
-    return saved ? JSON.parse(saved) : {
-      username: 'Shakir',
-      email: 'shakir@teraplay.io',
-      tier: 'Premium Pro',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
-    };
+export default function ProfileView({ videos = [], history = [], currentUser }) {
+  const [profile, setProfile] = useState({
+    username: currentUser?.displayName || 'User',
+    email: currentUser?.email || '',
+    tier: 'Premium Pro',
+    avatar: currentUser?.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
   });
 
   const [username, setUsername] = useState(profile.username);
-  const [email, setEmail] = useState(profile.email);
   const [saveFeedback, setSaveFeedback] = useState(false);
+  const [errorFeedback, setErrorFeedback] = useState(null);
 
   useEffect(() => {
-    localStorage.setItem('teraplay_profile', JSON.stringify(profile));
-  }, [profile]);
+    if (!currentUser) return;
+    const profileRef = ref(db, `users/${currentUser.uid}/profile`);
+    const unsubscribe = onValue(profileRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setProfile(data);
+        setUsername(data.username || data.displayName || '');
+      }
+    });
+    return unsubscribe;
+  }, [currentUser]);
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    setProfile(prev => ({
-      ...prev,
-      username,
-      email
-    }));
-    setSaveFeedback(true);
-    setTimeout(() => setSaveFeedback(false), 2000);
+    setErrorFeedback(null);
+    setSaveFeedback(false);
+
+    try {
+      if (!username.trim()) {
+        throw new Error('Please enter a username');
+      }
+
+      if (currentUser) {
+        await updateProfile(currentUser, {
+          displayName: username.trim()
+        });
+
+        await set(ref(db, `users/${currentUser.uid}/profile`), {
+          ...profile,
+          username: username.trim(),
+          email: currentUser.email
+        });
+
+        setSaveFeedback(true);
+        setTimeout(() => setSaveFeedback(false), 2000);
+      }
+    } catch (err) {
+      console.error('Save profile error:', err);
+      setErrorFeedback(err.message || 'Failed to save profile changes.');
+    }
   };
 
   // Helper to parse duration string to seconds
@@ -167,17 +195,16 @@ export default function ProfileView({ videos = [], history = [] }) {
                   </div>
                 </div>
                 
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 opacity-60">
                   <label htmlFor="email" className="text-xs font-semibold text-muted uppercase tracking-wider select-none">Email Address</label>
-                  <div className="bg-surface border border-custom-border px-4 py-2.5 rounded-xl text-fg text-sm flex items-center gap-3 focus-within:border-accent transition-colors duration-200">
-                    <Mail size={16} className="text-muted shrink-0" />
+                  <div className="bg-surface border border-custom-border px-4 py-2.5 rounded-xl text-muted text-sm flex items-center gap-3 select-none">
+                    <Mail size={16} className="shrink-0" />
                     <input 
                       type="email" 
                       id="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full bg-transparent border-none outline-none text-fg"
-                      required
+                      value={currentUser?.email || ''}
+                      className="w-full bg-transparent border-none outline-none text-muted cursor-not-allowed"
+                      disabled
                     />
                   </div>
                 </div>
@@ -192,7 +219,10 @@ export default function ProfileView({ videos = [], history = [] }) {
                   <span>{saveFeedback ? 'Changes Saved' : 'Save Changes'}</span>
                 </button>
                 {saveFeedback && (
-                  <span className="text-xs text-accent animate-fade-in font-medium">Successfully written to local registry.</span>
+                  <span className="text-xs text-accent animate-fade-in font-medium">Successfully written to secure cloud database.</span>
+                )}
+                {errorFeedback && (
+                  <span className="text-xs text-rose-400 animate-fade-in font-medium">{errorFeedback}</span>
                 )}
               </div>
             </form>

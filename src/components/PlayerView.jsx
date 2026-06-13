@@ -6,6 +6,8 @@ import {
   Settings, Download, Heart, Share2, Copy, SkipBack, SkipForward,
   HelpCircle, Check, AlertCircle 
 } from 'lucide-react';
+import { db } from '../firebase';
+import { ref, set, get } from 'firebase/database';
 import { API_BASE, API_KEY } from '../config';
 
 class CustomLoader {
@@ -55,10 +57,11 @@ class CustomLoader {
   }
 }
 
-export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload, onUpdateVideo }) {
+export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload, onUpdateVideo, currentUser }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const navigate = useNavigate();
+  const lastSavedTimeRef = useRef(0);
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -99,6 +102,33 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   const handlePlayPauseRef = useRef(null);
   const skipRef = useRef(null);
   const toggleFullscreenRef = useRef(null);
+
+  const saveProgress = (time, duration) => {
+    if (duration <= 0) return;
+    const pct = Math.round((time / duration) * 100);
+    
+    if (onUpdateVideo) {
+      onUpdateVideo({
+        ...video,
+        progress: pct
+      });
+    }
+
+    if (currentUser) {
+      const progressPath = `users/${currentUser.uid}/progress/${video.id}`;
+      if (time > 5 && time < duration * 0.95) {
+        set(ref(db, progressPath), time);
+      } else if (time >= duration * 0.95 || time <= 0) {
+        set(ref(db, progressPath), null);
+      }
+    } else {
+      if (time > 5 && time < duration * 0.95) {
+        localStorage.setItem(`progress_${video.id}`, time.toString());
+      } else if (time >= duration * 0.95 || time <= 0) {
+        localStorage.removeItem(`progress_${video.id}`);
+      }
+    }
+  };
 
   // Sync resolution when active video changes
   useEffect(() => {
@@ -400,13 +430,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     return () => {
       // ── Save playback position before cleanup ──
       if (videoElement && localStorage.getItem('settings_remember_progress') !== 'false') {
-        const ct = videoElement.currentTime;
-        const dur = videoElement.duration;
-        if (ct > 5 && dur > 0 && ct < dur * 0.95) {
-          localStorage.setItem(`progress_${video.id}`, ct.toString());
-        } else if (ct >= dur * 0.95) {
-          localStorage.removeItem(`progress_${video.id}`);
-        }
+        saveProgress(videoElement.currentTime, videoElement.duration);
       }
       if (hls) {
         hls.destroy();
@@ -441,6 +465,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
       videoRef.current.pause();
       setIsPlaying(false);
       triggerClickAction('pause');
+      saveProgress(videoRef.current.currentTime, videoRef.current.duration);
     } else {
       videoRef.current.play();
       setIsPlaying(true);
@@ -453,7 +478,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   const handleEnded = () => {
     setIsPlaying(false);
     // Clear saved progress — video finished
-    localStorage.removeItem(`progress_${video.id}`);
+    saveProgress(0, duration);
 
     const autoplay = localStorage.getItem('settings_autoplay') !== 'false';
     if (!autoplay || !relatedVideos || relatedVideos.length === 0) return;
@@ -479,13 +504,21 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
-      setCurrentTime(videoRef.current.currentTime);
-      const pct = (videoRef.current.currentTime / videoRef.current.duration) * 100;
+      const ct = videoRef.current.currentTime;
+      const dur = videoRef.current.duration;
+      setCurrentTime(ct);
+      
+      const pct = (ct / dur) * 100;
       video.progress = Math.round(pct);
+
+      if (Math.abs(ct - lastSavedTimeRef.current) >= 5) {
+        lastSavedTimeRef.current = ct;
+        saveProgress(ct, dur);
+      }
     }
   };
 
-  const handleLoadedMetadata = () => {
+  const handleLoadedMetadata = async () => {
     if (videoRef.current) {
       const dur = videoRef.current.duration;
       setDuration(dur);
@@ -503,9 +536,24 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
       }
       // ── Restore saved playback position ──
       if (localStorage.getItem('settings_remember_progress') !== 'false') {
-        const savedTime = parseFloat(localStorage.getItem(`progress_${video.id}`) || '0');
-        if (savedTime > 5 && savedTime < (dur || Infinity) * 0.95) {
+        let savedTime = 0;
+        if (currentUser) {
+          try {
+            const progressRef = ref(db, `users/${currentUser.uid}/progress/${video.id}`);
+            const snapshot = await get(progressRef);
+            if (snapshot.exists()) {
+              savedTime = parseFloat(snapshot.val() || '0');
+            }
+          } catch (e) {
+            console.error("Failed to restore progress from database:", e);
+          }
+        } else {
+          savedTime = parseFloat(localStorage.getItem(`progress_${video.id}`) || '0');
+        }
+
+        if (savedTime > 5 && savedTime < (dur || Infinity) * 0.95 && videoRef.current) {
           videoRef.current.currentTime = savedTime;
+          lastSavedTimeRef.current = savedTime;
         }
       }
     }

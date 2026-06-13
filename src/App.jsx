@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createHashRouter, RouterProvider, Routes, Route, useNavigate, useParams, Link } from 'react-router-dom';
-import { Play, History, User, Settings, Loader2, AlertCircle, X } from 'lucide-react';
+import { Play, History, User, Settings, Loader2, AlertCircle, X, LogOut } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import HomeView from './components/HomeView';
 import PlayerView from './components/PlayerView';
@@ -9,6 +9,10 @@ import ProfileView from './components/ProfileView';
 import SettingsView from './components/SettingsView';
 import HistoryView from './components/HistoryView';
 import ErrorBoundary from './components/ErrorBoundary';
+import AuthScreen from './components/AuthScreen';
+import { auth, db } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { ref, onValue, set } from 'firebase/database';
 import { API_BASE, API_KEY } from './config';
 
 // Synchronously apply theme and migrate/clear mock data from localStorage
@@ -39,17 +43,11 @@ const INITIAL_VIDEOS = [];
 
 function AppShell() {
   const navigate = useNavigate();
-  const [videos, setVideos] = useState(() => {
-    if (!localStorage.getItem('teraplay_mock_cleaned_v3')) return [];
-    const saved = localStorage.getItem('teraplay_videos');
-    return saved ? JSON.parse(saved) : INITIAL_VIDEOS;
-  });
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
-  const [history, setHistory] = useState(() => {
-    if (!localStorage.getItem('teraplay_mock_cleaned_v3')) return [];
-    const saved = localStorage.getItem('teraplay_history');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [videos, setVideos] = useState([]);
+  const [history, setHistory] = useState([]);
 
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState(null);
@@ -57,30 +55,92 @@ function AppShell() {
 
   const resolveAbortRef = useRef(null);          // for the /api/resolve call
 
-  // Clean up old mock template data from memory and local storage once
-    if (!localStorage.getItem('teraplay_mock_cleaned_v3')) {
-      localStorage.removeItem('teraplay_videos');
-      localStorage.removeItem('teraplay_history');
-      localStorage.setItem('teraplay_mock_cleaned_v3', 'true');
-      setVideos([]);
-      setHistory([]);
-    }
+  // Refs to prevent stale state issues in callback functions
+  const videosRef = useRef([]);
+  const historyRef = useRef([]);
 
-  // Persist states to local storage
   useEffect(() => {
-    localStorage.setItem('teraplay_videos', JSON.stringify(videos));
+    videosRef.current = videos;
   }, [videos]);
 
-
-
   useEffect(() => {
-    localStorage.setItem('teraplay_history', JSON.stringify(history));
+    historyRef.current = history;
   }, [history]);
 
-  // Download progress is now driven by real fetch streaming — no fake timer needed.
+  // Auth State Listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setAuthLoading(false);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Sync Database
+  useEffect(() => {
+    if (!currentUser) {
+      setVideos([]);
+      setHistory([]);
+      return;
+    }
+
+    const dbVideosRef = ref(db, `users/${currentUser.uid}/videos`);
+    const unsubscribeVideos = onValue(dbVideosRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setVideos(data);
+      } else {
+        const local = localStorage.getItem('teraplay_videos');
+        if (local) {
+          try {
+            const parsed = JSON.parse(local);
+            if (parsed && parsed.length > 0) {
+              set(dbVideosRef, parsed);
+              setVideos(parsed);
+              return;
+            }
+          } catch (e) {
+            console.error('Failed to parse local videos: ', e);
+          }
+        }
+        setVideos([]);
+      }
+    });
+
+    const dbHistoryRef = ref(db, `users/${currentUser.uid}/history`);
+    const unsubscribeHistory = onValue(dbHistoryRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setHistory(data);
+      } else {
+        const local = localStorage.getItem('teraplay_history');
+        if (local) {
+          try {
+            const parsed = JSON.parse(local);
+            if (parsed && parsed.length > 0) {
+              set(dbHistoryRef, parsed);
+              setHistory(parsed);
+              return;
+            }
+          } catch (e) {
+            console.error('Failed to parse local history: ', e);
+          }
+        }
+        setHistory([]);
+      }
+    });
+
+    return () => {
+      unsubscribeVideos();
+      unsubscribeHistory();
+    };
+  }, [currentUser]);
 
   const handleVideoSelect = (video) => {
-    setVideos(prev => prev.map(v => {
+    const currentVideos = videosRef.current;
+    const currentHistory = historyRef.current;
+
+    const updatedVideos = currentVideos.map(v => {
       if (v.id === video.id) {
         return {
           ...v,
@@ -90,32 +150,44 @@ function AppShell() {
         };
       }
       return v;
-    }));
+    });
 
     // Update watch history logs
-    setHistory(prev => {
-      const filtered = prev.filter(h => h.videoId !== video.id);
-      const newRecord = {
-        id: `h_${Date.now()}`,
-        videoId: video.id,
-        title: video.title,
-        size: video.size,
-        duration: video.duration,
-        thumbnail: video.thumbnail,
-        progress: video.progress === 0 ? 1 : video.progress,
-        watchedAt: new Date().toISOString()
-      };
-      return [newRecord, ...filtered];
-    });
+    const filteredHistory = currentHistory.filter(h => h.videoId !== video.id);
+    const newRecord = {
+      id: `h_${Date.now()}`,
+      videoId: video.id,
+      title: video.title,
+      size: video.size,
+      duration: video.duration,
+      thumbnail: video.thumbnail,
+      progress: video.progress === 0 ? 1 : video.progress,
+      watchedAt: new Date().toISOString()
+    };
+    const updatedHistory = [newRecord, ...filteredHistory];
+
+    if (currentUser) {
+      set(ref(db, `users/${currentUser.uid}/videos`), updatedVideos);
+      set(ref(db, `users/${currentUser.uid}/history`), updatedHistory);
+    } else {
+      setVideos(updatedVideos);
+      setHistory(updatedHistory);
+    }
   };
 
   const handleToggleFavorite = (videoId) => {
-    setVideos(prev => prev.map(v => {
+    const currentVideos = videosRef.current;
+    const updated = currentVideos.map(v => {
       if (v.id === videoId) {
         return { ...v, favorite: !v.favorite };
       }
       return v;
-    }));
+    });
+    if (currentUser) {
+      set(ref(db, `users/${currentUser.uid}/videos`), updated);
+    } else {
+      setVideos(updated);
+    }
   };
 
   const handleFetch = async (url) => {
@@ -210,26 +282,33 @@ function AppShell() {
         };
       });
       
-      setVideos(prev => {
-        const existingIds = new Set(prev.map(v => v.id));
-        const filteredNew = newVideos.filter(nv => !existingIds.has(nv.id));
-        return [...filteredNew, ...prev];
-      });
-      
-      setHistory(prev => {
-        const historyRecords = newVideos.map(nv => ({
-          id: `h_${Date.now()}_${nv.id}`,
-          videoId: nv.id,
-          title: nv.title,
-          size: nv.size,
-          duration: nv.duration,
-          thumbnail: nv.thumbnail,
-          progress: 0,
-          watchedAt: new Date().toISOString()
-        }));
-        return [...historyRecords, ...prev];
-      });
-      
+      const currentVideos = videosRef.current;
+      const currentHistory = historyRef.current;
+
+      const existingIds = new Set(currentVideos.map(v => v.id));
+      const filteredNew = newVideos.filter(nv => !existingIds.has(nv.id));
+      const updatedVideos = [...filteredNew, ...currentVideos];
+
+      const historyRecords = newVideos.map(nv => ({
+        id: `h_${Date.now()}_${nv.id}`,
+        videoId: nv.id,
+        title: nv.title,
+        size: nv.size,
+        duration: nv.duration,
+        thumbnail: nv.thumbnail,
+        progress: 0,
+        watchedAt: new Date().toISOString()
+      }));
+      const updatedHistory = [...historyRecords, ...currentHistory];
+
+      if (currentUser) {
+        set(ref(db, `users/${currentUser.uid}/videos`), updatedVideos);
+        set(ref(db, `users/${currentUser.uid}/history`), updatedHistory);
+      } else {
+        setVideos(updatedVideos);
+        setHistory(updatedHistory);
+      }
+
       const firstFileId = newVideos[0].id;
       navigate(`/player/${firstFileId}`);
       
@@ -242,22 +321,29 @@ function AppShell() {
     }
   };
 
-
-
   const handleClearAllHistory = () => {
     if (window.confirm("Are you sure you want to clear your complete watch history?")) {
-      setHistory([]);
+      if (currentUser) {
+        set(ref(db, `users/${currentUser.uid}/history`), null);
+      } else {
+        setHistory([]);
+      }
     }
   };
 
   const handleRemoveHistoryItem = (id) => {
-    setHistory(prev => prev.filter(h => h.id !== id));
+    const currentHistory = historyRef.current;
+    const updated = currentHistory.filter(h => h.id !== id);
+    if (currentUser) {
+      set(ref(db, `users/${currentUser.uid}/history`), updated);
+    } else {
+      setHistory(updated);
+    }
   };
 
   const handlePlayFromHistory = (videoId) => {
     const matched = videos.find(v => v.id === videoId);
     if (matched) {
-      // Re-trigger progress recording
       handleVideoSelect(matched);
       navigate(`/player/${videoId}`);
     } else {
@@ -266,15 +352,41 @@ function AppShell() {
   };
 
   const handleUpdateVideo = (updatedVideo) => {
-    setVideos(prev => prev.map(v => v.id === updatedVideo.id ? { ...v, ...updatedVideo } : v));
+    const currentVideos = videosRef.current;
+    const updated = currentVideos.map(v => v.id === updatedVideo.id ? { ...v, ...updatedVideo } : v);
+    if (currentUser) {
+      set(ref(db, `users/${currentUser.uid}/videos`), updated);
+    } else {
+      setVideos(updated);
+    }
   };
 
   const handleResetData = () => {
-    localStorage.removeItem('teraplay_videos');
-    localStorage.removeItem('teraplay_history');
-    setVideos(INITIAL_VIDEOS);
-    setHistory([]);
+    if (currentUser) {
+      set(ref(db, `users/${currentUser.uid}/videos`), null);
+      set(ref(db, `users/${currentUser.uid}/history`), null);
+    } else {
+      localStorage.removeItem('teraplay_videos');
+      localStorage.removeItem('teraplay_history');
+      setVideos(INITIAL_VIDEOS);
+      setHistory([]);
+    }
   };
+
+  if (authLoading) {
+    return (
+      <div className="fixed inset-0 bg-bg z-[9999] flex items-center justify-center font-body">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <Loader2 size={40} className="text-accent animate-spin" />
+          <p className="text-sm text-muted animate-pulse font-medium">Initializing Secure Connection...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return <AuthScreen />;
+  }
 
   return (
     <div className="flex min-h-screen bg-bg relative text-fg">
@@ -316,6 +428,7 @@ function AppShell() {
               handleToggleFavorite={handleToggleFavorite}
               handleVideoSelect={handleVideoSelect}
               handleUpdateVideo={handleUpdateVideo}
+              currentUser={currentUser}
             />
           } />
           <Route path="/library" element={
@@ -325,10 +438,10 @@ function AppShell() {
             />
           } />
           <Route path="/profile" element={
-            <ProfileView videos={videos} history={history} />
+            <ProfileView videos={videos} history={history} currentUser={currentUser} />
           } />
           <Route path="/settings" element={
-            <SettingsView onResetData={handleResetData} />
+            <SettingsView onResetData={handleResetData} currentUser={currentUser} />
           } />
           <Route path="/history" element={
             <HistoryView 
@@ -391,7 +504,7 @@ function AppShell() {
   );
 }
 
-function PlayerRouteWrapper({ videos, handleToggleFavorite, handleVideoSelect, handleUpdateVideo }) {
+function PlayerRouteWrapper({ videos, handleToggleFavorite, handleVideoSelect, handleUpdateVideo, currentUser }) {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -420,6 +533,7 @@ function PlayerRouteWrapper({ videos, handleToggleFavorite, handleVideoSelect, h
       onBack={() => navigate(-1)}
       onToggleFavorite={handleToggleFavorite}
       onUpdateVideo={handleUpdateVideo}
+      currentUser={currentUser}
     />
   );
 }

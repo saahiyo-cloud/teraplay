@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Play, Check, EyeOff, RefreshCw, Sliders, ChevronDown } from 'lucide-react';
+import { Settings, Play, Check, EyeOff, RefreshCw, Sliders, ChevronDown, Cloud } from 'lucide-react';
+import { db } from '../firebase';
+import { ref, set, onValue } from 'firebase/database';
 
 const ACCENT_COLORS = [
   { name: 'blue', value: 'oklch(65% 0.18 250)', muted: 'oklch(65% 0.18 250 / 0.15)', hex: '#3b82f6' },
@@ -9,32 +11,38 @@ const ACCENT_COLORS = [
   { name: 'orange', value: 'oklch(68% 0.18 55)', muted: 'oklch(68% 0.18 55 / 0.15)', hex: '#f97316' }
 ];
 
-export default function SettingsView({ onResetData }) {
-  const [selectedColor, setSelectedColor] = useState(() => {
-    const saved = localStorage.getItem('teraplay_accent');
-    if (saved) {
-      try {
-        return JSON.parse(saved).name;
-      } catch (e) {
-        return 'blue';
-      }
-    }
-    return 'blue';
-  });
-
-  const [autoplay, setAutoplay] = useState(() => {
-    return localStorage.getItem('settings_autoplay') !== 'false';
-  });
-  const [rememberProgress, setRememberProgress] = useState(() => {
-    return localStorage.getItem('settings_remember_progress') !== 'false';
-  });
-  const [resolution, setResolution] = useState(() => {
-    return localStorage.getItem('settings_resolution') || 'auto';
-  });
-
+export default function SettingsView({ onResetData, currentUser }) {
+  const [selectedColor, setSelectedColor] = useState('blue');
+  const [autoplay, setAutoplay] = useState(true);
+  const [rememberProgress, setRememberProgress] = useState(true);
+  const [resolution, setResolution] = useState('auto');
 
   const [resetFeedback, setResetFeedback] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState(false);
+
+  useEffect(() => {
+    // Load local storage accent
+    const savedAccent = localStorage.getItem('teraplay_accent');
+    if (savedAccent) {
+      try {
+        setSelectedColor(JSON.parse(savedAccent).name);
+      } catch (e) {
+        setSelectedColor('blue');
+      }
+    }
+
+    if (!currentUser) return;
+    const settingsRef = ref(db, `users/${currentUser.uid}/settings`);
+    const unsubscribe = onValue(settingsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        if (data.autoplay !== undefined) setAutoplay(data.autoplay);
+        if (data.rememberProgress !== undefined) setRememberProgress(data.rememberProgress);
+        if (data.resolution !== undefined) setResolution(data.resolution);
+      }
+    });
+    return unsubscribe;
+  }, [currentUser]);
 
   const applyColor = (color) => {
     document.documentElement.style.setProperty('--color-accent', color.value);
@@ -43,19 +51,25 @@ export default function SettingsView({ onResetData }) {
     setSelectedColor(color.name);
   };
 
-  const handleSaveSettings = (e) => {
+  const handleSaveSettings = async (e) => {
     e.preventDefault();
-    localStorage.setItem('settings_autoplay', autoplay.toString());
-    localStorage.setItem('settings_remember_progress', rememberProgress.toString());
-    localStorage.setItem('settings_resolution', resolution);
-
-
-    setSaveFeedback(true);
-    setTimeout(() => setSaveFeedback(false), 2000);
+    if (currentUser) {
+      try {
+        await set(ref(db, `users/${currentUser.uid}/settings`), {
+          autoplay,
+          rememberProgress,
+          resolution
+        });
+        setSaveFeedback(true);
+        setTimeout(() => setSaveFeedback(false), 2000);
+      } catch (err) {
+        console.error('Save settings error:', err);
+      }
+    }
   };
 
   const triggerReset = () => {
-    if (window.confirm("Are you sure you want to clear your local database? This resets all video watch progresses, custom links, and active downloads.")) {
+    if (window.confirm("Are you sure you want to clear your database? This resets all video watch progresses, custom links, and active downloads.")) {
       onResetData();
       setResetFeedback(true);
       setTimeout(() => setResetFeedback(false), 2000);
@@ -63,13 +77,28 @@ export default function SettingsView({ onResetData }) {
   };
 
   return (
-    <div className="animate-fade-in max-w-4xl">
-      <header className="mb-10">
+    <div className="animate-fade-in max-w-4xl flex flex-col gap-6">
+      <header className="mb-4">
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-fg">Settings</h1>
         <p className="text-muted text-sm mt-2">Adjust application configurations, playback rules, and color palettes.</p>
       </header>
 
-      <form onSubmit={handleSaveSettings} className="flex flex-col gap-8">
+      {/* Firebase Cloud Connection Card */}
+      <div className="glass-card p-6 border border-custom-border rounded-2xl">
+        <div className="flex items-center gap-3 mb-4 select-none text-fg font-bold text-lg border-b border-custom-border/50 pb-3">
+          <Cloud size={20} className="text-accent" />
+          <h2>Cloud Sync Status</h2>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+          <span className="text-sm text-fg font-medium">Synced with Firebase Realtime Database</span>
+        </div>
+        <p className="text-xs text-muted mt-2">
+          Logged in as <span className="text-accent font-semibold">{currentUser?.email}</span>. Your playlists, history, and configuration preferences are securely stored in the cloud.
+        </p>
+      </div>
+
+      <form onSubmit={handleSaveSettings} className="flex flex-col gap-6">
         
         {/* Playback Settings Card */}
         <div className="glass-card p-6 border border-custom-border rounded-2xl">
@@ -111,7 +140,7 @@ export default function SettingsView({ onResetData }) {
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <label htmlFor="resolution" className="font-semibold text-sm text-fg block select-none">Default playback buffer</label>
+                <label htmlFor="resolution" className="font-semibold text-sm text-fg block select-none">Default playback quality</label>
                 <span className="text-xs text-muted">Initial target video quality to stream from TeraBox link.</span>
               </div>
               <div className="relative w-full sm:w-48 bg-surface border border-custom-border rounded-xl text-sm text-fg px-3 py-2 flex items-center justify-between focus-within:border-accent">
@@ -165,8 +194,6 @@ export default function SettingsView({ onResetData }) {
           </div>
         </div>
 
-
-
         {/* Danger zone / resets */}
         <div className="glass-card p-6 border border-rose-500/20 bg-rose-500/[0.02] rounded-2xl">
           <div className="flex items-center gap-3 mb-6 select-none text-rose-400 font-bold text-lg border-b border-rose-500/10 pb-3">
@@ -176,8 +203,8 @@ export default function SettingsView({ onResetData }) {
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h3 className="font-semibold text-sm text-fg select-none">Reset library database</h3>
-              <p className="text-xs text-muted">Clear all custom downloads, favorites, and reset default library streams.</p>
+              <h3 className="font-semibold text-sm text-fg select-none">Reset cloud database</h3>
+              <p className="text-xs text-muted">Clear all custom downloads, favorites, and reset default library streams in the cloud.</p>
             </div>
             <button 
               type="button" 
@@ -189,7 +216,7 @@ export default function SettingsView({ onResetData }) {
             </button>
           </div>
           {resetFeedback && (
-            <div className="mt-4 text-xs text-rose-400 font-medium animate-fade-in">Registry reset completed. Reloading settings.</div>
+            <div className="mt-4 text-xs text-rose-400 font-medium animate-fade-in">Cloud database reset completed.</div>
           )}
         </div>
 
@@ -203,7 +230,7 @@ export default function SettingsView({ onResetData }) {
             <span>{saveFeedback ? 'Settings Saved' : 'Save Configs'}</span>
           </button>
           {saveFeedback && (
-            <span className="text-xs text-accent animate-fade-in font-medium">Configurations written to browser storage.</span>
+            <span className="text-xs text-accent animate-fade-in font-medium">Configurations written to cloud database.</span>
           )}
         </div>
         
