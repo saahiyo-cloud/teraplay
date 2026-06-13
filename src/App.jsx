@@ -264,9 +264,7 @@ function AppShell() {
         return {
           id: fileId,
           title: file.filename || `TeraBox Video #${fileId.substring(0, 6)}`,
-          description: isHlsReady
-            ? `Imported from TeraBox URL. High-speed HLS stream proxied via TeraBridge. Original Path: ${file.path || '/'}`
-            : `Imported from TeraBox URL. Direct stream link. Original Path: ${file.path || '/'}`,
+          description: `Imported from TeraBox URL. High-speed HLS stream proxied via TeraBridge. Original Path: ${file.path || '/'}`,
           size: sizeStr,
           duration: file.duration || '02:00',
           progress: 0,
