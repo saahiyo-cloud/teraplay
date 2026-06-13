@@ -73,9 +73,8 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   const [showControls, setShowControls] = useState(true);
   const [copiedFeedback, setCopiedFeedback] = useState(false);
   const [sharedFeedback, setSharedFeedback] = useState(false);
-  const [isCheckingHls, setIsCheckingHls] = useState(false);
-  const [hlsCheckMessage, setHlsCheckMessage] = useState('');
-  
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const volumeAreaRef = useRef(null);
   // New features state
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
@@ -86,8 +85,8 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   const [clickAction, setClickAction] = useState(null); // 'play' or 'pause'
   const [ping, setPing] = useState(null);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
-  const [isUsingFallback, setIsUsingFallback] = useState(false);
-  const [hasHlsFailed, setHasHlsFailed] = useState(false);
+  const isUsingFallback = false;
+  const hasHlsFailed = false;
   const [qualities, setQualities] = useState([]);
   const [videoError, setVideoError] = useState(null);
   
@@ -96,15 +95,14 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   const hlsRef = useRef(null);
 
   // Refs for keyboard handler — always point to the latest stable callback.
-  // The keyboard listener is registered once (empty deps) and calls through
-  // these refs, so it never suffers from stale closures over isPlaying,
-  // duration, or isFullscreen.
   const handlePlayPauseRef = useRef(null);
   const skipRef = useRef(null);
   const toggleFullscreenRef = useRef(null);
+  const toggleMuteRef = useRef(null);
 
   const saveProgress = (time, duration) => {
-    if (duration <= 0) return;
+    if (!duration || isNaN(duration) || duration <= 0) return;
+    if (isNaN(time)) return;
     const pct = Math.round((time / duration) * 100);
     
     if (onUpdateVideo) {
@@ -136,97 +134,10 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     setQualities([]);
     setShowQualityMenu(false);
     setIsBuffering(false);
-    setIsUsingFallback(false);
-    setHasHlsFailed(false);
-    setIsCheckingHls(false);
-    setHlsCheckMessage('');
     setIsInitialLoading(true);
     setActiveResolution('');
     setVideoError(null);
   }, [video.id]);
-
-  const checkHlsStatus = async (isBackground = false) => {
-    if (!video.originalUrl) return;
-    
-    if (!isBackground) {
-      setIsCheckingHls(true);
-      setHlsCheckMessage("Checking stream status...");
-    }
-    
-    try {
-      const manifestUrl = `${API_BASE}/api/stream/manifest?url=${encodeURIComponent(video.originalUrl)}&index=${video.fileIndex || 0}&key=${API_KEY}`;
-      const res = await fetch(manifestUrl);
-      if (res.status === 200) {
-        const text = await res.text();
-        if (text.includes("#EXTM3U")) {
-          // HLS is ready!
-          if (!isBackground) {
-            setHlsCheckMessage("Stream ready! Switching to HLS...");
-          }
-          
-          const updated = {
-            ...video,
-            streamReady: true,
-            videoUrl: manifestUrl
-          };
-          if (onUpdateVideo) {
-            onUpdateVideo(updated);
-          }
-          setIsUsingFallback(false);
-          
-          if (!isBackground) {
-            setTimeout(() => {
-              setIsCheckingHls(false);
-              setHlsCheckMessage("");
-            }, 1500);
-          }
-          return true;
-        }
-      }
-      if (!isBackground) {
-        setHlsCheckMessage("HLS stream is still transcoding. Playing direct link...");
-      }
-    } catch (e) {
-      console.error("Failed to check HLS status:", e);
-      if (!isBackground) {
-        setHlsCheckMessage("Connection check failed.");
-      }
-    }
-    
-    if (!isBackground) {
-      setTimeout(() => {
-        setIsCheckingHls(false);
-      }, 3000);
-    }
-    return false;
-  };
-
-  // Background check for HLS transcoding completion
-  useEffect(() => {
-    if (!video.originalUrl || hasHlsFailed) return;
-    
-    // Check if it's either in fallback state OR was imported as direct link originally
-    const needsCheck = isUsingFallback || !video.streamReady;
-    if (!needsCheck) return;
-    
-    let active = true;
-    
-    // Run background check on mount or ID change immediately
-    checkHlsStatus(true);
-    
-    const interval = setInterval(async () => {
-      if (!active) return;
-      const ready = await checkHlsStatus(true);
-      if (ready) {
-        clearInterval(interval);
-      }
-    }, 15000); // Check every 15 seconds
-    
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
-  }, [isUsingFallback, video.id, video.originalUrl, video.streamReady, hasHlsFailed]);
 
   // Measure latency (ping) to the API gateway in the background
   useEffect(() => {
@@ -261,12 +172,12 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     };
   }, []);
 
-  // Keep handler refs in sync with latest functions. Runs every render but
-  // no-op if nothing changed (ref assignment is cheap).
+  // Keep handler refs in sync with latest functions.
   useEffect(() => {
     handlePlayPauseRef.current = handlePlayPause;
     skipRef.current = skip;
     toggleFullscreenRef.current = toggleFullscreen;
+    toggleMuteRef.current = toggleMute;
   });
 
   // Keyboard Shortcuts — registered once, calls through refs so it always
@@ -296,6 +207,10 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           e.preventDefault();
           toggleFullscreenRef.current?.();
           break;
+        case 'm':
+          e.preventDefault();
+          toggleMuteRef.current?.();
+          break;
         case '?':
         case '/':
           e.preventDefault();
@@ -319,14 +234,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     setIsPlaying(false);
     setIsInitialLoading(true);
 
-    if (isUsingFallback) {
-      // Standard video streaming fallback using direct download link
-      videoElement.src = video.downloadUrl || video.videoUrl;
-      videoElement.load();
-      videoElement.play()
-        .then(() => setIsPlaying(true))
-        .catch(err => console.log("Fallback stream play blocked: ", err));
-    } else if (video.videoUrl && (video.videoUrl.includes('.m3u8') || video.videoUrl.includes('/api/stream/manifest'))) {
+    if (video.videoUrl) {
       if (Hls.isSupported()) {
         hls = new Hls({
           maxMaxBufferLength: 30, // Keep buffer efficient for high speeds
@@ -388,13 +296,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
             switch (data.type) {
               case Hls.ErrorTypes.NETWORK_ERROR:
                 console.warn("HLS fatal network error, trying to recover...", data);
-                if (data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR) {
-                  console.warn("Manifest load error (possibly transcoding 202). Falling back to direct stream...");
-                  setHasHlsFailed(true);
-                  setIsUsingFallback(true);
-                } else {
-                  hls.startLoad();
-                }
+                hls.startLoad();
                 break;
               case Hls.ErrorTypes.MEDIA_ERROR:
                 console.warn("HLS fatal media error, recovering...", data);
@@ -402,8 +304,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
                 break;
               default:
                 console.error("HLS fatal unrecoverable error:", data);
-                setHasHlsFailed(true);
-                setIsUsingFallback(true);
+                setVideoError("HLS playback failed. The proxy server returned an error.");
                 break;
             }
           }
@@ -416,13 +317,6 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           .then(() => setIsPlaying(true))
           .catch(err => console.log("Native auto-play blocked: ", err));
       }
-    } else {
-      // Standard video streaming fallback
-      videoElement.src = video.videoUrl;
-      videoElement.load();
-      videoElement.play()
-        .then(() => setIsPlaying(true))
-        .catch(err => console.log("Standard auto-play blocked: ", err));
     }
 
     setCurrentTime(0);
@@ -437,7 +331,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
         hlsRef.current = null;
       }
     };
-  }, [video.videoUrl, video.id, isUsingFallback]);
+  }, [video.videoUrl, video.id]);
 
   const resetControlsTimer = () => {
     setShowControls(true);
@@ -507,9 +401,6 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
       const ct = videoRef.current.currentTime;
       const dur = videoRef.current.duration;
       setCurrentTime(ct);
-      
-      const pct = (ct / dur) * 100;
-      video.progress = Math.round(pct);
 
       if (Math.abs(ct - lastSavedTimeRef.current) >= 5) {
         lastSavedTimeRef.current = ct;
@@ -615,14 +506,58 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(video.url || window.location.href);
+    const linkToCopy = video.originalUrl || window.location.href;
+    navigator.clipboard.writeText(linkToCopy);
     setCopiedFeedback(true);
     setTimeout(() => setCopiedFeedback(false), 2000);
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
+    const shareUrl = video.originalUrl || window.location.href;
+    const shareData = {
+      title: video.title,
+      text: `Watch "${video.title}" on TeraPlay`,
+      url: shareUrl,
+    };
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(shareUrl);
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        // User cancelled share — silently ignore AbortError
+        console.error('Share failed:', err);
+      }
+    }
     setSharedFeedback(true);
     setTimeout(() => setSharedFeedback(false), 2000);
+  };
+
+  const handleVolumeChange = (e) => {
+    const val = parseFloat(e.target.value);
+    setVolume(val);
+    setIsMuted(val === 0);
+    if (videoRef.current) {
+      videoRef.current.volume = val;
+      videoRef.current.muted = val === 0;
+    }
+  };
+
+  const toggleMute = () => {
+    if (!videoRef.current) return;
+    const newMuted = !isMuted;
+    setIsMuted(newMuted);
+    videoRef.current.muted = newMuted;
+    if (newMuted) {
+      setVolume(0);
+    } else {
+      const restored = volume > 0 ? volume : 1;
+      setVolume(restored);
+      videoRef.current.volume = restored;
+    }
   };
 
   const handleRelatedClick = (relVideo) => {
@@ -715,14 +650,9 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
       }
     }
     
-    if (video.videoUrl && video.downloadUrl && video.videoUrl !== video.downloadUrl && !isUsingFallback) {
-      console.warn("Video play error. Switching to direct download link stream...");
-      setIsUsingFallback(true);
-    } else {
-      setVideoError(errorMsg);
-      setIsBuffering(false);
-      setIsInitialLoading(false);
-    }
+    setVideoError(errorMsg);
+    setIsBuffering(false);
+    setIsInitialLoading(false);
   };
 
   const isHlsActive = !isUsingFallback && video.videoUrl && (video.videoUrl.includes('.m3u8') || video.videoUrl.includes('/api/stream/manifest'));
@@ -843,6 +773,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
                 <div className="flex justify-between items-center"><span className="text-muted">Skip Forward 10s</span><kbd className="bg-surface-elevated border border-custom-border px-2 py-0.5 rounded-md text-xs font-mono">➡ Arrow</kbd></div>
                 <div className="flex justify-between items-center"><span className="text-muted">Skip Backward 10s</span><kbd className="bg-surface-elevated border border-custom-border px-2 py-0.5 rounded-md text-xs font-mono">⬅ Arrow</kbd></div>
                 <div className="flex justify-between items-center"><span className="text-muted">Toggle Fullscreen</span><kbd className="bg-surface-elevated border border-custom-border px-2 py-0.5 rounded-md text-xs font-mono">F</kbd></div>
+                <div className="flex justify-between items-center"><span className="text-muted">Toggle Mute</span><kbd className="bg-surface-elevated border border-custom-border px-2 py-0.5 rounded-md text-xs font-mono">M</kbd></div>
                 <div className="flex justify-between items-center"><span className="text-muted">Toggle Shortcuts Map</span><kbd className="bg-surface-elevated border border-custom-border px-2 py-0.5 rounded-md text-xs font-mono">?</kbd></div>
               </div>
             </div>
@@ -889,6 +820,42 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
               
               <div className="text-xs md:text-sm font-mono text-white/95 whitespace-nowrap">
                 {formatTime(currentTime)} <span className="opacity-40">/</span> {formatTime(duration)}
+              </div>
+
+              {/* Volume control */}
+              <div
+                ref={volumeAreaRef}
+                className="hidden sm:flex items-center gap-2 group/vol relative"
+                onMouseEnter={() => setShowVolumeSlider(true)}
+                onMouseLeave={() => setShowVolumeSlider(false)}
+              >
+                <button
+                  onClick={toggleMute}
+                  className="text-white hover:text-accent hover:scale-110 active:scale-95 transition-all cursor-pointer"
+                  aria-label={isMuted || volume === 0 ? 'Unmute' : 'Mute'}
+                >
+                  {isMuted || volume === 0
+                    ? <VolumeX size={18} className="md:w-5 md:h-5" />
+                    : <Volume2 size={18} className="md:w-5 md:h-5" />}
+                </button>
+                <div
+                  className="overflow-hidden transition-all duration-200"
+                  style={{ width: showVolumeSlider ? '72px' : '0px', opacity: showVolumeSlider ? 1 : 0 }}
+                >
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={isMuted ? 0 : volume}
+                    onChange={handleVolumeChange}
+                    className="progress-slider w-full cursor-pointer h-1 rounded-full outline-none appearance-none"
+                    style={{
+                      background: `linear-gradient(to right, var(--color-accent) ${(isMuted ? 0 : volume) * 100}%, oklch(100% 0 0 / 0.2) ${(isMuted ? 0 : volume) * 100}%)`
+                    }}
+                    aria-label="Volume"
+                  />
+                </div>
               </div>
             </div>
  

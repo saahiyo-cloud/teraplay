@@ -10,6 +10,7 @@ import SettingsView from './components/SettingsView';
 import HistoryView from './components/HistoryView';
 import ErrorBoundary from './components/ErrorBoundary';
 import AuthScreen from './components/AuthScreen';
+import ConfirmDialog from './components/ConfirmDialog';
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { ref, onValue, set } from 'firebase/database';
@@ -52,6 +53,9 @@ function AppShell() {
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState(null);
   const [fetchStep, setFetchStep] = useState('');
+
+  // Confirm dialog state
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
 
   const resolveAbortRef = useRef(null);          // for the /api/resolve call
 
@@ -230,11 +234,8 @@ function AppShell() {
         
         const thumbUrl = file.thumbnails?.url2 || file.thumbnails?.url1 || file.thumbnails?.icon || 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=600';
         
-        // Fallback to direct stream link if HLS manifest is not transcoded/ready yet on Terabox side
-        const isHlsReady = file.stream_ready === true;
-        const streamUrl = isHlsReady
-          ? `${API_BASE}/api/stream/manifest?url=${encodeURIComponent(url)}&index=${idx}&key=${API_KEY}`
-          : file.dlink;
+        // Always use HLS manifest URL for video streaming
+        const streamUrl = `${API_BASE}/api/stream/manifest?url=${encodeURIComponent(url)}&index=${idx}&key=${API_KEY}`;
         
         let detectedRes = '';
         if (file.streams && Object.keys(file.streams).length > 0) {
@@ -276,7 +277,7 @@ function AppShell() {
           relativeTime: 'Just now',
           addedDate: new Date().toISOString(),
           resolution: detectedRes,
-          streamReady: isHlsReady,
+          streamReady: true,
           originalUrl: url,
           fileIndex: idx
         };
@@ -322,13 +323,19 @@ function AppShell() {
   };
 
   const handleClearAllHistory = () => {
-    if (window.confirm("Are you sure you want to clear your complete watch history?")) {
-      if (currentUser) {
-        set(ref(db, `users/${currentUser.uid}/history`), null);
-      } else {
-        setHistory([]);
-      }
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Clear Watch History',
+      message: 'Are you sure you want to clear your complete watch history? This cannot be undone.',
+      onConfirm: () => {
+        if (currentUser) {
+          set(ref(db, `users/${currentUser.uid}/history`), null);
+        } else {
+          setHistory([]);
+        }
+        setConfirmDialog(d => ({ ...d, isOpen: false }));
+      },
+    });
   };
 
   const handleRemoveHistoryItem = (id) => {
@@ -353,7 +360,10 @@ function AppShell() {
 
   const handleUpdateVideo = (updatedVideo) => {
     const currentVideos = videosRef.current;
-    const updated = currentVideos.map(v => v.id === updatedVideo.id ? { ...v, ...updatedVideo } : v);
+    // Sanitize: replace any NaN numeric fields before writing to Firebase
+    const safe = { ...updatedVideo };
+    if (typeof safe.progress === 'number' && isNaN(safe.progress)) safe.progress = 0;
+    const updated = currentVideos.map(v => v.id === safe.id ? { ...v, ...safe } : v);
     if (currentUser) {
       set(ref(db, `users/${currentUser.uid}/videos`), updated);
     } else {
@@ -500,6 +510,17 @@ function AppShell() {
           </div>
         </div>
       )}
+
+      {/* Custom Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmLabel="Yes, proceed"
+        danger={true}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(d => ({ ...d, isOpen: false }))}
+      />
     </div>
   );
 }

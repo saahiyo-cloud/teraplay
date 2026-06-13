@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Settings, Play, Check, EyeOff, RefreshCw, Sliders, ChevronDown, Cloud } from 'lucide-react';
 import { db } from '../firebase';
 import { ref, set, onValue } from 'firebase/database';
+import ConfirmDialog from './ConfirmDialog';
 
 const ACCENT_COLORS = [
   { name: 'blue', value: 'oklch(65% 0.18 250)', muted: 'oklch(65% 0.18 250 / 0.15)', hex: '#3b82f6' },
@@ -19,6 +20,7 @@ export default function SettingsView({ onResetData, currentUser }) {
 
   const [resetFeedback, setResetFeedback] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     // Load local storage accent
@@ -69,11 +71,14 @@ export default function SettingsView({ onResetData, currentUser }) {
   };
 
   const triggerReset = () => {
-    if (window.confirm("Are you sure you want to clear your database? This resets all video watch progresses, custom links, and active downloads.")) {
-      onResetData();
-      setResetFeedback(true);
-      setTimeout(() => setResetFeedback(false), 2000);
-    }
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmReset = () => {
+    setConfirmOpen(false);
+    onResetData();
+    setResetFeedback(true);
+    setTimeout(() => setResetFeedback(false), 2000);
   };
 
   return (
@@ -235,6 +240,16 @@ export default function SettingsView({ onResetData, currentUser }) {
         </div>
         
       </form>
+
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        title="Reset Cloud Database"
+        message="This will clear all video watch progress, custom links, and active downloads. This cannot be undone."
+        confirmLabel="Reset Database"
+        danger={true}
+        onConfirm={handleConfirmReset}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }

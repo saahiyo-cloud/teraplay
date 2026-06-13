@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Play, Home, Layers, Clock, Heart, History, User, Settings, LogOut } from 'lucide-react';
+import ConfirmDialog from './ConfirmDialog';
 
 export default function Sidebar() {
   const location = useLocation();
+  const [signOutConfirm, setSignOutConfirm] = useState(false);
 
   const isLibraryActive = (tab = 'all') => {
     if (location.pathname !== '/library') return false;
@@ -90,11 +92,7 @@ export default function Sidebar() {
             <span>Settings</span>
           </Link>
           <button 
-            onClick={() => {
-              if (window.confirm("Are you sure you want to sign out?")) {
-                import('../firebase').then(({ auth }) => auth.signOut());
-              }
-            }}
+            onClick={() => setSignOutConfirm(true)}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-rose-400/80 hover:bg-rose-500/10 hover:text-rose-400 transition-all duration-200 font-medium text-left cursor-pointer mt-1 border-none outline-none"
           >
             <LogOut size={20} />
@@ -128,6 +126,19 @@ export default function Sidebar() {
         </Link>
 
       </div>
+
+      <ConfirmDialog
+        isOpen={signOutConfirm}
+        title="Sign Out"
+        message="Are you sure you want to sign out of TeraPlay?"
+        confirmLabel="Sign Out"
+        danger={true}
+        onConfirm={() => {
+          setSignOutConfirm(false);
+          import('../firebase').then(({ auth }) => auth.signOut());
+        }}
+        onCancel={() => setSignOutConfirm(false)}
+      />
     </>
   );
 }
