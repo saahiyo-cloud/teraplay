@@ -268,6 +268,7 @@ export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImag
             ))}
           </div>
         )}
-        </div>
+      </section>
+    </div>
   );
 }
