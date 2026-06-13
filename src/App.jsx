@@ -530,7 +530,7 @@ function AppShell() {
             />
           } />
           <Route path="/profile" element={
-            <ProfileView videos={videos} history={history} currentUser={currentUser} />
+            <ProfileView videos={videos} history={history} currentUser={currentUser} onVideoSelect={handleVideoSelect} />
           } />
           <Route path="/settings" element={
             <SettingsView onResetData={handleResetData} currentUser={currentUser} />

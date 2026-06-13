@@ -1,18 +1,30 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, Mail, Shield, Check, PlayCircle, Clock } from 'lucide-react';
 import { auth, db } from '../firebase';
 import { updateProfile } from 'firebase/auth';
 import { ref, set, onValue } from 'firebase/database';
 
-export default function ProfileView({ videos = [], history = [], currentUser }) {
+const PRESET_AVATARS = [
+  { name: 'Classic Male', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150' },
+  { name: 'Classic Female', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150' },
+  { name: 'Cyber Neon', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150' },
+  { name: 'Creative Red', url: 'https://images.unsplash.com/photo-1628157582853-a796fa650a6a?auto=format&fit=crop&q=80&w=150' },
+  { name: 'Tech Orange', url: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=150' },
+  { name: 'Gradient Spark', url: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&q=80&w=150' }
+];
+
+export default function ProfileView({ videos = [], history = [], currentUser, onVideoSelect }) {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState({
     username: currentUser?.displayName || 'User',
     email: currentUser?.email || '',
     tier: 'Premium Pro',
-    avatar: currentUser?.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
+    avatar: currentUser?.photoURL || PRESET_AVATARS[0].url
   });
 
   const [username, setUsername] = useState(profile.username);
+  const [avatar, setAvatar] = useState(profile.avatar);
   const [saveFeedback, setSaveFeedback] = useState(false);
   const [errorFeedback, setErrorFeedback] = useState(null);
 
@@ -24,6 +36,7 @@ export default function ProfileView({ videos = [], history = [], currentUser }) 
       if (data) {
         setProfile(data);
         setUsername(data.username || data.displayName || '');
+        setAvatar(data.avatar || data.photoURL || currentUser.photoURL || PRESET_AVATARS[0].url);
       }
     });
     return unsubscribe;
@@ -41,12 +54,14 @@ export default function ProfileView({ videos = [], history = [], currentUser }) 
 
       if (currentUser) {
         await updateProfile(currentUser, {
-          displayName: username.trim()
+          displayName: username.trim(),
+          photoURL: avatar.trim()
         });
 
         await set(ref(db, `users/${currentUser.uid}/profile`), {
           ...profile,
           username: username.trim(),
+          avatar: avatar.trim(),
           email: currentUser.email
         });
 
@@ -56,6 +71,16 @@ export default function ProfileView({ videos = [], history = [], currentUser }) 
     } catch (err) {
       console.error('Save profile error:', err);
       setErrorFeedback(err.message || 'Failed to save profile changes.');
+    }
+  };
+
+  const handlePlayRecentVideo = (videoId) => {
+    const matched = videos.find(v => String(v.id) === String(videoId));
+    if (matched) {
+      if (onVideoSelect) {
+        onVideoSelect(matched);
+      }
+      navigate(`/player/${videoId}`);
     }
   };
 
@@ -91,8 +116,6 @@ export default function ProfileView({ videos = [], history = [], currentUser }) 
 
   const formattedPlayback = formatPlaybackTime(totalPlaybackSeconds);
 
-
-
   // Dynamically compute a renewal date (1 month from today)
   const getNextRenewalDate = () => {
     const nextDate = new Date();
@@ -123,7 +146,7 @@ export default function ProfileView({ videos = [], history = [], currentUser }) 
 
             {/* Avatar with Glow */}
             <div className="w-24 h-24 rounded-full border-2 border-accent/40 p-1 mt-6 mb-4 shadow-[0_0_20px_var(--color-accent-muted)] shrink-0 overflow-hidden select-none">
-              <img src={profile.avatar} alt="User Avatar" className="w-full h-full object-cover rounded-full" />
+              <img src={avatar || profile.avatar} alt="User Avatar" className="w-full h-full object-cover rounded-full" />
             </div>
 
             <h2 className="text-xl font-bold text-fg leading-tight mb-1">{profile.username}</h2>
@@ -150,7 +173,7 @@ export default function ProfileView({ videos = [], history = [], currentUser }) 
           </div>
         </div>
 
-        {/* Right Column: Stats & Profile Form */}
+        {/* Right Column: Stats, Profile Form & Activity */}
         <div className="md:col-span-2 flex flex-col gap-6">
           {/* Stats Grid */}
           <div className="grid grid-cols-2 gap-4">
@@ -210,6 +233,43 @@ export default function ProfileView({ videos = [], history = [], currentUser }) 
                 </div>
               </div>
 
+              {/* Preset Avatars Selector */}
+              <div className="flex flex-col gap-3">
+                <label className="text-xs font-semibold text-muted uppercase tracking-wider select-none">Select Avatar Profile</label>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                  {PRESET_AVATARS.map(item => {
+                    const isSelected = avatar === item.url;
+                    return (
+                      <button
+                        key={item.name}
+                        type="button"
+                        onClick={() => setAvatar(item.url)}
+                        className={`aspect-square rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 ${isSelected ? 'border-accent shadow-[0_0_12px_var(--color-accent-muted)]' : 'border-custom-border opacity-70 hover:opacity-100'}`}
+                        title={item.name}
+                      >
+                        <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom Avatar URL Field */}
+              <div className="flex flex-col gap-2">
+                <label htmlFor="avatarUrl" className="text-xs font-semibold text-muted uppercase tracking-wider select-none">Custom Avatar URL (Optional)</label>
+                <div className="bg-surface border border-custom-border px-4 py-2.5 rounded-xl text-fg text-sm flex items-center gap-3 focus-within:border-accent transition-colors duration-200">
+                  <User size={16} className="text-muted shrink-0" />
+                  <input 
+                    type="url" 
+                    id="avatarUrl"
+                    placeholder="https://example.com/your-image.jpg"
+                    value={avatar}
+                    onChange={(e) => setAvatar(e.target.value)}
+                    className="w-full bg-transparent border-none outline-none text-fg"
+                  />
+                </div>
+              </div>
+
               <div className="flex items-center gap-4 mt-2">
                 <button 
                   type="submit" 
@@ -226,6 +286,53 @@ export default function ProfileView({ videos = [], history = [], currentUser }) 
                 )}
               </div>
             </form>
+          </div>
+
+          {/* Recent Watch Activity Feed */}
+          <div className="glass-card p-6 border border-custom-border rounded-2xl">
+            <h3 className="font-bold text-lg text-fg mb-4 select-none">Recent Watch Activity</h3>
+            {history.length === 0 ? (
+              <div className="flex flex-col items-center justify-center p-8 border border-dashed border-custom-border rounded-2xl bg-white/[0.01] text-center gap-2 select-none">
+                <p className="text-sm text-muted">No recently played videos found.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {history.slice(0, 3).map(item => {
+                  return (
+                    <div 
+                      key={item.id} 
+                      className="glass-card p-3 rounded-xl border border-custom-border flex items-center gap-4 group cursor-pointer hover:bg-white/5"
+                      onClick={() => handlePlayRecentVideo(item.videoId)}
+                    >
+                      {/* Mini Thumbnail */}
+                      <div className="w-20 aspect-video bg-surface-elevated rounded-lg overflow-hidden shrink-0 relative select-none">
+                        <img src={item.thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                          <PlayCircle size={20} className="text-accent" />
+                        </div>
+                        <div className="absolute bottom-0 left-0 w-full h-0.5 bg-white/10">
+                          <div className="h-full bg-accent" style={{ width: `${item.progress}%` }}></div>
+                        </div>
+                      </div>
+
+                      {/* Text Details */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-xs md:text-sm text-fg leading-snug line-clamp-1 group-hover:text-accent transition-colors duration-100">
+                          {item.title}
+                        </h4>
+                        <div className="flex items-center gap-2 text-[10px] md:text-xs text-muted font-medium mt-1">
+                          <span className="font-mono text-accent">{item.progress}% watched</span>
+                          <span>•</span>
+                          <span>{item.size}</span>
+                          <span>•</span>
+                          <span className="text-[10px]">{new Date(item.watchedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
