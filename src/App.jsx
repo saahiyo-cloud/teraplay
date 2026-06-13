@@ -197,7 +197,7 @@ function AppShell() {
     }
   };
 
-  const handleFetch = async (url) => {
+  const handleFetch = React.useCallback(async (url) => {
     // Abort any in-flight resolve request
     if (resolveAbortRef.current) {
       resolveAbortRef.current.abort();
@@ -332,7 +332,7 @@ function AppShell() {
     } finally {
       setIsFetching(false);
     }
-  };
+  }, [currentUser, navigate]);
 
   const handleClearAllHistory = () => {
     setConfirmDialog({
