@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, Filter, Layers, Play, Maximize2, X } from 'lucide-react';
+import { Search, Filter, Layers, Play, Maximize2, X, Trash2 } from 'lucide-react';
 
-export default function LibraryView({ videos, onVideoSelect, onPreviewImage }) {
+export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onDeleteVideo }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = useState('date');
   const [searchParams, setSearchParams] = useSearchParams();
@@ -140,6 +140,17 @@ export default function LibraryView({ videos, onVideoSelect, onPreviewImage }) {
               <div className="aspect-video bg-surface-elevated relative overflow-hidden shrink-0 flex items-center justify-center">
                 <img src={video.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover blur-md opacity-35 scale-110 pointer-events-none select-none" />
                 <img src={video.thumbnail} alt={video.title} loading="lazy" className="relative z-10 max-w-full max-h-full object-contain opacity-90 transition-transform duration-500 ease-out group-hover:scale-105 group-hover:opacity-100" />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteVideo(video.id);
+                  }}
+                  className="absolute top-2.5 left-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-rose-500 hover:text-white border border-white/10 hover:border-rose-500 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-0 group-hover:opacity-100 duration-200 text-muted hover:text-white"
+                  title="Delete Video"
+                >
+                  <Trash2 size={14} />
+                </button>
                 <button
                   type="button"
                   onClick={(e) => {

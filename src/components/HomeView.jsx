@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Link as LinkIcon, Clipboard, Zap, Info, Play, X, Maximize2 } from 'lucide-react';
+import { Link as LinkIcon, Clipboard, Zap, Info, Play, X, Maximize2, Trash2 } from 'lucide-react';
 
-export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImage }) {
+export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImage, onDeleteVideo }) {
   const [url, setUrl] = useState('');
   const [pasteFeedback, setPasteFeedback] = useState(false);
   const [autoFetch, setAutoFetch] = useState(() => localStorage.getItem('teraplay_autofetch') !== 'false');
@@ -177,6 +177,17 @@ export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImag
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
+                      onDeleteVideo(video.id);
+                    }}
+                    className="absolute top-2.5 left-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-rose-500 hover:text-white border border-white/10 hover:border-rose-500 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-0 group-hover:opacity-100 duration-200 text-muted hover:text-white"
+                    title="Delete Video"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
                       onPreviewImage({ url: video.thumbnail, title: video.title });
                     }}
                     className="absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-black/90 text-white/80 hover:text-white border border-white/10 hover:border-white/20 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-0 group-hover:opacity-100 duration-200"
@@ -235,6 +246,17 @@ export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImag
                 <div className="aspect-video bg-surface-elevated relative overflow-hidden shrink-0 flex items-center justify-center">
                   <img src={video.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover blur-md opacity-35 scale-110 pointer-events-none select-none" />
                   <img src={video.thumbnail} alt={video.title} loading="lazy" className="relative z-10 max-w-full max-h-full object-contain opacity-90 transition-transform duration-500 ease-out group-hover:scale-105 group-hover:opacity-100" />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteVideo(video.id);
+                    }}
+                    className="absolute top-2.5 left-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-rose-500 hover:text-white border border-white/10 hover:border-rose-500 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-0 group-hover:opacity-100 duration-200 text-muted hover:text-white"
+                    title="Delete Video"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                   <button
                     type="button"
                     onClick={(e) => {

@@ -383,6 +383,27 @@ function AppShell() {
     }
   };
 
+  const handleDeleteVideo = (videoId) => {
+    const matched = videosRef.current.find(v => v.id === videoId);
+    const title = matched ? matched.title : 'this video';
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Video',
+      message: `Are you sure you want to delete "${title}" from your library?`,
+      onConfirm: () => {
+        const currentVideos = videosRef.current;
+        const updated = currentVideos.filter(v => v.id !== videoId);
+        if (currentUser) {
+          set(ref(db, `users/${currentUser.uid}/videos`), updated);
+          set(ref(db, `users/${currentUser.uid}/progress/${videoId}`), null);
+        } else {
+          setVideos(updated);
+        }
+        setConfirmDialog(d => ({ ...d, isOpen: false }));
+      }
+    });
+  };
+
   const handleResetData = () => {
     if (currentUser) {
       set(ref(db, `users/${currentUser.uid}/videos`), null);
@@ -443,6 +464,7 @@ function AppShell() {
               onVideoSelect={handleVideoSelect}
               onFetch={handleFetch}
               onPreviewImage={setPreviewImage}
+              onDeleteVideo={handleDeleteVideo}
             />
           } />
           <Route path="/player/:id?" element={
@@ -459,6 +481,7 @@ function AppShell() {
               videos={videos} 
               onVideoSelect={handleVideoSelect}
               onPreviewImage={setPreviewImage}
+              onDeleteVideo={handleDeleteVideo}
             />
           } />
           <Route path="/profile" element={
