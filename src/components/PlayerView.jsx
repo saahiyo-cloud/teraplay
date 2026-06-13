@@ -309,7 +309,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
 
           // ── Apply saved resolution preference ──
           const savedRes = localStorage.getItem('settings_resolution') || 'auto';
-          const resHeightMap = { '4k': 2160, '1080p': 1080, '720p': 720 };
+          const resHeightMap = { '4k': 2160, '1080p': 1080, '720p': 720, '480p': 480 };
           const targetHeight = resHeightMap[savedRes];
           if (targetHeight) {
             const matchIdx = hls.levels.findIndex(l => l.height && Math.abs(l.height - targetHeight) < targetHeight * 0.25);

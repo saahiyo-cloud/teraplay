@@ -156,9 +156,8 @@ export default function SettingsView({ onResetData, currentUser }) {
                   className="w-full bg-transparent border-none outline-none appearance-none pr-8 cursor-pointer text-fg"
                 >
                   <option value="auto" className="bg-surface">Auto Adjust</option>
-                  <option value="4k" className="bg-surface">4K UHD</option>
-                  <option value="1080p" className="bg-surface">1080P Full HD</option>
                   <option value="720p" className="bg-surface">720P HD</option>
+                  <option value="480p" className="bg-surface">480P</option>
                 </select>
                 <ChevronDown size={16} className="text-muted absolute right-3 pointer-events-none" />
               </div>
