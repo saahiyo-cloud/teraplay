@@ -16,7 +16,8 @@ export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImag
     }
     const teraboxDomains = [
       'terabox', 'dubox', '1024tera', 'teraboxapp', 'terashare', 
-      'neotbx', 'freeterabox', 'tibianbox', 'momotbox', 'sharestb', 'mixtb'
+      'neotbx', 'freeterabox', 'tibianbox', 'momotbox', 'sharestb', 'mixtb',
+      'teraboxshare'
     ];
     return teraboxDomains.some(domain => val.includes(domain));
   };
