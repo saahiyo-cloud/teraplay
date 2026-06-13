@@ -147,8 +147,9 @@ function AppShell() {
     const currentVideos = videosRef.current;
     const currentHistory = historyRef.current;
 
+    const vidIdStr = String(video.id);
     const updatedVideos = currentVideos.map(v => {
-      if (v.id === video.id) {
+      if (String(v.id) === vidIdStr) {
         return {
           ...v,
           progress: v.progress === 0 ? 1 : v.progress,
@@ -160,7 +161,7 @@ function AppShell() {
     });
 
     // Update watch history logs
-    const filteredHistory = currentHistory.filter(h => h.videoId !== video.id);
+    const filteredHistory = currentHistory.filter(h => String(h.videoId) !== vidIdStr);
     const newRecord = {
       id: `h_${Date.now()}`,
       videoId: video.id,
@@ -184,8 +185,9 @@ function AppShell() {
 
   const handleToggleFavorite = (videoId) => {
     const currentVideos = videosRef.current;
+    const vidIdStr = String(videoId);
     const updated = currentVideos.map(v => {
-      if (v.id === videoId) {
+      if (String(v.id) === vidIdStr) {
         return { ...v, favorite: !v.favorite };
       }
       return v;
@@ -298,8 +300,8 @@ function AppShell() {
       const currentVideos = videosRef.current;
       const currentHistory = historyRef.current;
 
-      const existingIds = new Set(currentVideos.map(v => v.id));
-      const filteredNew = newVideos.filter(nv => !existingIds.has(nv.id));
+      const existingIds = new Set(currentVideos.map(v => String(v.id)));
+      const filteredNew = newVideos.filter(nv => !existingIds.has(String(nv.id)));
       const updatedVideos = [...filteredNew, ...currentVideos];
 
       const historyRecords = newVideos.map(nv => ({
@@ -352,16 +354,16 @@ function AppShell() {
 
   const handleRemoveHistoryItem = (id) => {
     const currentHistory = historyRef.current;
-    const updated = currentHistory.filter(h => h.id !== id);
+    const updated = currentHistory.filter(h => String(h.id) !== String(id));
     if (currentUser) {
-      set(ref(db, `users/${currentUser.uid}/history`), updated);
+      set(ref(db, `users/${currentUser.uid}/history`), updated.length > 0 ? updated : null);
     } else {
       setHistory(updated);
     }
   };
 
   const handlePlayFromHistory = (videoId) => {
-    const matched = videos.find(v => v.id === videoId);
+    const matched = videos.find(v => String(v.id) === String(videoId));
     if (matched) {
       handleVideoSelect(matched);
       navigate(`/player/${videoId}`);
@@ -375,7 +377,7 @@ function AppShell() {
     // Sanitize: replace any NaN numeric fields before writing to Firebase
     const safe = { ...updatedVideo };
     if (typeof safe.progress === 'number' && isNaN(safe.progress)) safe.progress = 0;
-    const updated = currentVideos.map(v => v.id === safe.id ? { ...v, ...safe } : v);
+    const updated = currentVideos.map(v => String(v.id) === String(safe.id) ? { ...v, ...safe } : v);
     if (currentUser) {
       set(ref(db, `users/${currentUser.uid}/videos`), updated);
     } else {
@@ -384,24 +386,34 @@ function AppShell() {
   };
 
   const handleDeleteVideo = (videoId) => {
-    const matched = videosRef.current.find(v => v.id === videoId);
+    const vidIdStr = String(videoId);
+    const matched = videosRef.current.find(v => String(v.id) === vidIdStr);
     const title = matched ? matched.title : 'this video';
     setConfirmDialog({
       isOpen: true,
       title: 'Delete Video',
       message: `Are you sure you want to delete "${title}" from your library?`,
-      onConfirm: () => {
+      onConfirm: async () => {
         const currentVideos = videosRef.current;
-        const updated = currentVideos.filter(v => v.id !== videoId);
+        const currentHistory = historyRef.current;
+        const updatedVideos = currentVideos.filter(v => String(v.id) !== vidIdStr);
+        const updatedHistory = currentHistory.filter(h => String(h.videoId) !== vidIdStr);
+
         if (currentUser) {
-          set(ref(db, `users/${currentUser.uid}/videos`), updated);
-          set(ref(db, `users/${currentUser.uid}/progress/${videoId}`), null);
+          try {
+            await set(ref(db, `users/${currentUser.uid}/videos`), updatedVideos.length > 0 ? updatedVideos : null);
+            await set(ref(db, `users/${currentUser.uid}/history`), updatedHistory.length > 0 ? updatedHistory : null);
+            set(ref(db, `users/${currentUser.uid}/progress/${videoId}`), null);
+          } catch (err) {
+            console.error('Failed to delete video from database:', err);
+          }
         } else {
-          setVideos(updated);
+          setVideos(updatedVideos);
+          setHistory(updatedHistory);
         }
         setConfirmDialog(d => ({ ...d, isOpen: false }));
-        // If we are currently playing this video, navigate to home/library
-        if (window.location.hash.includes(videoId)) {
+        // If we are currently playing this video, navigate to home
+        if (window.location.hash.includes(vidIdStr)) {
           navigate('/', { replace: true });
         }
       }
