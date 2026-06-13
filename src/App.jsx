@@ -63,6 +63,7 @@ function AppShell() {
   // Refs to prevent stale state issues in callback functions
   const videosRef = useRef([]);
   const historyRef = useRef([]);
+  const deletingVideoIdRef = useRef(null);
 
   useEffect(() => {
     videosRef.current = videos;
@@ -373,6 +374,10 @@ function AppShell() {
   };
 
   const handleUpdateVideo = (updatedVideo) => {
+    if (deletingVideoIdRef.current && String(updatedVideo.id) === String(deletingVideoIdRef.current)) {
+      console.log('Skipping update/progress save for deleting video:', updatedVideo.id);
+      return;
+    }
     const currentVideos = videosRef.current;
     // Sanitize: replace any NaN numeric fields before writing to Firebase
     const safe = { ...updatedVideo };
@@ -387,6 +392,7 @@ function AppShell() {
 
   const handleDeleteVideo = (videoId) => {
     const vidIdStr = String(videoId);
+    deletingVideoIdRef.current = vidIdStr;
     const matched = videosRef.current.find(v => String(v.id) === vidIdStr);
     const title = matched ? matched.title : 'this video';
     setConfirmDialog({
@@ -416,6 +422,17 @@ function AppShell() {
         if (window.location.hash.includes(vidIdStr)) {
           navigate('/', { replace: true });
         }
+        
+        // Reset deleting ref after a brief timeout to let route transition complete
+        setTimeout(() => {
+          if (deletingVideoIdRef.current === vidIdStr) {
+            deletingVideoIdRef.current = null;
+          }
+        }, 100);
+      },
+      onCancel: () => {
+        setConfirmDialog(d => ({ ...d, isOpen: false }));
+        deletingVideoIdRef.current = null;
       }
     });
   };
@@ -573,7 +590,7 @@ function AppShell() {
         confirmLabel="Yes, proceed"
         danger={true}
         onConfirm={confirmDialog.onConfirm}
-        onCancel={() => setConfirmDialog(d => ({ ...d, isOpen: false }))}
+        onCancel={confirmDialog.onCancel || (() => setConfirmDialog(d => ({ ...d, isOpen: false })))}
       />
 
       {/* Fullscreen Thumbnail Preview Modal */}
@@ -612,7 +629,7 @@ function PlayerRouteWrapper({ videos, handleToggleFavorite, handleVideoSelect, h
   const navigate = useNavigate();
 
   const activeVideoId = id || (videos.length > 0 ? videos[0].id : null);
-  const activeVideo = videos.find(v => v.id === activeVideoId);
+  const activeVideo = videos.find(v => String(v.id) === String(activeVideoId));
 
   if (!activeVideo) {
     return (
