@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, Filter, Layers, Play } from 'lucide-react';
+import { Search, Filter, Layers, Play, Maximize2, X } from 'lucide-react';
 
 export default function LibraryView({ videos, onVideoSelect }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = useState('date');
   const [searchParams, setSearchParams] = useSearchParams();
+  const [previewImage, setPreviewImage] = useState(null);
   const navigate = useNavigate();
 
   const activeTab = searchParams.get('tab') || 'all';
@@ -140,6 +141,17 @@ export default function LibraryView({ videos, onVideoSelect }) {
               <div className="aspect-video bg-surface-elevated relative overflow-hidden shrink-0 flex items-center justify-center">
                 <img src={video.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover blur-md opacity-35 scale-110 pointer-events-none select-none" />
                 <img src={video.thumbnail} alt={video.title} loading="lazy" className="relative z-10 max-w-full max-h-full object-contain opacity-90 transition-transform duration-500 ease-out group-hover:scale-105 group-hover:opacity-100" />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPreviewImage({ url: video.thumbnail, title: video.title });
+                  }}
+                  className="absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-black/90 text-white/80 hover:text-white border border-white/10 hover:border-white/20 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-0 group-hover:opacity-100 duration-200"
+                  title="Enlarge Thumbnail"
+                >
+                  <Maximize2 size={14} />
+                </button>
                 <div className="absolute bottom-3 right-3 bg-black/75 backdrop-blur-sm px-2 py-1 rounded-md text-[11px] font-mono font-semibold border border-white/10 text-fg">{video.duration}</div>
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <div className="w-12 h-12 bg-accent rounded-full grid place-items-center text-bg scale-90 group-hover:scale-100 transition-transform duration-300 shadow-[0_4px_12px_var(--color-accent-muted)]">
@@ -176,6 +188,34 @@ export default function LibraryView({ videos, onVideoSelect }) {
                 : 'No playback history recorded yet.'
             }
           </p>
+        </div>
+      )}
+
+      {/* Fullscreen Thumbnail Preview Modal */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 backdrop-blur-md z-[9999] flex flex-col items-center justify-center animate-fade-in p-4 cursor-zoom-out select-none" 
+          onClick={() => setPreviewImage(null)}
+        >
+          <button 
+            type="button"
+            onClick={() => setPreviewImage(null)} 
+            className="absolute top-6 right-6 text-white/70 hover:text-white hover:bg-white/10 rounded-full p-2.5 transition-all cursor-pointer"
+            aria-label="Close preview"
+          >
+            <X size={24} />
+          </button>
+          <div 
+            className="max-w-4xl max-h-[85vh] flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-200 cursor-default" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img 
+              src={previewImage.url} 
+              alt={previewImage.title} 
+              className="max-w-full max-h-[75vh] object-contain rounded-2xl border border-white/10 shadow-2xl"
+            />
+            <p className="text-white/90 text-sm font-semibold text-center px-4 line-clamp-2 select-text max-w-2xl">{previewImage.title}</p>
+          </div>
         </div>
       )}
     </div>
