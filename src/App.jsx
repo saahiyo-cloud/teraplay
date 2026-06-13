@@ -150,19 +150,21 @@ function AppShell() {
 
     const vidIdStr = String(video.id);
     const updatedVideos = currentVideos.map(v => {
-      if (String(v.id) === vidIdStr) {
-        return {
-          ...v,
-          progress: v.progress === 0 ? 1 : v.progress,
-          relativeTime: 'Just now',
-          addedDate: new Date().toISOString()
-        };
-      }
-      return v;
+      const isSelected = String(v.id) === vidIdStr;
+      const currentProgress = typeof v.progress === 'number' && !isNaN(v.progress) ? v.progress : 0;
+      return {
+        ...v,
+        progress: isSelected 
+          ? (currentProgress === 0 ? 1 : currentProgress)
+          : currentProgress,
+        relativeTime: isSelected ? 'Just now' : (v.relativeTime || 'Just now'),
+        addedDate: isSelected ? new Date().toISOString() : (v.addedDate || new Date().toISOString())
+      };
     });
 
     // Update watch history logs
     const filteredHistory = currentHistory.filter(h => String(h.videoId) !== vidIdStr);
+    const videoProgress = typeof video.progress === 'number' && !isNaN(video.progress) ? video.progress : 0;
     const newRecord = {
       id: `h_${Date.now()}`,
       videoId: video.id,
@@ -170,7 +172,7 @@ function AppShell() {
       size: video.size,
       duration: video.duration,
       thumbnail: video.thumbnail,
-      progress: video.progress === 0 ? 1 : video.progress,
+      progress: videoProgress === 0 ? 1 : videoProgress,
       watchedAt: new Date().toISOString()
     };
     const updatedHistory = [newRecord, ...filteredHistory];
@@ -379,10 +381,19 @@ function AppShell() {
       return;
     }
     const currentVideos = videosRef.current;
-    // Sanitize: replace any NaN numeric fields before writing to Firebase
+    // Sanitize the updated video properties
     const safe = { ...updatedVideo };
-    if (typeof safe.progress === 'number' && isNaN(safe.progress)) safe.progress = 0;
-    const updated = currentVideos.map(v => String(v.id) === String(safe.id) ? { ...v, ...safe } : v);
+    if (safe.progress === undefined || safe.progress === null || isNaN(safe.progress)) {
+      safe.progress = 0;
+    }
+    const updated = currentVideos.map(v => {
+      const isTarget = String(v.id) === String(safe.id);
+      const videoObj = isTarget ? { ...v, ...safe } : v;
+      if (videoObj.progress === undefined || videoObj.progress === null || isNaN(videoObj.progress)) {
+        videoObj.progress = 0;
+      }
+      return videoObj;
+    });
     if (currentUser) {
       set(ref(db, `users/${currentUser.uid}/videos`), updated);
     } else {
