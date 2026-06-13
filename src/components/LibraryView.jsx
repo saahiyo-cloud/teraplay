@@ -60,31 +60,47 @@ export default function LibraryView({ videos, onVideoSelect }) {
     navigate(`/player/${video.id}`);
   };
 
+  const allCount = videos.length;
+  const favoritesCount = videos.filter(v => v.favorite).length;
+  const recentCount = videos.filter(v => v.progress > 0).length;
+
   return (
     <div className="animate-fade-in">
       <header className="mb-10">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-fg mb-6">My Library</h1>
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-fg mb-6 flex items-baseline gap-3 select-none">
+          <span>My Library</span>
+          <span className="text-xs md:text-sm font-medium text-muted font-mono">({allCount} {allCount === 1 ? 'video' : 'videos'})</span>
+        </h1>
         
         <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 flex-wrap">
           {/* Tabs */}
           <div className="flex gap-1 bg-surface p-1 rounded-2xl border border-custom-border shrink-0 overflow-x-auto scrollbar-none flex-nowrap max-w-full">
             <button 
-              className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'all' ? 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)]' : 'text-muted hover:text-fg'}`}
+              className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap flex items-center gap-2 ${activeTab === 'all' ? 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)]' : 'text-muted hover:text-fg'}`}
               onClick={() => setActiveTab('all')}
             >
-              All Videos
+              <span>All Videos</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold font-mono transition-colors ${activeTab === 'all' ? 'bg-black/10 text-bg' : 'bg-surface-elevated text-muted'}`}>
+                {allCount}
+              </span>
             </button>
             <button 
-              className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'favorites' ? 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)]' : 'text-muted hover:text-fg'}`}
+              className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap flex items-center gap-2 ${activeTab === 'favorites' ? 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)]' : 'text-muted hover:text-fg'}`}
               onClick={() => setActiveTab('favorites')}
             >
-              Favorites
+              <span>Favorites</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold font-mono transition-colors ${activeTab === 'favorites' ? 'bg-black/10 text-bg' : 'bg-surface-elevated text-muted'}`}>
+                {favoritesCount}
+              </span>
             </button>
             <button 
-              className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'recent' ? 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)]' : 'text-muted hover:text-fg'}`}
+              className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap flex items-center gap-2 ${activeTab === 'recent' ? 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)]' : 'text-muted hover:text-fg'}`}
               onClick={() => setActiveTab('recent')}
             >
-              Recent
+              <span>Recent</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold font-mono transition-colors ${activeTab === 'recent' ? 'bg-black/10 text-bg' : 'bg-surface-elevated text-muted'}`}>
+                {recentCount}
+              </span>
             </button>
           </div>
 
