@@ -137,8 +137,9 @@ export default function LibraryView({ videos, onVideoSelect }) {
               className="glass-card group cursor-pointer overflow-hidden rounded-2xl flex flex-col border border-custom-border" 
               onClick={() => handleCardClick(video)}
             >
-              <div className="aspect-video bg-surface-elevated relative overflow-hidden shrink-0">
-                <img src={video.thumbnail} alt={video.title} loading="lazy" className="w-full h-full object-cover opacity-85 transition-transform duration-500 ease-out group-hover:scale-105 group-hover:opacity-100" />
+              <div className="aspect-video bg-surface-elevated relative overflow-hidden shrink-0 flex items-center justify-center">
+                <img src={video.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover blur-md opacity-35 scale-110 pointer-events-none select-none" />
+                <img src={video.thumbnail} alt={video.title} loading="lazy" className="relative z-10 max-w-full max-h-full object-contain opacity-90 transition-transform duration-500 ease-out group-hover:scale-105 group-hover:opacity-100" />
                 <div className="absolute bottom-3 right-3 bg-black/75 backdrop-blur-sm px-2 py-1 rounded-md text-[11px] font-mono font-semibold border border-white/10 text-fg">{video.duration}</div>
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <div className="w-12 h-12 bg-accent rounded-full grid place-items-center text-bg scale-90 group-hover:scale-100 transition-transform duration-300 shadow-[0_4px_12px_var(--color-accent-muted)]">
