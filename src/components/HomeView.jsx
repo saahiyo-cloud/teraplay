@@ -179,7 +179,7 @@ export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImag
                       e.stopPropagation();
                       onDeleteVideo(video.id);
                     }}
-                    className="absolute top-2.5 left-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-rose-500 hover:text-white border border-white/10 hover:border-rose-500 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-0 group-hover:opacity-100 duration-200 text-muted hover:text-white"
+                    className="absolute top-2.5 left-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-rose-500 hover:text-white border border-white/10 hover:border-rose-500 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200 text-muted hover:text-white"
                     title="Delete Video"
                   >
                     <Trash2 size={14} />
@@ -190,7 +190,7 @@ export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImag
                       e.stopPropagation();
                       onPreviewImage({ url: video.thumbnail, title: video.title });
                     }}
-                    className="absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-black/90 text-white/80 hover:text-white border border-white/10 hover:border-white/20 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-0 group-hover:opacity-100 duration-200"
+                    className="absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-black/90 text-white/80 hover:text-white border border-white/10 hover:border-white/20 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200"
                     title="Enlarge Thumbnail"
                   >
                     <Maximize2 size={14} />
@@ -252,7 +252,7 @@ export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImag
                       e.stopPropagation();
                       onDeleteVideo(video.id);
                     }}
-                    className="absolute top-2.5 left-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-rose-500 hover:text-white border border-white/10 hover:border-rose-500 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-0 group-hover:opacity-100 duration-200 text-muted hover:text-white"
+                    className="absolute top-2.5 left-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-rose-500 hover:text-white border border-white/10 hover:border-rose-500 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200 text-muted hover:text-white"
                     title="Delete Video"
                   >
                     <Trash2 size={14} />
@@ -263,7 +263,7 @@ export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImag
                       e.stopPropagation();
                       onPreviewImage({ url: video.thumbnail, title: video.title });
                     }}
-                    className="absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-black/90 text-white/80 hover:text-white border border-white/10 hover:border-white/20 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-0 group-hover:opacity-100 duration-200"
+                    className="absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-black/90 text-white/80 hover:text-white border border-white/10 hover:border-white/20 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200"
                     title="Enlarge Thumbnail"
                   >
                     <Maximize2 size={14} />

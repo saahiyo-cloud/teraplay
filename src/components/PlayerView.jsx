@@ -4,7 +4,7 @@ import Hls from 'hls.js';
 import { 
   ChevronLeft, Play, Pause, RotateCcw, Volume2, VolumeX, Maximize2, Minimize2,
   Download, Heart, Share2, Copy, SkipForward,
-  HelpCircle, Check, AlertCircle, X
+  HelpCircle, Check, AlertCircle, X, Trash2
 } from 'lucide-react';
 import { db } from '../firebase';
 import { ref, set, get } from 'firebase/database';
@@ -49,7 +49,7 @@ class CustomLoader extends Hls.DefaultConfig.loader {
   }
 }
 
-export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload, onUpdateVideo, currentUser }) {
+export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload, onUpdateVideo, currentUser, onDeleteVideo }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const navigate = useNavigate();
@@ -1079,7 +1079,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
         <div className="grid grid-cols-2 gap-3 shrink-0">
           <a 
             href={video.downloadUrl || video.videoUrl || ''}
-            download={`${video.title}.mp4`}
+            download={video.title + ".mp4"}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => showToast('Download started', 'success')}
@@ -1090,7 +1090,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           </a>
 
           <button 
-            className={`flex items-center justify-center gap-2 p-3 rounded-xl border border-custom-border bg-surface-elevated font-semibold text-xs text-fg hover:bg-custom-border hover:-translate-y-0.5 transition-all cursor-pointer ${video.favorite ? 'border-accent text-accent' : ''}`}
+            className={"flex items-center justify-center gap-2 p-3 rounded-xl border border-custom-border bg-surface-elevated font-semibold text-xs text-fg hover:bg-custom-border hover:-translate-y-0.5 transition-all cursor-pointer " + (video.favorite ? "border-accent text-accent" : "")}
             onClick={() => {
               onToggleFavorite(video.id);
               showToast(video.favorite ? 'Removed from favorites' : 'Added to favorites', 'success');
@@ -1114,6 +1114,14 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           >
             <Copy size={16} />
             <span>Copy Link</span>
+          </button>
+
+          <button 
+            className="col-span-2 flex items-center justify-center gap-2 p-3 rounded-xl border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 font-semibold text-xs text-rose-400 hover:border-rose-500/30 transition-all cursor-pointer"
+            onClick={() => onDeleteVideo && onDeleteVideo(video.id)}
+          >
+            <Trash2 size={16} />
+            <span>Delete Video</span>
           </button>
         </div>
 

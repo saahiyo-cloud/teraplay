@@ -400,6 +400,10 @@ function AppShell() {
           setVideos(updated);
         }
         setConfirmDialog(d => ({ ...d, isOpen: false }));
+        // If we are currently playing this video, navigate to home/library
+        if (window.location.hash.includes(videoId)) {
+          navigate('/', { replace: true });
+        }
       }
     });
   };
@@ -474,6 +478,7 @@ function AppShell() {
               handleVideoSelect={handleVideoSelect}
               handleUpdateVideo={handleUpdateVideo}
               currentUser={currentUser}
+              onDeleteVideo={handleDeleteVideo}
             />
           } />
           <Route path="/library" element={
@@ -590,7 +595,7 @@ function AppShell() {
   );
 }
 
-function PlayerRouteWrapper({ videos, handleToggleFavorite, handleVideoSelect, handleUpdateVideo, currentUser }) {
+function PlayerRouteWrapper({ videos, handleToggleFavorite, handleVideoSelect, handleUpdateVideo, currentUser, onDeleteVideo }) {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -620,6 +625,7 @@ function PlayerRouteWrapper({ videos, handleToggleFavorite, handleVideoSelect, h
       onToggleFavorite={handleToggleFavorite}
       onUpdateVideo={handleUpdateVideo}
       currentUser={currentUser}
+      onDeleteVideo={onDeleteVideo}
     />
   );
 }
