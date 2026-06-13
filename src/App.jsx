@@ -56,6 +56,7 @@ function AppShell() {
 
   // Confirm dialog state
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
+  const [previewImage, setPreviewImage] = useState(null);
 
   const resolveAbortRef = useRef(null);          // for the /api/resolve call
 
@@ -428,6 +429,7 @@ function AppShell() {
               videos={videos} 
               onVideoSelect={handleVideoSelect}
               onFetch={handleFetch}
+              onPreviewImage={setPreviewImage}
             />
           } />
           <Route path="/player/:id?" element={
@@ -443,6 +445,7 @@ function AppShell() {
             <LibraryView 
               videos={videos} 
               onVideoSelect={handleVideoSelect}
+              onPreviewImage={setPreviewImage}
             />
           } />
           <Route path="/profile" element={
@@ -519,6 +522,34 @@ function AppShell() {
         onConfirm={confirmDialog.onConfirm}
         onCancel={() => setConfirmDialog(d => ({ ...d, isOpen: false }))}
       />
+
+      {/* Fullscreen Thumbnail Preview Modal */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 backdrop-blur-md z-[9999] flex flex-col items-center justify-center animate-fade-in p-4 cursor-zoom-out select-none" 
+          onClick={() => setPreviewImage(null)}
+        >
+          <button 
+            type="button"
+            onClick={() => setPreviewImage(null)} 
+            className="absolute top-6 right-6 text-white/70 hover:text-white hover:bg-white/10 rounded-full p-2.5 transition-all cursor-pointer"
+            aria-label="Close preview"
+          >
+            <X size={24} />
+          </button>
+          <div 
+            className="max-w-4xl max-h-[85vh] flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-200 cursor-default" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img 
+              src={previewImage.url} 
+              alt={previewImage.title} 
+              className="max-w-full max-h-[75vh] object-contain rounded-2xl border border-white/10 shadow-2xl"
+            />
+            <p className="text-white/90 text-sm font-semibold text-center px-4 line-clamp-2 select-text max-w-2xl">{previewImage.title}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

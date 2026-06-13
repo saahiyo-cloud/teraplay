@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link as LinkIcon, Clipboard, Zap, Info, Play, X, Maximize2 } from 'lucide-react';
 
-export default function HomeView({ videos, onVideoSelect, onFetch }) {
+export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImage }) {
   const [url, setUrl] = useState('');
   const [pasteFeedback, setPasteFeedback] = useState(false);
   const [autoFetch, setAutoFetch] = useState(() => localStorage.getItem('teraplay_autofetch') !== 'false');
-  const [previewImage, setPreviewImage] = useState(null);
   const navigate = useNavigate();
 
   const isValidLink = (value) => {
@@ -177,7 +176,7 @@ export default function HomeView({ videos, onVideoSelect, onFetch }) {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setPreviewImage({ url: video.thumbnail, title: video.title });
+                      onPreviewImage({ url: video.thumbnail, title: video.title });
                     }}
                     className="absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-black/90 text-white/80 hover:text-white border border-white/10 hover:border-white/20 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-0 group-hover:opacity-100 duration-200"
                     title="Enlarge Thumbnail"
@@ -239,7 +238,7 @@ export default function HomeView({ videos, onVideoSelect, onFetch }) {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setPreviewImage({ url: video.thumbnail, title: video.title });
+                      onPreviewImage({ url: video.thumbnail, title: video.title });
                     }}
                     className="absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-black/90 text-white/80 hover:text-white border border-white/10 hover:border-white/20 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-0 group-hover:opacity-100 duration-200"
                     title="Enlarge Thumbnail"
@@ -269,35 +268,6 @@ export default function HomeView({ videos, onVideoSelect, onFetch }) {
             ))}
           </div>
         )}
-      </section>
-
-      {/* Fullscreen Thumbnail Preview Modal */}
-      {previewImage && (
-        <div 
-          className="fixed inset-0 bg-black/90 backdrop-blur-md z-[9999] flex flex-col items-center justify-center animate-fade-in p-4 cursor-zoom-out select-none" 
-          onClick={() => setPreviewImage(null)}
-        >
-          <button 
-            type="button"
-            onClick={() => setPreviewImage(null)} 
-            className="absolute top-6 right-6 text-white/70 hover:text-white hover:bg-white/10 rounded-full p-2.5 transition-all cursor-pointer"
-            aria-label="Close preview"
-          >
-            <X size={24} />
-          </button>
-          <div 
-            className="max-w-4xl max-h-[85vh] flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-200 cursor-default" 
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img 
-              src={previewImage.url} 
-              alt={previewImage.title} 
-              className="max-w-full max-h-[75vh] object-contain rounded-2xl border border-white/10 shadow-2xl"
-            />
-            <p className="text-white/90 text-sm font-semibold text-center px-4 line-clamp-2 select-text max-w-2xl">{previewImage.title}</p>
-          </div>
         </div>
-      )}
-    </div>
   );
 }
