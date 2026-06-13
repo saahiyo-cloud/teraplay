@@ -2,9 +2,9 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Hls from 'hls.js';
 import { 
-  ChevronLeft, Play, Pause, RotateCcw, Volume2, VolumeX, Maximize2, 
-  Settings, Download, Heart, Share2, Copy, SkipBack, SkipForward,
-  HelpCircle, Check, AlertCircle 
+  ChevronLeft, Play, Pause, RotateCcw, Volume2, VolumeX, Maximize2, Minimize2,
+  Download, Heart, Share2, Copy, SkipForward,
+  HelpCircle, Check, AlertCircle, X
 } from 'lucide-react';
 import { db } from '../firebase';
 import { ref, set, get } from 'firebase/database';
@@ -66,32 +66,57 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
+  const [volume, setVolume] = useState(() => {
+    const saved = parseFloat(localStorage.getItem('teraplay_volume') ?? '1');
+    return isNaN(saved) ? 1 : saved;
+  });
   const [isMuted, setIsMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [copiedFeedback, setCopiedFeedback] = useState(false);
-  const [sharedFeedback, setSharedFeedback] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const volumeAreaRef = useRef(null);
-  // New features state
-  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // Scrubber hover tooltip
+  const [scrubHover, setScrubHover] = useState(null); // { pct, time }
+
+  // Skip feedback overlay: { dir: 'fwd'|'bwd', key: number }
+  const [skipFeedback, setSkipFeedback] = useState(null);
+
+  // Toast notifications
+  const [toasts, setToasts] = useState([]);
+  const toastIdRef = useRef(0);
+
+  // HUD play/pause animation
+  const [clickAction, setClickAction] = useState(null);
+
+  // Buffering / loading
   const [isBuffering, setIsBuffering] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [bufferingResolution, setBufferingResolution] = useState('');
+
+  // Quality / resolution
   const [currentResolution, setCurrentResolution] = useState(video.resolution || 'Auto');
   const [activeResolution, setActiveResolution] = useState('');
-  const [clickAction, setClickAction] = useState(null); // 'play' or 'pause'
-  const [ping, setPing] = useState(null);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const [qualities, setQualities] = useState([]);
+
+  // Shortcuts overlay
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // Ping
+  const [ping, setPing] = useState(null);
+
+  // Error
+  const [videoError, setVideoError] = useState(null);
+
+  // HLS fallback state
   const isUsingFallback = false;
   const hasHlsFailed = false;
-  const [qualities, setQualities] = useState([]);
-  const [videoError, setVideoError] = useState(null);
   
   const controlsTimeoutRef = useRef(null);
   const actionTimeoutRef = useRef(null);
+  const skipFeedbackTimeoutRef = useRef(null);
   const hlsRef = useRef(null);
 
   // Refs for keyboard handler — always point to the latest stable callback.
@@ -138,6 +163,24 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     setActiveResolution('');
     setVideoError(null);
   }, [video.id]);
+
+  // Toast helper
+  const showToast = useCallback((message, type = 'success') => {
+    const id = ++toastIdRef.current;
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 2800);
+  }, []);
+
+  // Sync fullscreen state from browser events (handles Esc key exit)
+  useEffect(() => {
+    const onFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
 
   // Measure latency (ping) to the API gateway in the background
   useEffect(() => {
@@ -335,13 +378,10 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
 
   const resetControlsTimer = () => {
     setShowControls(true);
-    if (controlsTimeoutRef.current) {
-      clearTimeout(controlsTimeoutRef.current);
-    }
-    if (isPlaying) {
-      controlsTimeoutRef.current = setTimeout(() => {
-        setShowControls(false);
-      }, 3000);
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    // Only auto-hide when playing and not buffering
+    if (isPlaying && !isBuffering) {
+      controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
     }
   };
 
@@ -350,8 +390,9 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     return () => {
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
       if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
+      if (skipFeedbackTimeoutRef.current) clearTimeout(skipFeedbackTimeoutRef.current);
     };
-  }, [isPlaying]);
+  }, [isPlaying, isBuffering]);
 
   const handlePlayPause = () => {
     if (!videoRef.current) return;
@@ -459,6 +500,13 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     resetControlsTimer();
   };
 
+  const handleScrubMove = (e) => {
+    if (!duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+    setScrubHover({ pct: pct * 100, time: formatTime(pct * duration) });
+  };
+
   const cycleSpeed = () => {
     const rates = [1, 1.25, 1.5, 2];
     const nextIdx = (rates.indexOf(playbackRate) + 1) % rates.length;
@@ -490,6 +538,11 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
         duration
       );
       resetControlsTimer();
+      // Show skip feedback overlay
+      const dir = seconds > 0 ? 'fwd' : 'bwd';
+      setSkipFeedback({ dir, key: Date.now() });
+      if (skipFeedbackTimeoutRef.current) clearTimeout(skipFeedbackTimeoutRef.current);
+      skipFeedbackTimeoutRef.current = setTimeout(() => setSkipFeedback(null), 600);
     }
   };
 
@@ -507,9 +560,9 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
 
   const handleCopyLink = () => {
     const linkToCopy = video.originalUrl || window.location.href;
-    navigator.clipboard.writeText(linkToCopy);
-    setCopiedFeedback(true);
-    setTimeout(() => setCopiedFeedback(false), 2000);
+    navigator.clipboard.writeText(linkToCopy)
+      .then(() => showToast('Link copied to clipboard', 'success'))
+      .catch(() => showToast('Failed to copy link', 'error'));
   };
 
   const handleShare = async () => {
@@ -522,24 +575,23 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     try {
       if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
         await navigator.share(shareData);
+        showToast('Shared successfully', 'success');
       } else {
-        // Fallback: copy to clipboard
         await navigator.clipboard.writeText(shareUrl);
+        showToast('Link copied to clipboard', 'success');
       }
     } catch (err) {
       if (err.name !== 'AbortError') {
-        // User cancelled share — silently ignore AbortError
-        console.error('Share failed:', err);
+        showToast('Share failed', 'error');
       }
     }
-    setSharedFeedback(true);
-    setTimeout(() => setSharedFeedback(false), 2000);
   };
 
   const handleVolumeChange = (e) => {
     const val = parseFloat(e.target.value);
     setVolume(val);
     setIsMuted(val === 0);
+    localStorage.setItem('teraplay_volume', val.toString());
     if (videoRef.current) {
       videoRef.current.volume = val;
       videoRef.current.muted = val === 0;
@@ -553,9 +605,11 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     videoRef.current.muted = newMuted;
     if (newMuted) {
       setVolume(0);
+      localStorage.setItem('teraplay_volume', '0');
     } else {
       const restored = volume > 0 ? volume : 1;
       setVolume(restored);
+      localStorage.setItem('teraplay_volume', restored.toString());
       videoRef.current.volume = restored;
     }
   };
@@ -563,6 +617,18 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   const handleRelatedClick = (relVideo) => {
     onVideoSelect(relVideo);
     navigate(`/player/${relVideo.id}`);
+  };
+
+  const handleVideoDoubleClick = (e) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const half = rect.width / 2;
+    if (x < half) {
+      skip(-10);
+    } else {
+      skip(10);
+    }
   };
 
   // Video Quality Switcher (Leverages HLS seamless switching or brief fallback simulation)
@@ -681,6 +747,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           src={video.videoUrl}
           className="w-full h-full object-contain cursor-pointer opacity-100"
           onClick={handlePlayPause}
+          onDoubleClick={handleVideoDoubleClick}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
           onEnded={handleEnded}
@@ -698,6 +765,25 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none select-none">
             <div className="w-20 h-20 rounded-full bg-black/55 backdrop-blur-md border border-white/10 flex items-center justify-center text-white animate-hud-ping">
               {clickAction === 'play' ? <Play fill="currentColor" size={32} className="ml-1" /> : <Pause fill="currentColor" size={32} />}
+            </div>
+          </div>
+        )}
+
+        {/* Skip feedback overlay — left/right flash on double-click or skip button */}
+        {skipFeedback && (
+          <div
+            key={skipFeedback.key}
+            className={`absolute inset-y-0 z-10 pointer-events-none flex items-center justify-center w-1/2 ${skipFeedback.dir === 'bwd' ? 'left-0' : 'right-0'}`}
+          >
+            <div className="flex flex-col items-center gap-1 animate-hud-ping">
+              <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 grid place-items-center text-white">
+                {skipFeedback.dir === 'bwd'
+                  ? <RotateCcw size={26} />
+                  : <SkipForward size={26} />}
+              </div>
+              <span className="text-white text-xs font-bold bg-black/50 px-2 py-0.5 rounded-full">
+                {skipFeedback.dir === 'bwd' ? '-10s' : '+10s'}
+              </span>
             </div>
           </div>
         )}
@@ -784,8 +870,8 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
         <div 
           className="absolute bottom-0 left-0 right-0 w-full p-2.5 md:p-4 pb-3 md:pb-5 flex flex-col gap-1.5 md:gap-2.5 bg-gradient-to-t from-black/95 via-black/55 to-transparent z-20"
           style={{ 
-            opacity: showControls && !isBuffering ? 1 : 0, 
-            pointerEvents: showControls && !isBuffering ? 'auto' : 'none',
+            opacity: showControls ? 1 : 0, 
+            pointerEvents: showControls ? 'auto' : 'none',
             transition: 'opacity 0.3s ease'
           }}
         >
@@ -798,12 +884,23 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
               step="0.1"
               value={progressPercent}
               onChange={handleScrub}
+              onMouseMove={handleScrubMove}
+              onMouseLeave={() => setScrubHover(null)}
               className="progress-slider w-full cursor-pointer accent-accent h-1 rounded-full outline-none appearance-none hover:h-1.5 transition-all duration-150"
               style={{
                 background: `linear-gradient(to right, var(--color-accent) ${progressPercent}%, oklch(100% 0 0 / 0.1) ${progressPercent}%)`
               }}
               aria-label="Playback timeline"
             />
+            {/* Hover time tooltip */}
+            {scrubHover && (
+              <div
+                className="absolute -top-8 pointer-events-none bg-black/80 backdrop-blur-sm text-white text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-md border border-white/10 whitespace-nowrap"
+                style={{ left: `calc(${scrubHover.pct}% - 18px)` }}
+              >
+                {scrubHover.time}
+              </div>
+            )}
           </div>
  
           <div className="flex justify-between items-center w-full px-1">
@@ -937,8 +1034,8 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
               </button>
 
               {/* Fullscreen toggle */}
-              <button onClick={toggleFullscreen} className="text-white hover:text-accent hover:scale-110 active:scale-95 transition-all cursor-pointer" aria-label="Fullscreen">
-                <Maximize2 size={20} />
+              <button onClick={toggleFullscreen} className="text-white hover:text-accent hover:scale-110 active:scale-95 transition-all cursor-pointer" aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}>
+                {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
               </button>
             </div>
           </div>
@@ -969,6 +1066,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
             download={`${video.title}.mp4`}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => showToast('Download started', 'success')}
             className="flex items-center justify-center gap-2 p-3 rounded-xl bg-accent text-bg font-semibold text-xs shadow-[0_4px_12px_var(--color-accent-muted)] hover:shadow-[0_8px_20px_var(--color-accent-muted)] hover:-translate-y-0.5 transition-all cursor-pointer text-center select-none"
           >
             <Download size={16} />
@@ -977,7 +1075,10 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
 
           <button 
             className={`flex items-center justify-center gap-2 p-3 rounded-xl border border-custom-border bg-surface-elevated font-semibold text-xs text-fg hover:bg-custom-border hover:-translate-y-0.5 transition-all cursor-pointer ${video.favorite ? 'border-accent text-accent' : ''}`}
-            onClick={() => onToggleFavorite(video.id)}
+            onClick={() => {
+              onToggleFavorite(video.id);
+              showToast(video.favorite ? 'Removed from favorites' : 'Added to favorites', 'success');
+            }}
           >
             <Heart size={16} fill={video.favorite ? "currentColor" : "none"} />
             <span>{video.favorite ? 'Favorited' : 'Favorite'}</span>
@@ -988,7 +1089,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
             onClick={handleShare}
           >
             <Share2 size={16} />
-            <span>{sharedFeedback ? 'Shared!' : 'Share'}</span>
+            <span>Share</span>
           </button>
           
           <button 
@@ -996,7 +1097,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
             onClick={handleCopyLink}
           >
             <Copy size={16} />
-            <span>{copiedFeedback ? 'Copied!' : 'Copy Link'}</span>
+            <span>Copy Link</span>
           </button>
         </div>
 
@@ -1028,6 +1129,19 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           </div>
         </div>
       </aside>
+
+      {/* Toast notification stack */}
+      <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 pointer-events-none">
+        {toasts.map(toast => (
+          <div
+            key={toast.id}
+            className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-surface border border-custom-border shadow-glass backdrop-blur-md text-sm font-medium text-fg animate-fade-in pointer-events-auto"
+          >
+            <span className={`w-2 h-2 rounded-full shrink-0 ${toast.type === 'error' ? 'bg-rose-400' : 'bg-emerald-400'}`} />
+            {toast.message}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
