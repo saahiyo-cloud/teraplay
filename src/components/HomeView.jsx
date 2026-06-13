@@ -68,14 +68,14 @@ export default function HomeView({ videos, onVideoSelect, onFetch }) {
         
         <form onSubmit={handleFetchSubmit} className="w-full">
           <div className="w-full max-w-2xl bg-white/5 border border-white/10 rounded-2xl md:rounded-full flex flex-col md:flex-row items-stretch md:items-center p-2.5 md:p-2 md:pl-5 md:pr-2 gap-3 shadow-glass transition-all duration-300 focus-within:border-accent/50 focus-within:bg-white/10">
-            <div className="flex items-center gap-2 flex-1 bg-white/5 border border-white/10 md:bg-transparent md:border-none rounded-xl md:rounded-none px-3 py-1.5 md:p-0">
+            <div className="flex items-center gap-2 flex-1 min-w-0 bg-white/5 border border-white/10 md:bg-transparent md:border-none rounded-xl md:rounded-none px-3 py-1.5 md:p-0">
               <LinkIcon size={18} className="text-muted shrink-0" />
               <input 
                 type="text" 
                 placeholder="Paste your TeraBox link here..." 
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                className="w-full bg-transparent border-none outline-none text-fg py-1.5 px-1 text-sm placeholder-white/30"
+                className="flex-1 min-w-0 bg-transparent border-none outline-none text-fg py-1.5 px-1 text-sm placeholder-white/30"
                 aria-label="TeraBox video link"
               />
               {url && (

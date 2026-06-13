@@ -10,9 +10,9 @@ import { db } from '../firebase';
 import { ref, set, get } from 'firebase/database';
 import { API_BASE, API_KEY } from '../config';
 
-class CustomLoader {
+class CustomLoader extends Hls.DefaultConfig.loader {
   constructor(config) {
-    this.innerLoader = new Hls.DefaultConfig.loader(config);
+    super(config);
   }
 
   load(context, config, callbacks) {
@@ -45,15 +45,7 @@ class CustomLoader {
         console.error("Error customizing HLS request URL:", e);
       }
     }
-    this.innerLoader.load(context, config, callbacks);
-  }
-
-  abort() {
-    this.innerLoader.abort();
-  }
-
-  destroy() {
-    this.innerLoader.destroy();
+    super.load(context, config, callbacks);
   }
 }
 
@@ -293,16 +285,27 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
 
         hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
           const levels = hls.levels.map((level, index) => {
-            const name = level.name || (level.height ? `${level.height}p` : `Level ${index}`);
+            let name = level.name;
+            if (!name || /^level\s+\d+$/i.test(name.trim())) {
+              if (level.height) {
+                name = `${level.height}p`;
+              } else if (level.bitrate) {
+                name = level.bitrate > 1000000 
+                  ? `${(level.bitrate / 1000000).toFixed(1)} Mbps` 
+                  : `${Math.round(level.bitrate / 1000)} kbps`;
+              } else if (video.resolution) {
+                name = video.resolution;
+              } else {
+                name = name || `Level ${index}`;
+              }
+            }
             return { id: index, name };
           });
           setQualities([{ id: -1, name: "Auto" }, ...levels]);
           setCurrentResolution("Auto");
           
-          const initialLevel = hls.levels[hls.currentLevel];
-          if (initialLevel) {
-            setActiveResolution(initialLevel.name || (initialLevel.height ? `${initialLevel.height}p` : ''));
-          }
+          const activeLvlName = levels[hls.currentLevel]?.name || levels[0]?.name || '';
+          setActiveResolution(activeLvlName);
 
           // ── Apply saved resolution preference ──
           const savedRes = localStorage.getItem('settings_resolution') || 'auto';
@@ -327,7 +330,20 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
         hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
           const currentLevel = hls.levels[data.level];
           if (currentLevel) {
-            const name = currentLevel.name || (currentLevel.height ? `${currentLevel.height}p` : '');
+            let name = currentLevel.name;
+            if (!name || /^level\s+\d+$/i.test(name.trim())) {
+              if (currentLevel.height) {
+                name = `${currentLevel.height}p`;
+              } else if (currentLevel.bitrate) {
+                name = currentLevel.bitrate > 1000000 
+                  ? `${(currentLevel.bitrate / 1000000).toFixed(1)} Mbps` 
+                  : `${Math.round(currentLevel.bitrate / 1000)} kbps`;
+              } else if (video.resolution) {
+                name = video.resolution;
+              } else {
+                name = name || `Level ${data.level}`;
+              }
+            }
             setActiveResolution(name);
             if (hls.autoLevelEnabled) {
               setBufferingResolution(name);
