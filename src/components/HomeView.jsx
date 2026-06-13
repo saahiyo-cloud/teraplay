@@ -56,7 +56,10 @@ export default function HomeView({ videos, onVideoSelect, onFetch }) {
     navigate(`/player/${video.id}`);
   };
 
-  const continueWatching = videos.filter(v => v.progress > 0 && v.progress < 100);
+  const continueWatching = videos
+    .filter(v => v.progress > 0 && v.progress < 100)
+    .sort((a, b) => new Date(b.addedDate) - new Date(a.addedDate))
+    .slice(0, 3);
   const recentlyAdded = [...videos].sort((a, b) => new Date(b.addedDate) - new Date(a.addedDate));
 
   return (
