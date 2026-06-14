@@ -162,14 +162,14 @@ export default function VideoCard({
       </div>
 
       {/* Card Description Panel */}
-      <div className="p-4 md:p-5 flex-1 flex flex-col gap-3.5 bg-surface/30 transition-transform duration-300 group-hover:translate-x-0.5">
-        <h3 className="font-semibold text-sm leading-snug line-clamp-2 text-fg group-hover:text-accent transition-colors duration-200">
+      <div className="p-3 md:p-5 flex-1 flex flex-col gap-2 md:gap-3.5 bg-surface/30 transition-transform duration-300 group-hover:translate-x-0.5">
+        <h3 className="font-semibold text-xs md:text-sm leading-snug line-clamp-2 text-fg group-hover:text-accent transition-colors duration-200">
           {video.title}
         </h3>
         
         {variant === 'discover' ? (
           /* Discover Details Panel */
-          <div className="flex justify-between items-center text-[10px] mt-auto border-t border-custom-border/40 pt-3">
+          <div className="flex justify-between items-center flex-wrap gap-y-1.5 text-[9px] md:text-[10px] mt-auto border-t border-custom-border/40 pt-2.5 md:pt-3">
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
               {video.uploader && (
                 <>
@@ -203,7 +203,7 @@ export default function VideoCard({
           </div>
         ) : (
           /* Library View Panel */
-          <div className="flex justify-between items-center text-xs text-muted mt-auto font-medium">
+          <div className="flex justify-between items-center flex-wrap gap-y-1 text-xs text-muted mt-auto font-medium">
             <span className="font-mono">{video.size}</span>
             <div className="flex items-center gap-1.5 shrink-0">
               <span className="px-1.5 py-0.5 rounded bg-accent/10 border border-accent/25 text-[8px] font-bold text-accent uppercase tracking-wider">
@@ -225,7 +225,7 @@ export function VideoCardSkeleton() {
       <div className="aspect-video bg-surface-elevated relative overflow-hidden shrink-0 flex items-center justify-center">
         <div className="absolute inset-0 bg-white/5"></div>
       </div>
-      <div className="p-4 md:p-5 flex-1 flex flex-col gap-3 bg-surface/30">
+      <div className="p-3 md:p-5 flex-1 flex flex-col gap-2 md:gap-3 bg-surface/30">
         <div className="h-4 bg-white/10 rounded w-5/6"></div>
         <div className="h-3 bg-white/5 rounded w-2/3 mt-2"></div>
         <div className="flex justify-between items-center mt-auto border-t border-custom-border/40 pt-3">

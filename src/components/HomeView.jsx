@@ -169,7 +169,7 @@ export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImag
             <h2 className="text-xl md:text-2xl font-bold tracking-tight text-fg">Continue Watching</h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
             <AnimatePresence initial={false}>
               {continueWatching.map(video => (
                 <VideoCard
@@ -205,7 +205,7 @@ export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImag
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
             <AnimatePresence initial={false}>
               {recentlyAdded.map(video => (
                 <VideoCard
