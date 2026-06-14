@@ -490,21 +490,41 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     }
   };
 
+  const handleDurationChange = () => {
+    if (videoRef.current) {
+      const dur = videoRef.current.duration;
+      if (dur && !isNaN(dur) && dur > 0 && dur !== Infinity) {
+        setDuration(dur);
+        if (onUpdateVideo) {
+          const formatted = formatTime(dur);
+          if (video.duration !== formatted) {
+            onUpdateVideo({
+              ...video,
+              duration: formatted
+            });
+          }
+        }
+      }
+    }
+  };
+
   const handleLoadedMetadata = async () => {
     if (videoRef.current) {
       const dur = videoRef.current.duration;
-      setDuration(dur);
+      if (dur && !isNaN(dur) && dur > 0 && dur !== Infinity) {
+        setDuration(dur);
+        if (onUpdateVideo) {
+          const formatted = formatTime(dur);
+          if (video.duration !== formatted) {
+            onUpdateVideo({
+              ...video,
+              duration: formatted
+            });
+          }
+        }
+      }
       if (!hlsRef.current && videoRef.current.videoHeight) {
         setActiveResolution(`${videoRef.current.videoHeight}p`);
-      }
-      if (dur && onUpdateVideo) {
-        const formatted = formatTime(dur);
-        if (video.duration !== formatted) {
-          onUpdateVideo({
-            ...video,
-            duration: formatted
-          });
-        }
       }
       // ── Restore saved playback position ──
       if (settings.rememberProgress) {
@@ -774,6 +794,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           onDoubleClick={handleVideoDoubleClick}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
+          onDurationChange={handleDurationChange}
           onEnded={handleEnded}
           onError={handleVideoError}
           onWaiting={handleWaiting}
