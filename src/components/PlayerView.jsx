@@ -49,7 +49,7 @@ class CustomLoader extends Hls.DefaultConfig.loader {
   }
 }
 
-export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload, onUpdateVideo, currentUser, onDeleteVideo, onShareVideo, settings = { autoplay: true, rememberProgress: true, resolution: 'auto' } }) {
+export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload, onUpdateVideo, onIncrementViewsAndPlays, currentUser, onDeleteVideo, onShareVideo, settings = { autoplay: true, rememberProgress: true, resolution: 'auto' } }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const navigate = useNavigate();
@@ -110,17 +110,11 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   useEffect(() => {
     if (isPlaying && !playTrackedRef.current) {
       playTrackedRef.current = true;
-      const currentPlays = typeof video.plays === 'number' ? video.plays : 0;
-      const currentViews = typeof video.views === 'number' ? video.views : 0;
-      if (onUpdateVideo) {
-        onUpdateVideo({
-          ...video,
-          plays: currentPlays + 1,
-          views: currentViews + 1
-        });
+      if (onIncrementViewsAndPlays) {
+        onIncrementViewsAndPlays(video.id);
       }
     }
-  }, [isPlaying, video.id, onUpdateVideo]);
+  }, [isPlaying, video.id, onIncrementViewsAndPlays]);
 
   useEffect(() => {
     playTrackedRef.current = false;

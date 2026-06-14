@@ -15,7 +15,7 @@ import ConfirmDialog from './components/ConfirmDialog';
 import ShareModal from './components/ShareModal';
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { ref, onValue, set, get, update } from 'firebase/database';
+import { ref, onValue, set, get, update, increment } from 'firebase/database';
 import { API_BASE, API_KEY } from './config';
 
 // Synchronously apply theme and migrate/clear mock data from localStorage
@@ -412,6 +412,12 @@ function AppShell() {
         if (publicVid.category && publicVid.category !== v.category) {
           updates.category = publicVid.category;
         }
+        if (typeof publicVid.views === 'number' && publicVid.views !== v.views) {
+          updates.views = publicVid.views;
+        }
+        if (typeof publicVid.plays === 'number' && publicVid.plays !== v.plays) {
+          updates.plays = publicVid.plays;
+        }
         
         if (Object.keys(updates).length > 0) {
           mutated = true;
@@ -789,6 +795,15 @@ function AppShell() {
     }
   };
 
+  const handleIncrementVideoViewsAndPlays = (videoId) => {
+    if (!currentUser) return;
+    const publicVideoRef = ref(db, `discoverVideos/${videoId}`);
+    update(publicVideoRef, {
+      views: increment(1),
+      plays: increment(1)
+    }).catch(err => console.error("Failed to increment views/plays atomically:", err));
+  };
+
   const handleDeleteVideo = (videoId) => {
     const vidIdStr = String(videoId);
     deletingVideoIdRef.current = vidIdStr;
@@ -939,6 +954,7 @@ function AppShell() {
               handleToggleFavorite={handleToggleFavorite}
               handleVideoSelect={handleVideoSelect}
               handleUpdateVideo={handleUpdateVideo}
+              handleIncrementVideoViewsAndPlays={handleIncrementVideoViewsAndPlays}
               currentUser={currentUser}
               onDeleteVideo={handleDeleteVideo}
               onShareVideo={setShareVideo}
@@ -1080,7 +1096,7 @@ function AppShell() {
   );
 }
 
-function PlayerRouteWrapper({ videos, discoverVideos = [], handleToggleFavorite, handleVideoSelect, handleUpdateVideo, currentUser, onDeleteVideo, onShareVideo, settings }) {
+function PlayerRouteWrapper({ videos, discoverVideos = [], handleToggleFavorite, handleVideoSelect, handleUpdateVideo, handleIncrementVideoViewsAndPlays, currentUser, onDeleteVideo, onShareVideo, settings }) {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -1117,6 +1133,7 @@ function PlayerRouteWrapper({ videos, discoverVideos = [], handleToggleFavorite,
       onBack={() => navigate(-1)}
       onToggleFavorite={handleToggleFavorite}
       onUpdateVideo={handleUpdateVideo}
+      onIncrementViewsAndPlays={handleIncrementVideoViewsAndPlays}
       currentUser={currentUser}
       onDeleteVideo={onDeleteVideo}
       onShareVideo={onShareVideo}
