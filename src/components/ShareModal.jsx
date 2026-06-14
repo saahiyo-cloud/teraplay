@@ -89,7 +89,7 @@ export default function ShareModal({ isOpen, onClose, video }) {
 
   const handleSocialShare = (platform) => {
     const url = platform.getUrl(shareUrl, video.title || 'Check out this video on iTeraPlay');
-    window.open(url, '_blank', 'noopener,noreferrer,width=600,height=500');
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
