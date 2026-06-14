@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Shield, Check, PlayCircle, Clock } from 'lucide-react';
+import { 
+  User, 
+  Mail, 
+  Shield, 
+  Check, 
+  PlayCircle, 
+  Clock, 
+  Heart, 
+  Activity,
+  Camera,
+  X
+} from 'lucide-react';
 import { auth, db } from '../firebase';
 import { updateProfile } from 'firebase/auth';
 import { ref, set, onValue } from 'firebase/database';
@@ -9,7 +21,7 @@ const PRESET_AVATARS = [
   { name: 'Classic Male', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150' },
   { name: 'Classic Female', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150' },
   { name: 'Cyber Neon', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150' },
-  { name: 'Creative Red', url: 'https://images.unsplash.com/photo-1628157582853-a796fa650a6a?auto=format&fit=crop&q=80&w=150' },
+  { name: 'Creative Red', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150' },
   { name: 'Tech Orange', url: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=150' },
   { name: 'Gradient Spark', url: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&q=80&w=150' }
 ];
@@ -27,6 +39,7 @@ export default function ProfileView({ videos = [], history = [], currentUser, on
   const [avatar, setAvatar] = useState(profile.avatar);
   const [saveFeedback, setSaveFeedback] = useState(false);
   const [errorFeedback, setErrorFeedback] = useState(null);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -41,6 +54,17 @@ export default function ProfileView({ videos = [], history = [], currentUser, on
     });
     return unsubscribe;
   }, [currentUser]);
+
+  useEffect(() => {
+    if (showAvatarModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showAvatarModal]);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -127,6 +151,8 @@ export default function ProfileView({ videos = [], history = [], currentUser, on
     });
   };
 
+  const favoriteVideosCount = videos.filter(v => v.favorite).length;
+
   return (
     <div className="animate-fade-in max-w-4xl">
       <header className="mb-10 select-none">
@@ -136,21 +162,29 @@ export default function ProfileView({ videos = [], history = [], currentUser, on
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         {/* Left Column: User & Subscription Details */}
-        <div className="md:col-span-1">
-          <div className="glass-card p-6 flex flex-col items-center text-center border border-custom-border rounded-2xl relative overflow-hidden h-full">
+        <div className="md:col-span-1 self-start">
+          <div className="glass-card p-6 flex flex-col items-center border border-custom-border rounded-2xl relative overflow-hidden h-full">
             {/* Tier Badge */}
             <div className="absolute top-4 right-4 text-accent bg-accent-muted border border-accent/20 px-2 py-0.5 rounded-lg text-[9px] font-extrabold tracking-wider uppercase flex items-center gap-1 select-none">
               <Shield size={10} fill="currentColor" />
               <span>{profile.tier}</span>
             </div>
 
-            {/* Avatar with Glow */}
-            <div className="w-24 h-24 rounded-full border-2 border-accent/40 p-1 mt-6 mb-4 shadow-[0_0_20px_var(--color-accent-muted)] shrink-0 overflow-hidden select-none">
-              <img src={avatar || profile.avatar} alt="User Avatar" className="w-full h-full object-cover rounded-full" />
+            {/* Click-to-select Avatar */}
+            <div 
+              onClick={() => setShowAvatarModal(true)}
+              className="relative w-24 h-24 rounded-full border-2 border-accent/40 p-1 mt-6 mb-4 shrink-0 cursor-pointer overflow-hidden select-none group/avatar"
+              title="Click to change profile picture"
+            >
+              <img src={avatar || profile.avatar} alt="User Avatar" className="w-full h-full object-cover rounded-full group-hover/avatar:scale-105 transition-transform duration-200" />
+              <div className="absolute inset-0 bg-black/40 rounded-full flex flex-col items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-200 text-[10px] font-semibold text-white">
+                <Camera size={16} className="mb-0.5" />
+                <span>Change</span>
+              </div>
             </div>
 
-            <h2 className="text-xl font-bold text-fg leading-tight mb-1">{profile.username}</h2>
-            <p className="text-xs text-muted mb-6">{profile.email}</p>
+            <h2 className="text-xl font-bold text-fg leading-tight mb-1 text-center">{profile.username}</h2>
+            <p className="text-xs text-muted mb-6 text-center select-all">{profile.email}</p>
 
             {/* Subscription Details List */}
             <div className="w-full pt-6 border-t border-custom-border/80 text-left mt-auto">
@@ -176,24 +210,28 @@ export default function ProfileView({ videos = [], history = [], currentUser, on
         {/* Right Column: Stats, Profile Form & Activity */}
         <div className="md:col-span-2 flex flex-col gap-6">
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="glass-card p-5 border border-custom-border rounded-2xl flex flex-col items-center text-center gap-3 hover:-translate-y-0.5 transition-all duration-200">
-              <div className="w-12 h-12 rounded-xl bg-surface-elevated border border-custom-border grid place-items-center text-accent shrink-0">
-                <PlayCircle size={22} />
-              </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="glass-card p-5 border border-custom-border rounded-2xl flex flex-col items-center text-center gap-2 hover:-translate-y-0.5 transition-all duration-200">
+              <PlayCircle size={22} className="text-accent shrink-0" />
               <div>
                 <div className="text-2xl md:text-3xl font-mono font-bold text-fg leading-tight">{history.length}</div>
-                <div className="text-[10px] md:text-xs text-muted font-semibold mt-1 uppercase tracking-widest">Total Streamed</div>
+                <div className="text-[9px] md:text-[10px] text-muted font-semibold mt-1 uppercase tracking-wider block whitespace-nowrap">Total Streamed</div>
               </div>
             </div>
 
-            <div className="glass-card p-5 border border-custom-border rounded-2xl flex flex-col items-center text-center gap-3 hover:-translate-y-0.5 transition-all duration-200">
-              <div className="w-12 h-12 rounded-xl bg-surface-elevated border border-custom-border grid place-items-center text-accent shrink-0">
-                <Clock size={22} />
-              </div>
+            <div className="glass-card p-5 border border-custom-border rounded-2xl flex flex-col items-center text-center gap-2 hover:-translate-y-0.5 transition-all duration-200">
+              <Clock size={22} className="text-accent shrink-0" />
               <div>
                 <div className="text-2xl md:text-3xl font-mono font-bold text-fg leading-tight">{formattedPlayback}</div>
-                <div className="text-[10px] md:text-xs text-muted font-semibold mt-1 uppercase tracking-widest">Playback Time</div>
+                <div className="text-[9px] md:text-[10px] text-muted font-semibold mt-1 uppercase tracking-wider block whitespace-nowrap">Playback Time</div>
+              </div>
+            </div>
+
+            <div className="glass-card p-5 border border-custom-border rounded-2xl flex flex-col items-center text-center gap-2 hover:-translate-y-0.5 transition-all duration-200">
+              <Heart size={22} className="text-accent shrink-0" />
+              <div>
+                <div className="text-2xl md:text-3xl font-mono font-bold text-fg leading-tight">{favoriteVideosCount}</div>
+                <div className="text-[9px] md:text-[10px] text-muted font-semibold mt-1 uppercase tracking-wider block whitespace-nowrap">Saved Favorites</div>
               </div>
             </div>
           </div>
@@ -233,27 +271,6 @@ export default function ProfileView({ videos = [], history = [], currentUser, on
                 </div>
               </div>
 
-              {/* Preset Avatars Selector */}
-              <div className="flex flex-col gap-3">
-                <label className="text-xs font-semibold text-muted uppercase tracking-wider select-none">Select Avatar Profile</label>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                  {PRESET_AVATARS.map(item => {
-                    const isSelected = avatar === item.url;
-                    return (
-                      <button
-                        key={item.name}
-                        type="button"
-                        onClick={() => setAvatar(item.url)}
-                        className={`aspect-square rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 ${isSelected ? 'border-accent shadow-[0_0_12px_var(--color-accent-muted)]' : 'border-custom-border opacity-70 hover:opacity-100'}`}
-                        title={item.name}
-                      >
-                        <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
               {/* Custom Avatar URL Field */}
               <div className="flex flex-col gap-2">
                 <label htmlFor="avatarUrl" className="text-xs font-semibold text-muted uppercase tracking-wider select-none">Custom Avatar URL (Optional)</label>
@@ -273,13 +290,13 @@ export default function ProfileView({ videos = [], history = [], currentUser, on
               <div className="flex items-center gap-4 mt-2">
                 <button 
                   type="submit" 
-                  className="flex items-center justify-center gap-2 px-6 py-2.5 bg-accent text-bg rounded-xl font-semibold shadow-[0_4px_12px_var(--color-accent-muted)] hover:-translate-y-0.5 hover:shadow-[0_8px_20px_var(--color-accent-muted)] transition-all cursor-pointer"
+                  className="flex items-center justify-center gap-2 px-6 py-2.5 bg-accent text-bg rounded-xl font-semibold shadow-[0_4px_12px_var(--color-accent-muted)] hover:opacity-95 transition-all cursor-pointer text-sm"
                 >
                   {saveFeedback ? <Check size={18} /> : null}
                   <span>{saveFeedback ? 'Changes Saved' : 'Save Changes'}</span>
                 </button>
                 {saveFeedback && (
-                  <span className="text-xs text-accent animate-fade-in font-medium">Successfully written to secure cloud database.</span>
+                  <span className="text-xs text-accent animate-fade-in font-medium">Successfully saved.</span>
                 )}
                 {errorFeedback && (
                   <span className="text-xs text-rose-400 animate-fade-in font-medium">{errorFeedback}</span>
@@ -336,6 +353,61 @@ export default function ProfileView({ videos = [], history = [], currentUser, on
           </div>
         </div>
       </div>
+
+      {/* Preset Avatar Selection Modal */}
+      {showAvatarModal && createPortal(
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowAvatarModal(false)}>
+          <div className="glass-card p-6 max-w-sm w-full border border-custom-border relative flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+            <button 
+              type="button"
+              onClick={() => setShowAvatarModal(false)} 
+              className="absolute top-4 right-4 text-muted hover:text-fg rounded-full p-1.5 hover:bg-white/5 transition-all cursor-pointer"
+              aria-label="Close modal"
+            >
+              <X size={18} />
+            </button>
+            
+            <div>
+              <h3 className="font-bold text-base text-fg">Select Profile Avatar</h3>
+              <p className="text-xs text-muted mt-1">Choose from our default preset avatars.</p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 my-2">
+              {PRESET_AVATARS.map(item => {
+                const isSelected = avatar === item.url;
+                return (
+                  <button
+                    key={item.name}
+                    type="button"
+                    onClick={() => {
+                      setAvatar(item.url);
+                      setShowAvatarModal(false);
+                    }}
+                    className={`relative aspect-square rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 group/btn ${isSelected ? 'border-accent' : 'border-custom-border opacity-70 hover:opacity-100'}`}
+                    title={item.name}
+                  >
+                    <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-accent/20 flex items-center justify-center">
+                        <Check size={20} className="stroke-[3.5] text-fg" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            
+            <button 
+              type="button"
+              onClick={() => setShowAvatarModal(false)}
+              className="w-full py-2 bg-surface hover:bg-white/5 border border-custom-border text-fg font-medium rounded-xl text-xs transition-all cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
