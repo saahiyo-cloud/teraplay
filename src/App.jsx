@@ -727,11 +727,26 @@ function AppShell() {
       const publicVideoRef = ref(db, `discoverVideos/${updatedVideo.id}`);
       get(publicVideoRef).then(snap => {
         if (snap.exists()) {
-          update(publicVideoRef, {
-            views: typeof updatedVideo.views === 'number' ? updatedVideo.views : 0,
-            plays: typeof updatedVideo.plays === 'number' ? updatedVideo.plays : 0,
-            duration: updatedVideo.duration || '02:00'
-          }).catch(err => console.error('Failed to update discover video views/duration:', err));
+          const dbVid = snap.val() || {};
+          const updateData = {};
+          
+          if (typeof updatedVideo.views === 'number' && updatedVideo.views > (dbVid.views || 0)) {
+            updateData.views = updatedVideo.views;
+          }
+          if (typeof updatedVideo.plays === 'number' && updatedVideo.plays > (dbVid.plays || 0)) {
+            updateData.plays = updatedVideo.plays;
+          }
+          if (updatedVideo.duration && updatedVideo.duration !== '02:00' && updatedVideo.duration !== dbVid.duration) {
+            updateData.duration = updatedVideo.duration;
+          }
+          if (updatedVideo.category && updatedVideo.category !== dbVid.category) {
+            updateData.category = updatedVideo.category;
+          }
+          
+          if (Object.keys(updateData).length > 0) {
+            console.log('[App] Updating public discover video fields:', updateData);
+            update(publicVideoRef, updateData).catch(err => console.error('Failed to update discover video fields:', err));
+          }
         }
       });
     } else {

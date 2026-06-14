@@ -493,11 +493,14 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   const handleDurationChange = () => {
     if (videoRef.current) {
       const dur = videoRef.current.duration;
+      console.log("[PlayerView] durationchange event fired. duration:", dur);
       if (dur && !isNaN(dur) && dur > 0 && dur !== Infinity) {
         setDuration(dur);
         if (onUpdateVideo) {
           const formatted = formatTime(dur);
+          console.log("[PlayerView] Formatted duration:", formatted, "current video duration:", video.duration);
           if (video.duration !== formatted) {
+            console.log("[PlayerView] Triggering onUpdateVideo with duration:", formatted);
             onUpdateVideo({
               ...video,
               duration: formatted
@@ -511,11 +514,14 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   const handleLoadedMetadata = async () => {
     if (videoRef.current) {
       const dur = videoRef.current.duration;
+      console.log("[PlayerView] loadedmetadata event fired. duration:", dur);
       if (dur && !isNaN(dur) && dur > 0 && dur !== Infinity) {
         setDuration(dur);
         if (onUpdateVideo) {
           const formatted = formatTime(dur);
+          console.log("[PlayerView] Formatted loaded duration:", formatted, "current video duration:", video.duration);
           if (video.duration !== formatted) {
+            console.log("[PlayerView] Triggering onUpdateVideo with loaded duration:", formatted);
             onUpdateVideo({
               ...video,
               duration: formatted
@@ -788,7 +794,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
       <section ref={containerRef} className="bg-black relative flex items-center justify-center overflow-hidden w-full aspect-video lg:aspect-auto lg:h-full select-none">
         <video 
           ref={videoRef}
-          src={video.videoUrl}
+          src={isHlsActive ? undefined : video.videoUrl}
           className="w-full h-full object-contain cursor-pointer opacity-100"
           onClick={handlePlayPause}
           onDoubleClick={handleVideoDoubleClick}
