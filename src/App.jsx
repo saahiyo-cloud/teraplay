@@ -15,7 +15,7 @@ import ConfirmDialog from './components/ConfirmDialog';
 import ShareModal from './components/ShareModal';
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { ref, onValue, set } from 'firebase/database';
+import { ref, onValue, set, get, update } from 'firebase/database';
 import { API_BASE, API_KEY } from './config';
 
 // Synchronously apply theme and migrate/clear mock data from localStorage
@@ -53,33 +53,27 @@ const INITIAL_VIDEOS = [];
 
 export const DISCOVER_VIDEOS = [];
 
-const calculateTopCreators = (usersData) => {
+const calculateTopCreators = (discoverVideosList) => {
   const creatorMap = {};
   
-  Object.entries(usersData).forEach(([uid, userObj]) => {
-    if (!userObj) return;
-    const profile = userObj.profile || {};
-    const videos = userObj.videos ? (Array.isArray(userObj.videos) ? userObj.videos : Object.values(userObj.videos)) : [];
-    
-    let totalViews = 0;
-    videos.forEach(v => {
-      if (v && typeof v.views === 'number') {
-        totalViews += v.views;
-      }
-    });
-
-    creatorMap[uid] = {
-      uid,
-      username: profile.username || `User_${uid.substring(0, 5)}`,
-      avatar: profile.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
-      videoCount: videos.filter(v => v && v.id).length,
-      totalViews: totalViews
-    };
+  discoverVideosList.forEach(vid => {
+    if (!vid || !vid.uploader || !vid.uploader.uid) return;
+    const uid = vid.uploader.uid;
+    if (!creatorMap[uid]) {
+      creatorMap[uid] = {
+        uid,
+        username: vid.uploader.username || `User_${uid.substring(0, 5)}`,
+        avatar: vid.uploader.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
+        videoCount: 0,
+        totalViews: 0
+      };
+    }
+    creatorMap[uid].videoCount += 1;
+    creatorMap[uid].totalViews += (typeof vid.views === 'number' ? vid.views : 0);
   });
 
   // Sort by total views desc, then by video count desc
   const sorted = Object.values(creatorMap)
-    .filter(c => c.videoCount > 0)
     .sort((a, b) => {
       if (b.totalViews !== a.totalViews) {
         return b.totalViews - a.totalViews;
@@ -144,6 +138,45 @@ function AppShell() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setAuthLoading(false);
+
+      if (user) {
+        // Run migration check: if /discoverVideos is empty, populate it from /users
+        const discoverRef = ref(db, 'discoverVideos');
+        get(discoverRef).then((snap) => {
+          if (!snap.exists() || !snap.val()) {
+            const usersRef = ref(db, 'users');
+            get(usersRef).then((usersSnap) => {
+              const usersData = usersSnap.val();
+              if (usersData) {
+                const publicVideos = {};
+                Object.entries(usersData).forEach(([uid, userObj]) => {
+                  const profile = userObj.profile || {};
+                  const videosList = userObj.videos ? (Array.isArray(userObj.videos) ? userObj.videos : Object.values(userObj.videos)) : [];
+                  videosList.forEach(vid => {
+                    if (vid && vid.id) {
+                      publicVideos[vid.id] = {
+                        ...vid,
+                        uploader: {
+                          uid: uid,
+                          username: profile.username || vid.uploader?.username || `User_${uid.substring(0, 5)}`,
+                          avatar: profile.avatar || vid.uploader?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
+                        }
+                      };
+                      delete publicVideos[vid.id].progress;
+                      delete publicVideos[vid.id].favorite;
+                    }
+                  });
+                });
+                if (Object.keys(publicVideos).length > 0) {
+                  set(discoverRef, publicVideos)
+                    .then(() => console.log('Successfully migrated videos to discoverVideos node'))
+                    .catch(err => console.error('Migration failed:', err));
+                }
+              }
+            }).catch(err => console.error('Failed to read users for migration:', err));
+          }
+        }).catch(err => console.error('Failed to read discoverVideos status:', err));
+      }
     });
     return unsubscribe;
   }, []);
@@ -324,55 +357,18 @@ function AppShell() {
     return unsubscribe;
   }, []);
 
-  // Fetch Discover Videos dynamically from all users in Realtime Database
+  // Fetch Discover Videos dynamically from Realtime Database
   useEffect(() => {
-    const usersRef = ref(db, 'users');
-    const unsubscribe = onValue(usersRef, (snapshot) => {
+    const discoverRef = ref(db, 'discoverVideos');
+    const unsubscribe = onValue(discoverRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const allVids = [];
-        Object.entries(data).forEach(([uid, userObj]) => {
-          if (userObj.videos) {
-            const videoList = Array.isArray(userObj.videos) 
-              ? userObj.videos 
-              : Object.values(userObj.videos);
-            
-            videoList.forEach(vid => {
-              if (vid && vid.id) {
-                // Read original uploader's UID, fallback to the current node owner's UID
-                const uploaderUid = vid.uploader?.uid || uid;
-                
-                // Retrieve the latest profile information directly from the database
-                const uploaderProfile = data[uploaderUid]?.profile;
-                
-                const uploaderObj = {
-                  uid: uploaderUid,
-                  username: uploaderProfile?.username || vid.uploader?.username || `User_${uploaderUid.substring(0, 5)}`,
-                  avatar: uploaderProfile?.avatar || vid.uploader?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
-                };
-                allVids.push({
-                  ...vid,
-                  uploader: uploaderObj
-                });
-              }
-            });
-          }
-        });
-
-        // Filter unique video IDs to prevent duplicates
-        const uniqueVids = [];
-        const seenIds = new Set();
-        allVids.forEach(v => {
-          if (!seenIds.has(v.id)) {
-            seenIds.add(v.id);
-            uniqueVids.push(v);
-          }
-        });
-
+        const videoList = Array.isArray(data) ? data : Object.values(data);
+        const uniqueVids = videoList.filter(vid => vid && vid.id);
         setDiscoverVideos(uniqueVids);
 
-        // Calculate and update top creators in database
-        const calculatedCreators = calculateTopCreators(data);
+        // Calculate and update top creators list in database
+        const calculatedCreators = calculateTopCreators(uniqueVids);
         set(ref(db, 'topCreators'), calculatedCreators);
       } else {
         setDiscoverVideos([]);
@@ -381,7 +377,6 @@ function AppShell() {
       console.error("Firebase Discover fetch failed:", error);
       setDiscoverVideos([]);
     });
-
     return () => unsubscribe();
   }, []);
 
@@ -617,6 +612,29 @@ function AppShell() {
       if (currentUser) {
         set(ref(db, `users/${currentUser.uid}/videos`), updatedVideos);
         set(ref(db, `users/${currentUser.uid}/history`), updatedHistory);
+
+        // Publish newly fetched videos to the public discoverVideos pool
+        newVideos.forEach(nv => {
+          const profileRef = ref(db, `users/${currentUser.uid}/profile`);
+          get(profileRef).then(snap => {
+            const profile = snap.val() || {};
+            const uploaderObj = {
+              uid: currentUser.uid,
+              username: profile.username || currentUser.displayName || `User_${currentUser.uid.substring(0, 5)}`,
+              avatar: profile.avatar || currentUser.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
+            };
+            const publicVideo = {
+              ...nv,
+              uploader: uploaderObj
+            };
+            // Remove user-specific properties
+            delete publicVideo.progress;
+            delete publicVideo.favorite;
+
+            set(ref(db, `discoverVideos/${nv.id}`), publicVideo)
+              .catch(err => console.error("Failed to post public video:", err));
+          }).catch(err => console.error("Failed to fetch user profile for discover publish:", err));
+        });
       } else {
         setVideos(updatedVideos);
         setHistory(updatedHistory);
@@ -691,6 +709,16 @@ function AppShell() {
     });
     if (currentUser) {
       set(ref(db, `users/${currentUser.uid}/videos`), updated);
+      // Also update views and plays dynamically in discoverVideos if this video exists there
+      const publicVideoRef = ref(db, `discoverVideos/${updatedVideo.id}`);
+      get(publicVideoRef).then(snap => {
+        if (snap.exists()) {
+          update(publicVideoRef, {
+            views: typeof updatedVideo.views === 'number' ? updatedVideo.views : 0,
+            plays: typeof updatedVideo.plays === 'number' ? updatedVideo.plays : 0
+          }).catch(err => console.error('Failed to update discover video views:', err));
+        }
+      });
     } else {
       setVideos(updated);
     }
