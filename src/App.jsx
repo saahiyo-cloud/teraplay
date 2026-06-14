@@ -410,28 +410,29 @@ function AppShell() {
       isOpen: true,
       title: 'Delete Video',
       message: `Are you sure you want to delete "${title}" from your library?`,
-      onConfirm: async () => {
+      onConfirm: () => {
+        setConfirmDialog(d => ({ ...d, isOpen: false }));
+        
         const currentVideos = videosRef.current;
         const currentHistory = historyRef.current;
         const updatedVideos = currentVideos.filter(v => String(v.id) !== vidIdStr);
         const updatedHistory = currentHistory.filter(h => String(h.videoId) !== vidIdStr);
 
+        // If we are currently playing this video, navigate to home immediately
+        if (window.location.hash.includes(vidIdStr)) {
+          navigate('/', { replace: true });
+        }
+
         if (currentUser) {
-          try {
-            await set(ref(db, `users/${currentUser.uid}/videos`), updatedVideos.length > 0 ? updatedVideos : null);
-            await set(ref(db, `users/${currentUser.uid}/history`), updatedHistory.length > 0 ? updatedHistory : null);
-            set(ref(db, `users/${currentUser.uid}/progress/${videoId}`), null);
-          } catch (err) {
-            console.error('Failed to delete video from database:', err);
-          }
+          set(ref(db, `users/${currentUser.uid}/videos`), updatedVideos.length > 0 ? updatedVideos : null)
+            .catch(err => console.error('Failed to delete video from database:', err));
+          set(ref(db, `users/${currentUser.uid}/history`), updatedHistory.length > 0 ? updatedHistory : null)
+            .catch(err => console.error('Failed to delete history from database:', err));
+          set(ref(db, `users/${currentUser.uid}/progress/${videoId}`), null)
+            .catch(err => console.error('Failed to delete progress from database:', err));
         } else {
           setVideos(updatedVideos);
           setHistory(updatedHistory);
-        }
-        setConfirmDialog(d => ({ ...d, isOpen: false }));
-        // If we are currently playing this video, navigate to home
-        if (window.location.hash.includes(vidIdStr)) {
-          navigate('/', { replace: true });
         }
         
         // Reset deleting ref after a brief timeout to let route transition complete
