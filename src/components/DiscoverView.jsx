@@ -5,7 +5,7 @@ import {
   Sparkles, Maximize2, Trash2, Heart, Award, User, Monitor
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-export default function DiscoverView({ videos = [], discoverVideos = [], onVideoSelect, onPreviewImage, onShareVideo, onImportVideo, currentUser }) {
+export default function DiscoverView({ videos = [], discoverVideos = [], onVideoSelect, onPreviewImage, onShareVideo, onImportVideo, currentUser, dbCategories = [], topCreators = [] }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -18,23 +18,23 @@ export default function DiscoverView({ videos = [], discoverVideos = [], onVideo
   // Setup list of unique creators from discover videos
   const creators = React.useMemo(() => {
     const list = [{ uid: 'all', username: 'All Creators', avatar: '' }];
-    const map = new Map();
-    activeDiscoverVideos.forEach(video => {
-      if (video.uploader && !map.has(video.uploader.uid)) {
-        map.set(video.uploader.uid, true);
+    topCreators.forEach(creator => {
+      if (creator && creator.uid) {
         list.push({
-          uid: video.uploader.uid,
-          username: video.uploader.username,
-          avatar: video.uploader.avatar
+          uid: creator.uid,
+          username: creator.username,
+          avatar: creator.avatar
         });
       }
     });
-    // Limit to "All Creators" + top 20 unique creators
-    return [list[0], ...list.slice(1, 21)];
-  }, [activeDiscoverVideos]);
+    return list;
+  }, [topCreators]);
 
-  // Filter categories
-  const categories = ['All', 'Trending', 'Popular', 'Recent', 'Cinema', 'Lo-Fi', 'Animation', 'Nature', 'Tech', 'Tutorials'];
+  // Filter categories: static dynamic filters + DB categories
+  const categories = React.useMemo(() => {
+    const base = ['All', 'Trending', 'Popular', 'Recent'];
+    return [...base, ...dbCategories];
+  }, [dbCategories]);
 
   // Handle toast notifications
   const triggerToast = (message) => {

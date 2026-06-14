@@ -53,6 +53,43 @@ const INITIAL_VIDEOS = [];
 
 export const DISCOVER_VIDEOS = [];
 
+const calculateTopCreators = (usersData) => {
+  const creatorMap = {};
+  
+  Object.entries(usersData).forEach(([uid, userObj]) => {
+    if (!userObj) return;
+    const profile = userObj.profile || {};
+    const videos = userObj.videos ? (Array.isArray(userObj.videos) ? userObj.videos : Object.values(userObj.videos)) : [];
+    
+    let totalViews = 0;
+    videos.forEach(v => {
+      if (v && typeof v.views === 'number') {
+        totalViews += v.views;
+      }
+    });
+
+    creatorMap[uid] = {
+      uid,
+      username: profile.username || `User_${uid.substring(0, 5)}`,
+      avatar: profile.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
+      videoCount: videos.filter(v => v && v.id).length,
+      totalViews: totalViews
+    };
+  });
+
+  // Sort by total views desc, then by video count desc
+  const sorted = Object.values(creatorMap)
+    .filter(c => c.videoCount > 0)
+    .sort((a, b) => {
+      if (b.totalViews !== a.totalViews) {
+        return b.totalViews - a.totalViews;
+      }
+      return b.videoCount - a.videoCount;
+    });
+
+  return sorted.slice(0, 10);
+};
+
 
 
 function AppShell() {
@@ -70,6 +107,8 @@ function AppShell() {
     accentColor: 'blue',
     autoFetch: true
   });
+  const [dbCategories, setDbCategories] = useState([]);
+  const [topCreators, setTopCreators] = useState([]);
 
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState(null);
@@ -254,6 +293,37 @@ function AppShell() {
     }
   }, [settings.accentColor]);
 
+  // Fetch Categories from RTDB
+  useEffect(() => {
+    const categoriesRef = ref(db, 'categories');
+    const unsubscribe = onValue(categoriesRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data && Array.isArray(data)) {
+        setDbCategories(data);
+      } else {
+        // Initialize if not present
+        const defaultCategories = ['Cinema', 'Lo-Fi', 'Animation', 'Nature', 'Tech', 'Tutorials'];
+        set(categoriesRef, defaultCategories);
+        setDbCategories(defaultCategories);
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+  // Fetch Top Creators from RTDB
+  useEffect(() => {
+    const topCreatorsRef = ref(db, 'topCreators');
+    const unsubscribe = onValue(topCreatorsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setTopCreators(Array.isArray(data) ? data : Object.values(data));
+      } else {
+        setTopCreators([]);
+      }
+    });
+    return unsubscribe;
+  }, []);
+
   // Fetch Discover Videos dynamically from all users in Realtime Database
   useEffect(() => {
     const usersRef = ref(db, 'users');
@@ -300,6 +370,10 @@ function AppShell() {
         });
 
         setDiscoverVideos(uniqueVids);
+
+        // Calculate and update top creators in database
+        const calculatedCreators = calculateTopCreators(data);
+        set(ref(db, 'topCreators'), calculatedCreators);
       } else {
         setDiscoverVideos([]);
       }
@@ -787,6 +861,8 @@ function AppShell() {
               onShareVideo={setShareVideo}
               onImportVideo={handleImportVideo}
               currentUser={currentUser}
+              dbCategories={dbCategories}
+              topCreators={topCreators}
             />
           } />
           <Route path="/library" element={
