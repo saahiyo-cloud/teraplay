@@ -102,6 +102,17 @@ function AppShell() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('teraplay_sidebar_collapsed') === 'true';
+  });
+
+  const handleToggleSidebar = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('teraplay_sidebar_collapsed', next.toString());
+      return next;
+    });
+  };
 
   const [videos, setVideos] = useState([]);
   const [history, setHistory] = useState([]);
@@ -909,7 +920,7 @@ function AppShell() {
 
   return (
     <div className="flex min-h-screen bg-bg relative text-fg">
-      <Sidebar />
+      <Sidebar isCollapsed={sidebarCollapsed} onToggleCollapse={handleToggleSidebar} />
 
       {/* Mobile Top Header */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-glass backdrop-blur-3xl border-b border-custom-border z-[90] flex items-center justify-between px-4 md:hidden select-none">
@@ -932,7 +943,7 @@ function AppShell() {
         </div>
       </header>
 
-      <main className="flex-1 md:ml-64 p-4 pt-20 md:p-10 max-w-[1400px] w-full min-h-screen pb-28 md:pb-10 box-border flex flex-col">
+      <main className={`flex-1 ${sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'} transition-all duration-300 p-4 pt-20 md:p-10 max-w-[1400px] w-full min-h-screen pb-28 md:pb-10 box-border flex flex-col`}>
         <Routes>
           <Route path="/" element={
             <HomeView 

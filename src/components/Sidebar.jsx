@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Play, Home, Layers, Heart, History, User, Settings, LogOut, Compass } from 'lucide-react';
+import { Play, Home, Layers, Heart, History, User, Settings, LogOut, Compass, ChevronLeft, ChevronRight } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 
-export default function Sidebar() {
+export default function Sidebar({ isCollapsed = false, onToggleCollapse }) {
   const location = useLocation();
   const [signOutConfirm, setSignOutConfirm] = useState(false);
 
@@ -21,82 +21,119 @@ export default function Sidebar() {
   return (
     <>
       {/* Sidebar for Desktop & Tablet */}
-      <aside className="fixed left-0 top-0 w-64 h-screen flex flex-col p-6 border-r border-custom-border bg-glass backdrop-blur-3xl z-[100] hidden md:flex">
+      <aside className={`fixed left-0 top-0 ${isCollapsed ? 'w-20 px-3 py-6' : 'w-64 p-6'} h-screen flex flex-col border-r border-custom-border bg-glass backdrop-blur-3xl z-[100] hidden md:flex transition-all duration-300`}>
+        {/* Toggle Collapse Button */}
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="absolute top-7 right-0 translate-x-1/2 z-[110] w-7 h-7 rounded-full bg-surface-elevated border border-custom-border text-muted hover:text-fg hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer shadow-glass"
+          title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+        >
+          {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        </button>
+
         <Link 
           to="/" 
-          className="flex items-center gap-3 font-bold text-xl mb-10 text-fg cursor-pointer select-none"
+          className={`flex items-center ${isCollapsed ? 'justify-center mb-8' : 'gap-3 mb-10'} font-bold text-xl text-fg cursor-pointer select-none transition-all duration-300`}
+          title="TeraPlay Home"
         >
-          <div className="w-8 h-8 bg-accent rounded-lg grid place-items-center text-bg">
+          <div className="w-8 h-8 bg-accent rounded-lg grid place-items-center text-bg shrink-0">
             <Play fill="currentColor" size={16} className="ml-0.5" />
           </div>
-          <span>TeraBox Player</span>
+          <span className={`transition-all duration-300 origin-left truncate ${isCollapsed ? 'opacity-0 w-0 scale-95 pointer-events-none' : 'opacity-100 w-auto'}`}>
+            TeraBox Player
+          </span>
         </Link>
 
         <nav className="mb-8">
-          <div className="text-[11px] uppercase tracking-widest text-muted mb-3 pl-3 select-none">Explore</div>
+          <div className={`text-[11px] uppercase tracking-widest text-muted mb-3 transition-all duration-300 truncate select-none ${isCollapsed ? 'opacity-0 h-0 mb-0 pl-0 overflow-hidden' : 'pl-3'}`}>Explore</div>
           <Link 
             to="/" 
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 mb-1 font-medium ${location.pathname === '/' ? 'bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent' : ''}`}
+            className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-3'} py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 mb-1 font-medium ${location.pathname === '/' ? 'bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent' : ''}`}
+            title={isCollapsed ? "Home" : ""}
           >
-            <Home size={20} />
-            <span>Home</span>
+            <Home size={20} className="shrink-0" />
+            <span className={`transition-all duration-300 origin-left truncate ${isCollapsed ? 'opacity-0 w-0 scale-95 pointer-events-none' : 'opacity-100 w-auto'}`}>
+              Home
+            </span>
           </Link>
           <Link 
             to="/discover" 
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 mb-1 font-medium ${location.pathname === '/discover' ? 'bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent' : ''}`}
+            className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-3'} py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 mb-1 font-medium ${location.pathname === '/discover' ? 'bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent' : ''}`}
+            title={isCollapsed ? "Discover" : ""}
           >
-            <Compass size={20} />
-            <span>Discover</span>
+            <Compass size={20} className="shrink-0" />
+            <span className={`transition-all duration-300 origin-left truncate ${isCollapsed ? 'opacity-0 w-0 scale-95 pointer-events-none' : 'opacity-100 w-auto'}`}>
+              Discover
+            </span>
           </Link>
           <Link 
             to="/library" 
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 mb-1 font-medium ${isLibraryActive('all') ? 'bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent' : ''}`}
+            className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-3'} py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 mb-1 font-medium ${isLibraryActive('all') ? 'bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent' : ''}`}
+            title={isCollapsed ? "My Library" : ""}
           >
-            <Layers size={20} />
-            <span>My Library</span>
+            <Layers size={20} className="shrink-0" />
+            <span className={`transition-all duration-300 origin-left truncate ${isCollapsed ? 'opacity-0 w-0 scale-95 pointer-events-none' : 'opacity-100 w-auto'}`}>
+              My Library
+            </span>
           </Link>
-
         </nav>
 
         <nav className="mb-8">
-          <div className="text-[11px] uppercase tracking-widest text-muted mb-3 pl-3 select-none">Library</div>
+          <div className={`text-[11px] uppercase tracking-widest text-muted mb-3 transition-all duration-300 truncate select-none ${isCollapsed ? 'opacity-0 h-0 mb-0 pl-0 overflow-hidden' : 'pl-3'}`}>Library</div>
           <Link 
             to="/library?tab=favorites" 
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 mb-1 font-medium ${isLibraryActive('favorites') ? 'bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent' : ''}`}
+            className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-3'} py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 mb-1 font-medium ${isLibraryActive('favorites') ? 'bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent' : ''}`}
+            title={isCollapsed ? "Favorites" : ""}
           >
-            <Heart size={20} />
-            <span>Favorites</span>
+            <Heart size={20} className="shrink-0" />
+            <span className={`transition-all duration-300 origin-left truncate ${isCollapsed ? 'opacity-0 w-0 scale-95 pointer-events-none' : 'opacity-100 w-auto'}`}>
+              Favorites
+            </span>
           </Link>
           <Link 
             to="/history" 
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 mb-1 font-medium ${location.pathname === '/history' ? 'bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent' : ''}`}
+            className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-3'} py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 mb-1 font-medium ${location.pathname === '/history' ? 'bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent' : ''}`}
+            title={isCollapsed ? "History" : ""}
           >
-            <History size={20} />
-            <span>History</span>
+            <History size={20} className="shrink-0" />
+            <span className={`transition-all duration-300 origin-left truncate ${isCollapsed ? 'opacity-0 w-0 scale-95 pointer-events-none' : 'opacity-100 w-auto'}`}>
+              History
+            </span>
           </Link>
         </nav>
 
         <div className="mt-auto flex flex-col gap-1">
           <Link 
             to="/profile" 
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 font-medium ${location.pathname === '/profile' ? 'bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent' : ''}`}
+            className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-3'} py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 font-medium ${location.pathname === '/profile' ? 'bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent' : ''}`}
+            title={isCollapsed ? "Profile" : ""}
           >
-            <User size={20} />
-            <span>Profile</span>
+            <User size={20} className="shrink-0" />
+            <span className={`transition-all duration-300 origin-left truncate ${isCollapsed ? 'opacity-0 w-0 scale-95 pointer-events-none' : 'opacity-100 w-auto'}`}>
+              Profile
+            </span>
           </Link>
           <Link 
             to="/settings" 
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 font-medium ${location.pathname === '/settings' ? 'bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent' : ''}`}
+            className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-3'} py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 font-medium ${location.pathname === '/settings' ? 'bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent' : ''}`}
+            title={isCollapsed ? "Settings" : ""}
           >
-            <Settings size={20} />
-            <span>Settings</span>
+            <Settings size={20} className="shrink-0" />
+            <span className={`transition-all duration-300 origin-left truncate ${isCollapsed ? 'opacity-0 w-0 scale-95 pointer-events-none' : 'opacity-100 w-auto'}`}>
+              Settings
+            </span>
           </Link>
           <button 
+            type="button"
             onClick={() => setSignOutConfirm(true)}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-rose-400/80 hover:bg-rose-500/10 hover:text-rose-400 transition-all duration-200 font-medium text-left cursor-pointer mt-1 border-none outline-none"
+            className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-3'} py-2.5 rounded-xl text-rose-400/80 hover:bg-rose-500/10 hover:text-rose-400 transition-all duration-200 font-medium text-left cursor-pointer mt-1 border-none outline-none`}
+            title={isCollapsed ? "Sign Out" : ""}
           >
-            <LogOut size={20} />
-            <span>Sign Out</span>
+            <LogOut size={20} className="shrink-0" />
+            <span className={`transition-all duration-300 origin-left truncate ${isCollapsed ? 'opacity-0 w-0 scale-95 pointer-events-none' : 'opacity-100 w-auto'}`}>
+              Sign Out
+            </span>
           </button>
         </div>
       </aside>
