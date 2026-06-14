@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Play, Home, Layers, Clock, Heart, History, User, Settings, LogOut, Compass } from 'lucide-react';
+import { Play, Home, Layers, Heart, History, User, Settings, LogOut, Compass } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 
 export default function Sidebar() {
@@ -54,13 +54,6 @@ export default function Sidebar() {
           >
             <Layers size={20} />
             <span>My Library</span>
-          </Link>
-          <Link 
-            to="/library?tab=recent" 
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 mb-1 font-medium ${isLibraryActive('recent') ? 'bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent' : ''}`}
-          >
-            <Clock size={20} />
-            <span>Recent Plays</span>
           </Link>
 
         </nav>
