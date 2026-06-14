@@ -351,6 +351,10 @@ function AppShell() {
 
   // Fetch Categories from RTDB
   useEffect(() => {
+    if (!currentUser) {
+      setDbCategories([]);
+      return;
+    }
     const categoriesRef = ref(db, 'categories');
     const unsubscribe = onValue(categoriesRef, (snapshot) => {
       const data = snapshot.val();
@@ -364,10 +368,14 @@ function AppShell() {
       }
     });
     return unsubscribe;
-  }, []);
+  }, [currentUser]);
 
   // Fetch Top Creators from RTDB
   useEffect(() => {
+    if (!currentUser) {
+      setTopCreators([]);
+      return;
+    }
     const topCreatorsRef = ref(db, 'topCreators');
     const unsubscribe = onValue(topCreatorsRef, (snapshot) => {
       const data = snapshot.val();
@@ -378,10 +386,14 @@ function AppShell() {
       }
     });
     return unsubscribe;
-  }, []);
+  }, [currentUser]);
 
   // Fetch Discover Videos dynamically from Realtime Database
   useEffect(() => {
+    if (!currentUser) {
+      setDiscoverVideos([]);
+      return;
+    }
     const discoverRef = ref(db, 'discoverVideos');
     const unsubscribe = onValue(discoverRef, (snapshot) => {
       const data = snapshot.val();
@@ -401,7 +413,7 @@ function AppShell() {
       setDiscoverVideos([]);
     });
     return () => unsubscribe();
-  }, []);
+  }, [currentUser]);
 
   // Sync public metadata updates into the current user's private library
   useEffect(() => {
