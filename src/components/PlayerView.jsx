@@ -49,7 +49,7 @@ class CustomLoader extends Hls.DefaultConfig.loader {
   }
 }
 
-export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload, onUpdateVideo, currentUser, onDeleteVideo, onShareVideo }) {
+export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload, onUpdateVideo, currentUser, onDeleteVideo, onShareVideo, settings = { autoplay: true, rememberProgress: true, resolution: 'auto' } }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const navigate = useNavigate();
@@ -332,7 +332,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           setActiveResolution(activeLvlName);
 
           // ── Apply saved resolution preference ──
-          const savedRes = localStorage.getItem('settings_resolution') || 'auto';
+          const savedRes = settings.resolution || 'auto';
           const resHeightMap = { '4k': 2160, '1080p': 1080, '720p': 720, '480p': 480 };
           const targetHeight = resHeightMap[savedRes];
           if (targetHeight) {
@@ -406,7 +406,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
 
     return () => {
       // ── Save playback position before cleanup ──
-      if (videoElement && localStorage.getItem('settings_remember_progress') !== 'false') {
+      if (videoElement && settings.rememberProgress) {
         saveProgress(videoElement.currentTime, videoElement.duration);
       }
       if (hls) {
@@ -455,7 +455,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     // Clear saved progress — video finished
     saveProgress(0, duration);
 
-    const autoplay = localStorage.getItem('settings_autoplay') !== 'false';
+    const autoplay = settings.autoplay;
     if (!autoplay || !relatedVideos || relatedVideos.length === 0) return;
 
     // Find the next playable video after the current one
@@ -507,7 +507,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
         }
       }
       // ── Restore saved playback position ──
-      if (localStorage.getItem('settings_remember_progress') !== 'false') {
+      if (settings.rememberProgress) {
         let savedTime = 0;
         if (currentUser) {
           try {

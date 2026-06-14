@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Link as LinkIcon, Clipboard, Zap, Info, Play, X, Maximize2, Trash2, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImage, onDeleteVideo, onShareVideo, currentUser }) {
+export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImage, onDeleteVideo, onShareVideo, currentUser, settings = { autoFetch: true }, onUpdateSettings }) {
   const [url, setUrl] = useState('');
   const [pasteFeedback, setPasteFeedback] = useState(false);
-  const [autoFetch, setAutoFetch] = useState(() => localStorage.getItem('teraplay_autofetch') !== 'false');
+  const autoFetch = settings.autoFetch;
   const navigate = useNavigate();
 
   const isValidLink = (value) => {
@@ -143,8 +143,9 @@ export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImag
                 type="checkbox" 
                 checked={autoFetch} 
                 onChange={(e) => {
-                  setAutoFetch(e.target.checked);
-                  localStorage.setItem('teraplay_autofetch', e.target.checked.toString());
+                  if (onUpdateSettings) {
+                    onUpdateSettings({ autoFetch: e.target.checked });
+                  }
                 }}
                 className="rounded border-white/20 bg-white/5 text-accent focus:ring-accent/50 w-3.5 h-3.5 cursor-pointer accent-accent"
               />

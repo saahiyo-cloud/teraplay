@@ -4,7 +4,7 @@ import { db } from '../firebase';
 import { ref, set, onValue } from 'firebase/database';
 import ConfirmDialog from './ConfirmDialog';
 
-const ACCENT_COLORS = [
+export const ACCENT_COLORS = [
   { name: 'blue', value: 'oklch(65% 0.18 250)', muted: 'oklch(65% 0.18 250 / 0.15)', hex: '#3b82f6' },
   { name: 'emerald', value: 'oklch(70% 0.18 140)', muted: 'oklch(70% 0.18 140 / 0.15)', hex: '#10b981' },
   { name: 'purple', value: 'oklch(65% 0.22 300)', muted: 'oklch(65% 0.22 300 / 0.15)', hex: '#8b5cf6' },
@@ -12,52 +12,38 @@ const ACCENT_COLORS = [
   { name: 'orange', value: 'oklch(68% 0.18 55)', muted: 'oklch(68% 0.18 55 / 0.15)', hex: '#f97316' }
 ];
 
-export default function SettingsView({ onResetData, currentUser }) {
-  const [selectedColor, setSelectedColor] = useState('blue');
-  const [autoplay, setAutoplay] = useState(true);
-  const [rememberProgress, setRememberProgress] = useState(true);
-  const [resolution, setResolution] = useState('auto');
+export default function SettingsView({ settings = { autoplay: true, rememberProgress: true, resolution: 'auto', accentColor: 'blue', autoFetch: true }, onUpdateSettings, onResetData, currentUser }) {
+  const [selectedColor, setSelectedColor] = useState(settings.accentColor);
+  const [autoplay, setAutoplay] = useState(settings.autoplay);
+  const [rememberProgress, setRememberProgress] = useState(settings.rememberProgress);
+  const [resolution, setResolution] = useState(settings.resolution);
 
   const [resetFeedback, setResetFeedback] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
-    // Load local storage accent
-    const savedAccent = localStorage.getItem('teraplay_accent');
-    if (savedAccent) {
-      try {
-        setSelectedColor(JSON.parse(savedAccent).name);
-      } catch (e) {
-        setSelectedColor('blue');
-      }
-    }
-
-    if (!currentUser) return;
-    const settingsRef = ref(db, `users/${currentUser.uid}/settings`);
-    const unsubscribe = onValue(settingsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        if (data.autoplay !== undefined) setAutoplay(data.autoplay);
-        if (data.rememberProgress !== undefined) setRememberProgress(data.rememberProgress);
-        if (data.resolution !== undefined) setResolution(data.resolution);
-      }
-    });
-    return unsubscribe;
-  }, [currentUser]);
+    setSelectedColor(settings.accentColor);
+    setAutoplay(settings.autoplay);
+    setRememberProgress(settings.rememberProgress);
+    setResolution(settings.resolution);
+  }, [settings]);
 
   const applyColor = (color) => {
     document.documentElement.style.setProperty('--color-accent', color.value);
     document.documentElement.style.setProperty('--color-accent-muted', color.muted);
     localStorage.setItem('teraplay_accent', JSON.stringify(color));
     setSelectedColor(color.name);
+    if (onUpdateSettings) {
+      onUpdateSettings({ accentColor: color.name });
+    }
   };
 
   const handleSaveSettings = async (e) => {
     e.preventDefault();
-    if (currentUser) {
+    if (onUpdateSettings) {
       try {
-        await set(ref(db, `users/${currentUser.uid}/settings`), {
+        await onUpdateSettings({
           autoplay,
           rememberProgress,
           resolution

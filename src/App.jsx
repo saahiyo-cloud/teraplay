@@ -7,7 +7,7 @@ import DiscoverView from './components/DiscoverView';
 import PlayerView from './components/PlayerView';
 import LibraryView from './components/LibraryView';
 import ProfileView from './components/ProfileView';
-import SettingsView from './components/SettingsView';
+import SettingsView, { ACCENT_COLORS } from './components/SettingsView';
 import HistoryView from './components/HistoryView';
 import ErrorBoundary from './components/ErrorBoundary';
 import AuthScreen from './components/AuthScreen';
@@ -63,6 +63,13 @@ function AppShell() {
   const [videos, setVideos] = useState([]);
   const [history, setHistory] = useState([]);
   const [discoverVideos, setDiscoverVideos] = useState([]);
+  const [settings, setSettings] = useState({
+    autoplay: true,
+    rememberProgress: true,
+    resolution: 'auto',
+    accentColor: 'blue',
+    autoFetch: true
+  });
 
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState(null);
@@ -164,6 +171,89 @@ function AppShell() {
     };
   }, [currentUser]);
 
+  // Sync Settings
+  useEffect(() => {
+    if (!currentUser) {
+      // Load from localStorage
+      const autoplay = localStorage.getItem('teraplay_autoplay') !== 'false';
+      const rememberProgress = localStorage.getItem('teraplay_remember_progress') !== 'false';
+      const resolution = localStorage.getItem('teraplay_resolution') || 'auto';
+      const autoFetch = localStorage.getItem('teraplay_autofetch') !== 'false';
+      
+      let accentColor = 'blue';
+      const savedAccent = localStorage.getItem('teraplay_accent');
+      if (savedAccent) {
+        try {
+          accentColor = JSON.parse(savedAccent).name || 'blue';
+        } catch (e) {
+          accentColor = 'blue';
+        }
+      }
+
+      setSettings({
+        autoplay,
+        rememberProgress,
+        resolution,
+        accentColor,
+        autoFetch
+      });
+      return;
+    }
+
+    const settingsRef = ref(db, `users/${currentUser.uid}/settings`);
+    const unsubscribe = onValue(settingsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setSettings({
+          autoplay: data.autoplay !== undefined ? data.autoplay : true,
+          rememberProgress: data.rememberProgress !== undefined ? data.rememberProgress : true,
+          resolution: data.resolution || 'auto',
+          accentColor: data.accentColor || 'blue',
+          autoFetch: data.autoFetch !== undefined ? data.autoFetch : true
+        });
+      } else {
+        // First-time logged-in user: migrate from localStorage if present
+        const autoplay = localStorage.getItem('teraplay_autoplay') !== 'false';
+        const rememberProgress = localStorage.getItem('teraplay_remember_progress') !== 'false';
+        const resolution = localStorage.getItem('teraplay_resolution') || 'auto';
+        const autoFetch = localStorage.getItem('teraplay_autofetch') !== 'false';
+        
+        let accentColor = 'blue';
+        const savedAccent = localStorage.getItem('teraplay_accent');
+        if (savedAccent) {
+          try {
+            accentColor = JSON.parse(savedAccent).name || 'blue';
+          } catch (e) {
+            accentColor = 'blue';
+          }
+        }
+
+        const initialSettings = {
+          autoplay,
+          rememberProgress,
+          resolution,
+          accentColor,
+          autoFetch
+        };
+        set(settingsRef, initialSettings);
+        setSettings(initialSettings);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [currentUser]);
+
+  // Apply accent color theme whenever settings change
+  useEffect(() => {
+    if (!settings.accentColor) return;
+    const color = ACCENT_COLORS.find(c => c.name === settings.accentColor);
+    if (color) {
+      document.documentElement.style.setProperty('--color-accent', color.value);
+      document.documentElement.style.setProperty('--color-accent-muted', color.muted);
+      localStorage.setItem('teraplay_accent', JSON.stringify(color));
+    }
+  }, [settings.accentColor]);
+
   // Fetch Discover Videos dynamically from all users in Realtime Database
   useEffect(() => {
     const usersRef = ref(db, 'users');
@@ -179,10 +269,16 @@ function AppShell() {
             
             videoList.forEach(vid => {
               if (vid && vid.id) {
-                const uploaderObj = vid.uploader || {
-                  uid: uid,
-                  username: userObj.profile?.username || `User_${uid.substring(0, 5)}`,
-                  avatar: userObj.profile?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
+                // Read original uploader's UID, fallback to the current node owner's UID
+                const uploaderUid = vid.uploader?.uid || uid;
+                
+                // Retrieve the latest profile information directly from the database
+                const uploaderProfile = data[uploaderUid]?.profile;
+                
+                const uploaderObj = {
+                  uid: uploaderUid,
+                  username: uploaderProfile?.username || vid.uploader?.username || `User_${uploaderUid.substring(0, 5)}`,
+                  avatar: uploaderProfile?.avatar || vid.uploader?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
                 };
                 allVids.push({
                   ...vid,
@@ -574,15 +670,43 @@ function AppShell() {
     });
   };
 
+  const handleUpdateSettings = (newSettings) => {
+    setSettings(prev => {
+      const updated = { ...prev, ...newSettings };
+      if (currentUser) {
+        set(ref(db, `users/${currentUser.uid}/settings`), updated);
+      } else {
+        localStorage.setItem('teraplay_autoplay', updated.autoplay.toString());
+        localStorage.setItem('teraplay_remember_progress', updated.rememberProgress.toString());
+        localStorage.setItem('teraplay_resolution', updated.resolution);
+        localStorage.setItem('teraplay_autofetch', updated.autoFetch.toString());
+      }
+      return updated;
+    });
+  };
+
   const handleResetData = () => {
     if (currentUser) {
       set(ref(db, `users/${currentUser.uid}/videos`), null);
       set(ref(db, `users/${currentUser.uid}/history`), null);
+      set(ref(db, `users/${currentUser.uid}/settings`), null);
     } else {
       localStorage.removeItem('teraplay_videos');
       localStorage.removeItem('teraplay_history');
+      localStorage.removeItem('teraplay_autoplay');
+      localStorage.removeItem('teraplay_remember_progress');
+      localStorage.removeItem('teraplay_resolution');
+      localStorage.removeItem('teraplay_autofetch');
+      localStorage.removeItem('teraplay_accent');
       setVideos(INITIAL_VIDEOS);
       setHistory([]);
+      setSettings({
+        autoplay: true,
+        rememberProgress: true,
+        resolution: 'auto',
+        accentColor: 'blue',
+        autoFetch: true
+      });
     }
   };
 
@@ -637,6 +761,8 @@ function AppShell() {
               onDeleteVideo={handleDeleteVideo}
               onShareVideo={setShareVideo}
               currentUser={currentUser}
+              settings={settings}
+              onUpdateSettings={handleUpdateSettings}
             />
           } />
           <Route path="/player/:id?" element={
@@ -649,6 +775,7 @@ function AppShell() {
               currentUser={currentUser}
               onDeleteVideo={handleDeleteVideo}
               onShareVideo={setShareVideo}
+              settings={settings}
             />
           } />
           <Route path="/discover" element={
@@ -675,7 +802,7 @@ function AppShell() {
             <ProfileView videos={videos} history={history} currentUser={currentUser} onVideoSelect={handleVideoSelect} />
           } />
           <Route path="/settings" element={
-            <SettingsView onResetData={handleResetData} currentUser={currentUser} />
+            <SettingsView settings={settings} onUpdateSettings={handleUpdateSettings} onResetData={handleResetData} currentUser={currentUser} />
           } />
           <Route path="/history" element={
             <HistoryView 
@@ -784,7 +911,7 @@ function AppShell() {
   );
 }
 
-function PlayerRouteWrapper({ videos, discoverVideos = [], handleToggleFavorite, handleVideoSelect, handleUpdateVideo, currentUser, onDeleteVideo, onShareVideo }) {
+function PlayerRouteWrapper({ videos, discoverVideos = [], handleToggleFavorite, handleVideoSelect, handleUpdateVideo, currentUser, onDeleteVideo, onShareVideo, settings }) {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -824,6 +951,7 @@ function PlayerRouteWrapper({ videos, discoverVideos = [], handleToggleFavorite,
       currentUser={currentUser}
       onDeleteVideo={onDeleteVideo}
       onShareVideo={onShareVideo}
+      settings={settings}
     />
   );
 }
