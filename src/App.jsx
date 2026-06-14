@@ -392,6 +392,41 @@ function AppShell() {
     return () => unsubscribe();
   }, []);
 
+  // Sync public metadata updates into the current user's private library
+  useEffect(() => {
+    if (!currentUser || !videos || videos.length === 0 || !discoverVideos || discoverVideos.length === 0) {
+      return;
+    }
+    
+    let mutated = false;
+    const synced = videos.map(v => {
+      const publicVid = discoverVideos.find(pv => String(pv.id) === String(v.id));
+      if (publicVid) {
+        const updates = {};
+        if (publicVid.duration && publicVid.duration !== '02:00' && publicVid.duration !== v.duration) {
+          updates.duration = publicVid.duration;
+        }
+        if (publicVid.resolution && publicVid.resolution !== 'Auto' && publicVid.resolution !== v.resolution) {
+          updates.resolution = publicVid.resolution;
+        }
+        if (publicVid.category && publicVid.category !== v.category) {
+          updates.category = publicVid.category;
+        }
+        
+        if (Object.keys(updates).length > 0) {
+          mutated = true;
+          return { ...v, ...updates };
+        }
+      }
+      return v;
+    });
+
+    if (mutated) {
+      console.log('[App] Syncing public video metadata changes to private library');
+      set(ref(db, `users/${currentUser.uid}/videos`), synced);
+    }
+  }, [currentUser, videos, discoverVideos]);
+
   const handleVideoSelect = (video) => {
     const currentVideos = videosRef.current;
     const currentHistory = historyRef.current;
