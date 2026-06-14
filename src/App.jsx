@@ -11,6 +11,7 @@ import HistoryView from './components/HistoryView';
 import ErrorBoundary from './components/ErrorBoundary';
 import AuthScreen from './components/AuthScreen';
 import ConfirmDialog from './components/ConfirmDialog';
+import ShareModal from './components/ShareModal';
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { ref, onValue, set } from 'firebase/database';
@@ -36,6 +37,15 @@ import { API_BASE, API_KEY } from './config';
     localStorage.removeItem('teraplay_history');
     localStorage.setItem('teraplay_mock_cleaned_v2', 'true');
   }
+
+  // Handle share link redirect: /?id=VIDEO_ID → /#/player/VIDEO_ID
+  const params = new URLSearchParams(window.location.search);
+  const sharedVideoId = params.get('id');
+  if (sharedVideoId) {
+    // Clean the query param from the URL and redirect to the hash route
+    window.history.replaceState(null, '', window.location.pathname);
+    window.location.hash = `/player/${sharedVideoId}`;
+  }
 })();
 
 const INITIAL_VIDEOS = [];
@@ -57,6 +67,7 @@ function AppShell() {
   // Confirm dialog state
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
   const [previewImage, setPreviewImage] = useState(null);
+  const [shareVideo, setShareVideo] = useState(null);
 
   const resolveAbortRef = useRef(null);          // for the /api/resolve call
 
@@ -510,6 +521,7 @@ function AppShell() {
               onFetch={handleFetch}
               onPreviewImage={setPreviewImage}
               onDeleteVideo={handleDeleteVideo}
+              onShareVideo={setShareVideo}
             />
           } />
           <Route path="/player/:id?" element={
@@ -520,6 +532,7 @@ function AppShell() {
               handleUpdateVideo={handleUpdateVideo}
               currentUser={currentUser}
               onDeleteVideo={handleDeleteVideo}
+              onShareVideo={setShareVideo}
             />
           } />
           <Route path="/library" element={
@@ -528,6 +541,7 @@ function AppShell() {
               onVideoSelect={handleVideoSelect}
               onPreviewImage={setPreviewImage}
               onDeleteVideo={handleDeleteVideo}
+              onShareVideo={setShareVideo}
             />
           } />
           <Route path="/profile" element={
@@ -605,6 +619,13 @@ function AppShell() {
         onCancel={confirmDialog.onCancel || (() => setConfirmDialog(d => ({ ...d, isOpen: false })))}
       />
 
+      {/* Share Video Modal */}
+      <ShareModal
+        isOpen={!!shareVideo}
+        onClose={() => setShareVideo(null)}
+        video={shareVideo}
+      />
+
       {/* Fullscreen Thumbnail Preview Modal */}
       {previewImage && (
         <div 
@@ -636,7 +657,7 @@ function AppShell() {
   );
 }
 
-function PlayerRouteWrapper({ videos, handleToggleFavorite, handleVideoSelect, handleUpdateVideo, currentUser, onDeleteVideo }) {
+function PlayerRouteWrapper({ videos, handleToggleFavorite, handleVideoSelect, handleUpdateVideo, currentUser, onDeleteVideo, onShareVideo }) {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -667,6 +688,7 @@ function PlayerRouteWrapper({ videos, handleToggleFavorite, handleVideoSelect, h
       onUpdateVideo={handleUpdateVideo}
       currentUser={currentUser}
       onDeleteVideo={onDeleteVideo}
+      onShareVideo={onShareVideo}
     />
   );
 }

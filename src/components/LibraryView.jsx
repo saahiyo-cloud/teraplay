@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, Filter, Layers, Play, Maximize2, X, Trash2 } from 'lucide-react';
+import { Search, Filter, Layers, Play, Maximize2, X, Trash2, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onDeleteVideo }) {
+export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onDeleteVideo, onShareVideo }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = useState('date');
   const [searchParams, setSearchParams] = useSearchParams();
@@ -157,6 +157,17 @@ export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onD
                     title="Delete Video"
                   >
                     <Trash2 size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onShareVideo(video);
+                    }}
+                    className="absolute top-2.5 left-12 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-accent hover:text-bg border border-white/10 hover:border-accent hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200 text-muted hover:text-white"
+                    title="Share Video"
+                  >
+                    <Share2 size={14} />
                   </button>
                   <button
                     type="button"

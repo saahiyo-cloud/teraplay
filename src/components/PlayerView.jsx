@@ -49,7 +49,7 @@ class CustomLoader extends Hls.DefaultConfig.loader {
   }
 }
 
-export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload, onUpdateVideo, currentUser, onDeleteVideo }) {
+export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload, onUpdateVideo, currentUser, onDeleteVideo, onShareVideo }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const navigate = useNavigate();
@@ -581,25 +581,9 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
       .catch(() => showToast('Failed to copy link', 'error'));
   };
 
-  const handleShare = async () => {
-    const shareUrl = video.originalUrl || window.location.href;
-    const shareData = {
-      title: video.title,
-      text: `Watch "${video.title}" on TeraPlay`,
-      url: shareUrl,
-    };
-    try {
-      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-        await navigator.share(shareData);
-        showToast('Shared successfully', 'success');
-      } else {
-        await navigator.clipboard.writeText(shareUrl);
-        showToast('Link copied to clipboard', 'success');
-      }
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        showToast('Share failed', 'error');
-      }
+  const handleShare = () => {
+    if (onShareVideo) {
+      onShareVideo(video);
     }
   };
 
