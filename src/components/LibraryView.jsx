@@ -65,7 +65,7 @@ export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onD
   const recentCount = videos.filter(v => v.progress > 0).length;
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in flex-1 flex flex-col">
       <header className="mb-10">
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-fg mb-6 flex items-baseline gap-3 select-none">
           <span>My Library</span>
@@ -185,7 +185,7 @@ export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onD
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-24 px-6 text-center border border-dashed border-custom-border rounded-3xl bg-white/[0.01]">
+        <div className="flex-1 flex flex-col items-center justify-center py-24 px-6 text-center border border-dashed border-custom-border rounded-3xl bg-white/[0.01]">
           <div className="w-16 h-16 bg-surface-elevated border border-custom-border rounded-full grid place-items-center mb-6 text-muted">
             <Layers size={28} />
           </div>

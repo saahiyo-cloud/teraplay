@@ -306,10 +306,10 @@ export default function ProfileView({ videos = [], history = [], currentUser, on
           </div>
 
           {/* Recent Watch Activity Feed */}
-          <div className="glass-card p-6 border border-custom-border rounded-2xl">
+          <div className="glass-card p-6 border border-custom-border rounded-2xl flex flex-col flex-1">
             <h3 className="font-bold text-lg text-fg mb-4 select-none">Recent Watch Activity</h3>
             {history.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-8 border border-dashed border-custom-border rounded-2xl bg-white/[0.01] text-center gap-2 select-none">
+              <div className="flex-1 flex flex-col items-center justify-center p-8 border border-dashed border-custom-border rounded-2xl bg-white/[0.01] text-center gap-2 select-none">
                 <p className="text-sm text-muted">No recently played videos found.</p>
               </div>
             ) : (

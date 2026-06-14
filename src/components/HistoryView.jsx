@@ -102,7 +102,7 @@ export default function HistoryView({ history, onClearHistory, onRemoveItem, onP
   };
 
   return (
-    <div className="animate-fade-in max-w-4xl">
+    <div className="animate-fade-in max-w-4xl flex-1 flex flex-col">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-10">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-fg">Watch History</h1>
@@ -126,7 +126,7 @@ export default function HistoryView({ history, onClearHistory, onRemoveItem, onP
           {renderHistoryList(earlier, 'Earlier')}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-24 px-6 text-center border border-dashed border-custom-border rounded-3xl bg-white/[0.01]">
+        <div className="flex-1 flex flex-col items-center justify-center py-24 px-6 text-center border border-dashed border-custom-border rounded-3xl bg-white/[0.01]">
           <div className="w-16 h-16 bg-surface-elevated border border-custom-border rounded-full grid place-items-center mb-6 text-muted">
             <EyeOff size={28} />
           </div>

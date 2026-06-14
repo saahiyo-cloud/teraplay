@@ -64,7 +64,7 @@ export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImag
   const recentlyAdded = [...videos].sort((a, b) => new Date(b.addedDate) - new Date(a.addedDate));
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in flex-1 flex flex-col">
       <header className="rounded-3xl p-6 md:p-10 mb-12 border border-custom-border bg-[radial-gradient(circle_at_100%_0%,var(--color-accent-muted),transparent_40%)] bg-surface shadow-glass relative overflow-hidden flex flex-col justify-center">
         <p className="text-muted mb-6 text-sm font-medium">
           Paste your TeraBox, Dubox, or Teraboxapp link below to stream instantly.
@@ -218,13 +218,13 @@ export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImag
         </section>
       )}
 
-      <section className="mb-12">
+      <section className="mb-12 flex-1 flex flex-col">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl md:text-2xl font-bold tracking-tight text-fg">Recently Added</h2>
         </div>
 
         {recentlyAdded.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-12 border border-dashed border-custom-border rounded-3xl bg-surface/50 text-center gap-4 animate-fade-in select-none">
+          <div className="flex-1 flex flex-col items-center justify-center p-12 border border-dashed border-custom-border rounded-3xl bg-surface/50 text-center gap-4 animate-fade-in select-none">
             <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/20 grid place-items-center text-accent">
               <Play size={24} className="ml-0.5" />
             </div>

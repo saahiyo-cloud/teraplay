@@ -500,7 +500,7 @@ function AppShell() {
         </div>
       </header>
 
-      <main className="flex-1 md:ml-64 p-4 pt-20 md:p-10 max-w-[1400px] w-full min-h-screen pb-28 md:pb-10 box-border">
+      <main className="flex-1 md:ml-64 p-4 pt-20 md:p-10 max-w-[1400px] w-full min-h-screen pb-28 md:pb-10 box-border flex flex-col">
         <Routes>
           <Route path="/" element={
             <HomeView 
