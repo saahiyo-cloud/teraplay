@@ -7,7 +7,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { DISCOVER_VIDEOS } from '../App';
 
-export default function DiscoverView({ videos = [], onVideoSelect, onPreviewImage, onShareVideo, onImportVideo, currentUser }) {
+export default function DiscoverView({ videos = [], discoverVideos = [], onVideoSelect, onPreviewImage, onShareVideo, onImportVideo, currentUser }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -15,11 +15,13 @@ export default function DiscoverView({ videos = [], onVideoSelect, onPreviewImag
   const [sortKey, setSortKey] = useState('date');
   const [toasts, setToasts] = useState([]);
 
+  const activeDiscoverVideos = discoverVideos && discoverVideos.length > 0 ? discoverVideos : DISCOVER_VIDEOS;
+
   // Setup list of unique creators from discover videos
   const creators = React.useMemo(() => {
     const list = [{ uid: 'all', username: 'All Creators', avatar: '' }];
     const map = new Map();
-    DISCOVER_VIDEOS.forEach(video => {
+    activeDiscoverVideos.forEach(video => {
       if (video.uploader && !map.has(video.uploader.uid)) {
         map.set(video.uploader.uid, true);
         list.push({
@@ -31,7 +33,7 @@ export default function DiscoverView({ videos = [], onVideoSelect, onPreviewImag
     });
     // Limit to "All Creators" + top 20 unique creators
     return [list[0], ...list.slice(1, 21)];
-  }, []);
+  }, [activeDiscoverVideos]);
 
   // Filter categories
   const categories = ['All', 'Trending', 'Popular', 'Recent', 'Cinema', 'Lo-Fi', 'Animation', 'Nature', 'Tech', 'Tutorials'];
@@ -66,7 +68,7 @@ export default function DiscoverView({ videos = [], onVideoSelect, onPreviewImag
 
 
   // Filtering and sorting discover videos
-  let filtered = [...DISCOVER_VIDEOS];
+  let filtered = [...activeDiscoverVideos];
 
   // Apply search query
   if (searchQuery.trim()) {
@@ -193,7 +195,7 @@ export default function DiscoverView({ videos = [], onVideoSelect, onPreviewImag
           <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-none snap-x snap-mandatory select-none">
             {creators.map(creator => {
               const isSelected = selectedCreator === creator.uid;
-              const count = creators.indexOf(creator) === 0 ? DISCOVER_VIDEOS.length : DISCOVER_VIDEOS.filter(v => v.uploader.uid === creator.uid).length;
+              const count = creators.indexOf(creator) === 0 ? activeDiscoverVideos.length : activeDiscoverVideos.filter(v => v.uploader.uid === creator.uid).length;
               return (
                 <button
                   key={creator.uid}

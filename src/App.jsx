@@ -224,6 +224,7 @@ function AppShell() {
 
   const [videos, setVideos] = useState([]);
   const [history, setHistory] = useState([]);
+  const [discoverVideos, setDiscoverVideos] = useState([]);
 
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState(null);
@@ -239,6 +240,7 @@ function AppShell() {
   // Refs to prevent stale state issues in callback functions
   const videosRef = useRef([]);
   const historyRef = useRef([]);
+  const discoverVideosRef = useRef([]);
   const deletingVideoIdRef = useRef(null);
 
   useEffect(() => {
@@ -248,6 +250,10 @@ function AppShell() {
   useEffect(() => {
     historyRef.current = history;
   }, [history]);
+
+  useEffect(() => {
+    discoverVideosRef.current = discoverVideos;
+  }, [discoverVideos]);
 
   // Auth State Listener
   useEffect(() => {
@@ -320,6 +326,61 @@ function AppShell() {
     };
   }, [currentUser]);
 
+  // Fetch Discover Videos dynamically from all users in Realtime Database
+  useEffect(() => {
+    const usersRef = ref(db, 'users');
+    const unsubscribe = onValue(usersRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const allVids = [];
+        Object.entries(data).forEach(([uid, userObj]) => {
+          if (userObj.videos) {
+            const videoList = Array.isArray(userObj.videos) 
+              ? userObj.videos 
+              : Object.values(userObj.videos);
+            
+            videoList.forEach(vid => {
+              if (vid && vid.id) {
+                const uploaderObj = vid.uploader || {
+                  uid: uid,
+                  username: userObj.profile?.username || `User_${uid.substring(0, 5)}`,
+                  avatar: userObj.profile?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
+                };
+                allVids.push({
+                  ...vid,
+                  uploader: uploaderObj
+                });
+              }
+            });
+          }
+        });
+
+        // Filter unique video IDs to prevent duplicates
+        const uniqueVids = [];
+        const seenIds = new Set();
+        allVids.forEach(v => {
+          if (!seenIds.has(v.id)) {
+            seenIds.add(v.id);
+            uniqueVids.push(v);
+          }
+        });
+
+        if (uniqueVids.length > 0) {
+          setDiscoverVideos(uniqueVids);
+        } else {
+          setDiscoverVideos(DISCOVER_VIDEOS);
+        }
+      } else {
+        setDiscoverVideos(DISCOVER_VIDEOS);
+      }
+    }, (error) => {
+      console.error("Firebase Discover fetch failed:", error);
+      setDiscoverVideos(DISCOVER_VIDEOS);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const handleVideoSelect = (video) => {
     const currentVideos = videosRef.current;
     const currentHistory = historyRef.current;
@@ -391,8 +452,9 @@ function AppShell() {
     const exists = currentVideos.some(v => String(v.id) === vidIdStr);
     
     if (!exists) {
-      // Look up in DISCOVER_VIDEOS and import as favorited
-      const discVid = DISCOVER_VIDEOS.find(v => String(v.id) === vidIdStr);
+      // Look up in discoverVideos or DISCOVER_VIDEOS and import as favorited
+      const activeDiscover = discoverVideosRef.current.length > 0 ? discoverVideosRef.current : DISCOVER_VIDEOS;
+      const discVid = activeDiscover.find(v => String(v.id) === vidIdStr);
       if (discVid) {
         handleImportVideo({ ...discVid, favorite: true });
         return;
@@ -746,6 +808,7 @@ function AppShell() {
           <Route path="/player/:id?" element={
             <PlayerRouteWrapper 
               videos={videos} 
+              discoverVideos={discoverVideos}
               handleToggleFavorite={handleToggleFavorite}
               handleVideoSelect={handleVideoSelect}
               handleUpdateVideo={handleUpdateVideo}
@@ -757,6 +820,7 @@ function AppShell() {
           <Route path="/discover" element={
             <DiscoverView 
               videos={videos} 
+              discoverVideos={discoverVideos}
               onVideoSelect={handleVideoSelect}
               onPreviewImage={setPreviewImage}
               onShareVideo={setShareVideo}
@@ -886,15 +950,17 @@ function AppShell() {
   );
 }
 
-function PlayerRouteWrapper({ videos, handleToggleFavorite, handleVideoSelect, handleUpdateVideo, currentUser, onDeleteVideo, onShareVideo }) {
+function PlayerRouteWrapper({ videos, discoverVideos = [], handleToggleFavorite, handleVideoSelect, handleUpdateVideo, currentUser, onDeleteVideo, onShareVideo }) {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const activeVideoId = id || (videos.length > 0 ? videos[0].id : (DISCOVER_VIDEOS.length > 0 ? DISCOVER_VIDEOS[0].id : null));
+  const activeDiscover = discoverVideos.length > 0 ? discoverVideos : DISCOVER_VIDEOS;
+
+  const activeVideoId = id || (videos.length > 0 ? videos[0].id : (activeDiscover.length > 0 ? activeDiscover[0].id : null));
   
   let activeVideo = videos.find(v => String(v.id) === String(activeVideoId));
   if (!activeVideo) {
-    activeVideo = DISCOVER_VIDEOS.find(v => String(v.id) === String(activeVideoId));
+    activeVideo = activeDiscover.find(v => String(v.id) === String(activeVideoId));
   }
 
   if (!activeVideo) {
@@ -911,7 +977,7 @@ function PlayerRouteWrapper({ videos, handleToggleFavorite, handleVideoSelect, h
     );
   }
 
-  const combinedRelated = [...videos, ...DISCOVER_VIDEOS.filter(dv => !videos.some(v => String(v.id) === String(dv.id)))];
+  const combinedRelated = [...videos, ...activeDiscover.filter(dv => !videos.some(v => String(v.id) === String(dv.id)))];
 
   return (
     <PlayerView 
