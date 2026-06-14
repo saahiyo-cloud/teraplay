@@ -1083,11 +1083,11 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           </div>
 
           {/* Interactive Category Selector with Dropdown */}
-          <div className="mt-5 flex flex-col gap-2 relative">
+          <div className="mt-5 flex flex-col gap-2 relative w-fit">
             <div className="text-[10px] font-bold text-muted uppercase tracking-wider pl-0.5">Category</div>
             <button 
               onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-              className="w-full flex items-center justify-between gap-2 px-4 py-2.5 bg-surface-elevated hover:bg-surface-elevated/85 border border-custom-border hover:border-muted rounded-xl text-xs font-semibold text-fg transition-all cursor-pointer text-left shadow-glass"
+              className="w-fit flex items-center justify-between gap-6 px-4 py-2 bg-surface-elevated hover:bg-surface-elevated/85 border border-custom-border hover:border-muted rounded-xl text-xs font-semibold text-fg transition-all cursor-pointer text-left shadow-glass"
             >
               <span className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent animate-[pulse_2s_infinite] glow-accent"></span>
@@ -1096,7 +1096,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
               <span className="text-accent text-[10px] font-bold">Edit</span>
             </button>
             {showCategoryDropdown && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-surface-elevated border border-custom-border rounded-xl shadow-glass z-[100] p-1 flex flex-col gap-0.5 max-h-48 overflow-y-auto">
+              <div className="absolute top-full left-0 mt-2 bg-surface-elevated border border-custom-border rounded-xl shadow-glass z-[100] p-1 flex flex-col gap-0.5 max-h-48 overflow-y-auto min-w-[150px]">
                 {['General', 'Cinema', 'Lo-Fi', 'Animation', 'Nature', 'Tech', 'Tutorials'].map(cat => (
                   <button
                     key={cat}
