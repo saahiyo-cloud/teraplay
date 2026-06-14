@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Play, Home, Layers, Clock, Heart, History, User, Settings, LogOut } from 'lucide-react';
+import { Play, Home, Layers, Clock, Heart, History, User, Settings, LogOut, Compass } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 
 export default function Sidebar() {
@@ -40,6 +40,13 @@ export default function Sidebar() {
           >
             <Home size={20} />
             <span>Home</span>
+          </Link>
+          <Link 
+            to="/discover" 
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 mb-1 font-medium ${location.pathname === '/discover' ? 'bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent' : ''}`}
+          >
+            <Compass size={20} />
+            <span>Discover</span>
           </Link>
           <Link 
             to="/library" 
@@ -109,6 +116,13 @@ export default function Sidebar() {
         >
           <Home size={22} />
           <span className="text-[10px]">Home</span>
+        </Link>
+        <Link 
+          to="/discover" 
+          className={`flex flex-col items-center justify-center gap-1 px-3 py-1.5 rounded-xl text-muted hover:text-fg transition-all duration-200 ${location.pathname === '/discover' ? 'text-accent bg-accent-muted' : ''}`}
+        >
+          <Compass size={22} />
+          <span className="text-[10px]">Discover</span>
         </Link>
         <Link 
           to="/library" 

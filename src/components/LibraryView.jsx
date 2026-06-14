@@ -6,8 +6,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onDeleteVideo, onShareVideo }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = useState('date');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  const categories = ['All', 'General', 'Cinema', 'Lo-Fi', 'Animation', 'Nature', 'Tech', 'Tutorials'];
 
   const activeTab = searchParams.get('tab') || 'all';
   const setActiveTab = (tab) => {
@@ -27,6 +30,12 @@ export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onD
       v.title.toLowerCase().includes(query) || 
       (v.description && v.description.toLowerCase().includes(query))
     );
+  }
+
+  const filteredBeforeCategory = [...filtered];
+
+  if (selectedCategory !== 'All') {
+    filtered = filtered.filter(v => (v.category || 'General') === selectedCategory);
   }
 
   filtered.sort((a, b) => {
@@ -67,8 +76,8 @@ export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onD
 
   return (
     <div className="animate-fade-in flex-1 flex flex-col">
-      <header className="mb-10">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-fg mb-6 flex items-baseline gap-3 select-none">
+      <header className="mb-10 flex flex-col gap-6">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-fg mb-1 flex items-baseline gap-3 select-none">
           <span>My Library</span>
           <span className="text-xs md:text-sm font-medium text-muted font-mono">({allCount} {allCount === 1 ? 'video' : 'videos'})</span>
         </h1>
@@ -127,6 +136,26 @@ export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onD
               <span>{getSortLabel()}</span>
             </button>
           </div>
+        </div>
+
+        {/* Category Pill Tabs */}
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-none flex-nowrap py-1 border-t border-custom-border/30 pt-4">
+          {categories.map(cat => {
+            const isSelected = selectedCategory === cat;
+            const count = cat === 'All' ? filteredBeforeCategory.length : filteredBeforeCategory.filter(v => (v.category || 'General') === cat).length;
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-4 py-1.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap select-none border border-transparent flex items-center gap-1.5 ${isSelected ? 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)] font-bold' : 'bg-surface border-custom-border text-muted hover:text-fg hover:bg-surface-elevated'}`}
+              >
+                <span>{cat}</span>
+                <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold font-mono transition-colors ${isSelected ? 'bg-black/10 text-bg' : 'bg-surface-elevated text-muted'}`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </header>
 
@@ -192,11 +221,15 @@ export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onD
                     </div>
                   )}
                 </div>
-                <div className="p-5 flex-1 flex flex-col gap-3">
+                <div className="p-5 flex-1 flex flex-col gap-3 bg-surface/30">
                   <h3 className="font-semibold text-base leading-snug line-clamp-2 text-fg group-hover:text-accent transition-colors duration-200">{video.title}</h3>
-                  <div className="flex justify-between text-xs text-muted mt-auto font-medium">
+                  <div className="flex justify-between items-center text-xs text-muted mt-auto font-medium">
                     <span className="font-mono">{video.size}</span>
-                    <span>{video.relativeTime || 'Library'}</span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="px-1.5 py-0.5 rounded bg-accent/10 border border-accent/25 text-[8px] font-bold text-accent uppercase tracking-wider">{video.category || 'General'}</span>
+                      <span>•</span>
+                      <span>{video.relativeTime || 'Library'}</span>
+                    </div>
                   </div>
                 </div>
               </motion.div>

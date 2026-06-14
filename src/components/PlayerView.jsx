@@ -96,11 +96,35 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   // Shortcuts overlay
   const [showShortcuts, setShowShortcuts] = useState(false);
 
+  // Category dropdown state
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+
   // Ping
   const [ping, setPing] = useState(null);
 
   // Error
   const [videoError, setVideoError] = useState(null);
+
+  // Increment view/play count when video starts playing
+  const playTrackedRef = useRef(false);
+  useEffect(() => {
+    if (isPlaying && !playTrackedRef.current) {
+      playTrackedRef.current = true;
+      const currentPlays = typeof video.plays === 'number' ? video.plays : 0;
+      const currentViews = typeof video.views === 'number' ? video.views : 0;
+      if (onUpdateVideo) {
+        onUpdateVideo({
+          ...video,
+          plays: currentPlays + 1,
+          views: currentViews + 1
+        });
+      }
+    }
+  }, [isPlaying, video.id, onUpdateVideo]);
+
+  useEffect(() => {
+    playTrackedRef.current = false;
+  }, [video.id]);
 
   // HLS fallback state
   const isUsingFallback = false;
@@ -1046,7 +1070,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
       <aside className="p-5 md:p-8 lg:border-l border-t lg:border-t-0 border-custom-border bg-surface lg:overflow-y-auto flex flex-col gap-6 h-auto lg:h-full">
         <div>
           <h1 className="text-2xl font-bold leading-tight tracking-tight text-fg mb-4 break-words break-all">{video.title}</h1>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap animate-fade-in">
             <span className="text-[11px] font-bold text-muted bg-surface-elevated border border-custom-border rounded-lg px-2.5 py-1 tracking-wider uppercase">
               {activeResolution ? activeResolution.toUpperCase() : (video.resolution || 'AUTO')}
             </span>
@@ -1055,6 +1079,41 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
               <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-2.5 py-1 tracking-wider uppercase">⚡ HLS Stream</span>
             ) : (
               <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-1 tracking-wider uppercase">🔗 Direct Link {isUsingFallback ? '(Fallback)' : ''}</span>
+            )}
+          </div>
+
+          {/* Interactive Category Selector with Dropdown */}
+          <div className="mt-5 flex flex-col gap-2 relative">
+            <div className="text-[10px] font-bold text-muted uppercase tracking-wider pl-0.5">Category</div>
+            <button 
+              onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+              className="w-full flex items-center justify-between gap-2 px-4 py-2.5 bg-surface-elevated hover:bg-surface-elevated/85 border border-custom-border hover:border-muted rounded-xl text-xs font-semibold text-fg transition-all cursor-pointer text-left shadow-glass"
+            >
+              <span className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent animate-[pulse_2s_infinite] glow-accent"></span>
+                <span>{video.category || 'General'}</span>
+              </span>
+              <span className="text-accent text-[10px] font-bold">Edit</span>
+            </button>
+            {showCategoryDropdown && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-surface-elevated border border-custom-border rounded-xl shadow-glass z-[100] p-1 flex flex-col gap-0.5 max-h-48 overflow-y-auto">
+                {['General', 'Cinema', 'Lo-Fi', 'Animation', 'Nature', 'Tech', 'Tutorials'].map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      if (onUpdateVideo) {
+                        onUpdateVideo({ ...video, category: cat });
+                      }
+                      setShowCategoryDropdown(false);
+                      showToast(`Category updated to ${cat}`, 'success');
+                    }}
+                    className={`w-full px-3 py-2 text-left rounded-lg text-xs font-semibold transition-all hover:bg-white/5 cursor-pointer flex items-center justify-between ${video.category === cat || (!video.category && cat === 'General') ? 'text-accent bg-accent/5' : 'text-fg'}`}
+                  >
+                    <span>{cat}</span>
+                    {(video.category === cat || (!video.category && cat === 'General')) && <Check size={12} />}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 

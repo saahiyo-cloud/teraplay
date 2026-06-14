@@ -3,6 +3,7 @@ import { createHashRouter, RouterProvider, Routes, Route, useNavigate, useParams
 import { Play, History, User, Settings, Loader2, AlertCircle, X, LogOut } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import HomeView from './components/HomeView';
+import DiscoverView from './components/DiscoverView';
 import PlayerView from './components/PlayerView';
 import LibraryView from './components/LibraryView';
 import ProfileView from './components/ProfileView';
@@ -49,6 +50,170 @@ import { API_BASE, API_KEY } from './config';
 })();
 
 const INITIAL_VIDEOS = [];
+
+export const DISCOVER_VIDEOS = [
+  {
+    id: 'discover_1',
+    title: 'Tears of Steel (Blender Cinematic Sci-Fi)',
+    description: 'Tears of Steel was realized in Seattle by the Blender Foundation. The film is set in Seattle\'s Gas Works Park and features a giant robot battle. The visual effects are breathtaking.',
+    size: '450.5 MB',
+    duration: '12:14',
+    progress: 0,
+    favorite: false,
+    videoUrl: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/teears-of-steel.ism/.m3u8',
+    downloadUrl: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/teears-of-steel.ism/.m3u8',
+    thumbnail: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=600',
+    relativeTime: '2 hours ago',
+    addedDate: '2026-06-14T13:32:00.000Z',
+    resolution: '1080P Full HD',
+    uploader: {
+      uid: 'sofia_rodriguez_uid',
+      username: 'Sofia Rodriguez',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
+    },
+    category: 'Cinema',
+    views: 245000,
+    trending: true
+  },
+  {
+    id: 'discover_2',
+    title: 'NASA TV Live Space Station Feed',
+    description: 'Live stream of NASA TV, showing space missions, interviews, and deep space footage straight from the International Space Station. Watch science in progress.',
+    size: 'Auto Stream',
+    duration: 'Live',
+    progress: 0,
+    favorite: false,
+    videoUrl: 'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8',
+    downloadUrl: 'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8',
+    thumbnail: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&q=80&w=600',
+    relativeTime: '5 hours ago',
+    addedDate: '2026-06-14T10:00:00.000Z',
+    resolution: '720P HD',
+    uploader: {
+      uid: 'nasa_media_uid',
+      username: 'NASA Media',
+      avatar: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&q=80&w=150'
+    },
+    category: 'Tech',
+    views: 189000,
+    trending: true
+  },
+  {
+    id: 'discover_3',
+    title: 'Sintel Cinematic Trailer (Blender Animation)',
+    description: 'Sintel is an independent short film initiated by the Blender Foundation. Sintel\'s quest is to save her baby dragon, Scales, from a giant beast. A touching animated fantasy story.',
+    size: '45.2 MB',
+    duration: '00:52',
+    progress: 0,
+    favorite: false,
+    videoUrl: 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8',
+    downloadUrl: 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8',
+    thumbnail: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&q=80&w=600',
+    relativeTime: '1 day ago',
+    addedDate: '2026-06-13T15:15:00.000Z',
+    resolution: '1080P Full HD',
+    uploader: {
+      uid: 'aria_chen_uid',
+      username: 'Aria Chen',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150'
+    },
+    category: 'Animation',
+    views: 45200,
+    trending: false
+  },
+  {
+    id: 'discover_4',
+    title: 'Big Buck Bunny (Short Animated Comedy)',
+    description: 'Big Buck Bunny is a short computer-animated comedy film by the Blender Institute. The film follows a giant rabbit who seeks revenge on three forest rodents who bullied him.',
+    size: '280.1 MB',
+    duration: '10:34',
+    progress: 0,
+    favorite: false,
+    videoUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+    downloadUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+    thumbnail: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=600',
+    relativeTime: '2 days ago',
+    addedDate: '2026-06-12T09:00:00.000Z',
+    resolution: '1080P Full HD',
+    uploader: {
+      uid: 'marcus_vance_uid',
+      username: 'Marcus Vance',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
+    },
+    category: 'Animation',
+    views: 128000,
+    trending: false
+  },
+  {
+    id: 'discover_5',
+    title: 'Chill Lo-fi Beats for Coding & Focus',
+    description: 'Chill lo-fi study beats to help you concentrate, code, relax, and think clearly. Featuring slow rhythms, warm vinyl crackle, and relaxing ambient textures.',
+    size: '450.5 MB',
+    duration: '12:14',
+    progress: 0,
+    favorite: false,
+    videoUrl: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/teears-of-steel.ism/.m3u8',
+    downloadUrl: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/teears-of-steel.ism/.m3u8',
+    thumbnail: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?auto=format&fit=crop&q=80&w=600',
+    relativeTime: '3 days ago',
+    addedDate: '2026-06-11T22:00:00.000Z',
+    resolution: '1080P Full HD',
+    uploader: {
+      uid: 'aria_chen_uid',
+      username: 'Aria Chen',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150'
+    },
+    category: 'Lo-Fi',
+    views: 95000,
+    trending: true
+  },
+  {
+    id: 'discover_6',
+    title: 'Fjords of Norway: Nature Cinematic Tour',
+    description: 'Explore the breathtaking fjords, snow-capped peaks, and crystal waters of Western Norway in high-definition cinematography. Pure visual therapy.',
+    size: '512.4 MB',
+    duration: '12:14',
+    progress: 0,
+    favorite: false,
+    videoUrl: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/teears-of-steel.ism/.m3u8',
+    downloadUrl: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/teears-of-steel.ism/.m3u8',
+    thumbnail: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&q=80&w=600',
+    relativeTime: '4 days ago',
+    addedDate: '2026-06-10T16:45:00.000Z',
+    resolution: '1080P Full HD',
+    uploader: {
+      uid: 'marcus_vance_uid',
+      username: 'Marcus Vance',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
+    },
+    category: 'Nature',
+    views: 52000,
+    trending: false
+  },
+  {
+    id: 'discover_7',
+    title: 'Vite + React Core Performance Guide',
+    description: 'A deep dive into Vite compilation caching, hot module replacement internals, and profiling React render cycles for modern production applications.',
+    size: '65.8 MB',
+    duration: '00:52',
+    progress: 0,
+    favorite: false,
+    videoUrl: 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8',
+    downloadUrl: 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8',
+    thumbnail: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=600',
+    relativeTime: '6 days ago',
+    addedDate: '2026-06-08T11:20:00.000Z',
+    resolution: '1080P Full HD',
+    uploader: {
+      uid: 'sofia_rodriguez_uid',
+      username: 'Sofia Rodriguez',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
+    },
+    category: 'Tutorials',
+    views: 12000,
+    trending: false
+  }
+];
 
 
 
@@ -197,9 +362,43 @@ function AppShell() {
     }
   };
 
+  const handleImportVideo = React.useCallback((video) => {
+    const currentVideos = videosRef.current;
+    const vidIdStr = String(video.id);
+    if (currentVideos.some(v => String(v.id) === vidIdStr)) {
+      return; // Already imported
+    }
+
+    const imported = {
+      ...video,
+      favorite: video.favorite || false,
+      progress: 0,
+      addedDate: new Date().toISOString(),
+      relativeTime: 'Just now'
+    };
+
+    const updated = [imported, ...currentVideos];
+    if (currentUser) {
+      set(ref(db, `users/${currentUser.uid}/videos`), updated);
+    } else {
+      setVideos(updated);
+    }
+  }, [currentUser]);
+
   const handleToggleFavorite = (videoId) => {
     const currentVideos = videosRef.current;
     const vidIdStr = String(videoId);
+    const exists = currentVideos.some(v => String(v.id) === vidIdStr);
+    
+    if (!exists) {
+      // Look up in DISCOVER_VIDEOS and import as favorited
+      const discVid = DISCOVER_VIDEOS.find(v => String(v.id) === vidIdStr);
+      if (discVid) {
+        handleImportVideo({ ...discVid, favorite: true });
+        return;
+      }
+    }
+
     const updated = currentVideos.map(v => {
       if (String(v.id) === vidIdStr) {
         return { ...v, favorite: !v.favorite };
@@ -291,6 +490,22 @@ function AppShell() {
           }
         }
 
+        const titleLower = (file.filename || '').toLowerCase();
+        let autoCategory = 'General';
+        if (titleLower.includes('movie') || titleLower.includes('film') || titleLower.includes('trailer') || titleLower.includes('cinematic') || titleLower.includes('cinema') || titleLower.includes('teaser') || titleLower.includes('episode') || titleLower.includes('season')) {
+          autoCategory = 'Cinema';
+        } else if (titleLower.includes('lofi') || titleLower.includes('lo-fi') || titleLower.includes('relax') || titleLower.includes('beats') || titleLower.includes('chill') || titleLower.includes('music') || titleLower.includes('song') || titleLower.includes('ambient') || titleLower.includes('playlist')) {
+          autoCategory = 'Lo-Fi';
+        } else if (titleLower.includes('animation') || titleLower.includes('anime') || titleLower.includes('cartoon') || titleLower.includes('blender') || titleLower.includes('cgi') || titleLower.includes('animated') || titleLower.includes('sintel') || titleLower.includes('bunny')) {
+          autoCategory = 'Animation';
+        } else if (titleLower.includes('nature') || titleLower.includes('travel') || titleLower.includes('fjord') || titleLower.includes('scenery') || titleLower.includes('forest') || titleLower.includes('documentary') || titleLower.includes('drone')) {
+          autoCategory = 'Nature';
+        } else if (titleLower.includes('tech') || titleLower.includes('science') || titleLower.includes('nasa') || titleLower.includes('space') || titleLower.includes('dev') || titleLower.includes('code') || titleLower.includes('program')) {
+          autoCategory = 'Tech';
+        } else if (titleLower.includes('tutorial') || titleLower.includes('course') || titleLower.includes('guide') || titleLower.includes('learn') || titleLower.includes('how to') || titleLower.includes('how-to') || titleLower.includes('lesson')) {
+          autoCategory = 'Tutorials';
+        }
+
         return {
           id: fileId,
           title: file.filename || `TeraBox Video #${fileId.substring(0, 6)}`,
@@ -307,7 +522,10 @@ function AppShell() {
           resolution: detectedRes,
           streamReady: true,
           originalUrl: url,
-          fileIndex: idx
+          fileIndex: idx,
+          category: autoCategory,
+          views: 0,
+          plays: 0
         };
       });
       
@@ -522,6 +740,7 @@ function AppShell() {
               onPreviewImage={setPreviewImage}
               onDeleteVideo={handleDeleteVideo}
               onShareVideo={setShareVideo}
+              currentUser={currentUser}
             />
           } />
           <Route path="/player/:id?" element={
@@ -533,6 +752,16 @@ function AppShell() {
               currentUser={currentUser}
               onDeleteVideo={handleDeleteVideo}
               onShareVideo={setShareVideo}
+            />
+          } />
+          <Route path="/discover" element={
+            <DiscoverView 
+              videos={videos} 
+              onVideoSelect={handleVideoSelect}
+              onPreviewImage={setPreviewImage}
+              onShareVideo={setShareVideo}
+              onImportVideo={handleImportVideo}
+              currentUser={currentUser}
             />
           } />
           <Route path="/library" element={
@@ -661,8 +890,12 @@ function PlayerRouteWrapper({ videos, handleToggleFavorite, handleVideoSelect, h
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const activeVideoId = id || (videos.length > 0 ? videos[0].id : null);
-  const activeVideo = videos.find(v => String(v.id) === String(activeVideoId));
+  const activeVideoId = id || (videos.length > 0 ? videos[0].id : (DISCOVER_VIDEOS.length > 0 ? DISCOVER_VIDEOS[0].id : null));
+  
+  let activeVideo = videos.find(v => String(v.id) === String(activeVideoId));
+  if (!activeVideo) {
+    activeVideo = DISCOVER_VIDEOS.find(v => String(v.id) === String(activeVideoId));
+  }
 
   if (!activeVideo) {
     return (
@@ -678,10 +911,12 @@ function PlayerRouteWrapper({ videos, handleToggleFavorite, handleVideoSelect, h
     );
   }
 
+  const combinedRelated = [...videos, ...DISCOVER_VIDEOS.filter(dv => !videos.some(v => String(v.id) === String(dv.id)))];
+
   return (
     <PlayerView 
       video={activeVideo} 
-      relatedVideos={videos}
+      relatedVideos={combinedRelated}
       onVideoSelect={handleVideoSelect}
       onBack={() => navigate(-1)}
       onToggleFavorite={handleToggleFavorite}

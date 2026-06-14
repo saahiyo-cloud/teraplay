@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Link as LinkIcon, Clipboard, Zap, Info, Play, X, Maximize2, Trash2, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImage, onDeleteVideo, onShareVideo }) {
+export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImage, onDeleteVideo, onShareVideo, currentUser }) {
   const [url, setUrl] = useState('');
   const [pasteFeedback, setPasteFeedback] = useState(false);
   const [autoFetch, setAutoFetch] = useState(() => localStorage.getItem('teraplay_autofetch') !== 'false');
@@ -67,6 +67,9 @@ export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImag
   return (
     <div className="animate-fade-in flex-1 flex flex-col">
       <header className="rounded-3xl p-6 md:p-10 mb-12 border border-custom-border bg-[radial-gradient(circle_at_100%_0%,var(--color-accent-muted),transparent_40%)] bg-surface shadow-glass relative overflow-hidden flex flex-col justify-center">
+        <h1 className="text-2xl md:text-3xl font-extrabold text-fg mb-2 tracking-tight">
+          Welcome back, {currentUser?.displayName || 'Streamer'}! 👋
+        </h1>
         <p className="text-muted mb-6 text-sm font-medium">
           Paste your TeraBox, Dubox, or Teraboxapp link below to stream instantly.
         </p>
