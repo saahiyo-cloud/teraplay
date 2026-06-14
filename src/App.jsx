@@ -127,6 +127,7 @@ function AppShell() {
   const [dbCategories, setDbCategories] = useState([]);
   const [topCreators, setTopCreators] = useState([]);
 
+  const [userProfile, setUserProfile] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState(null);
   const [fetchStep, setFetchStep] = useState('');
@@ -348,6 +349,30 @@ function AppShell() {
       localStorage.setItem('teraplay_accent', JSON.stringify(color));
     }
   }, [settings.accentColor]);
+
+  // Sync Realtime User Profile Data globally
+  useEffect(() => {
+    if (!currentUser) {
+      setUserProfile(null);
+      return;
+    }
+    const profileRef = ref(db, `users/${currentUser.uid}/profile`);
+    const unsubscribe = onValue(profileRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setUserProfile(data);
+      } else {
+        const initialProfile = {
+          username: currentUser.displayName || 'User',
+          email: currentUser.email || '',
+          tier: 'Premium Pro',
+          avatar: currentUser.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
+        };
+        setUserProfile(initialProfile);
+      }
+    });
+    return () => unsubscribe();
+  }, [currentUser]);
 
   // Fetch Categories from RTDB
   useEffect(() => {
@@ -693,25 +718,21 @@ function AppShell() {
 
         // Publish newly fetched videos to the public discoverVideos pool
         newVideos.forEach(nv => {
-          const profileRef = ref(db, `users/${currentUser.uid}/profile`);
-          get(profileRef).then(snap => {
-            const profile = snap.val() || {};
-            const uploaderObj = {
-              uid: currentUser.uid,
-              username: profile.username || currentUser.displayName || `User_${currentUser.uid.substring(0, 5)}`,
-              avatar: profile.avatar || currentUser.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
-            };
-            const publicVideo = {
-              ...nv,
-              uploader: uploaderObj
-            };
-            // Remove user-specific properties
-            delete publicVideo.progress;
-            delete publicVideo.favorite;
+          const uploaderObj = {
+            uid: currentUser.uid,
+            username: userProfile?.username || currentUser.displayName || `User_${currentUser.uid.substring(0, 5)}`,
+            avatar: userProfile?.avatar || currentUser.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
+          };
+          const publicVideo = {
+            ...nv,
+            uploader: uploaderObj
+          };
+          // Remove user-specific properties
+          delete publicVideo.progress;
+          delete publicVideo.favorite;
 
-            set(ref(db, `discoverVideos/${nv.id}`), publicVideo)
-              .catch(err => console.error("Failed to post public video:", err));
-          }).catch(err => console.error("Failed to fetch user profile for discover publish:", err));
+          set(ref(db, `discoverVideos/${nv.id}`), publicVideo)
+            .catch(err => console.error("Failed to post public video:", err));
         });
       } else {
         setVideos(updatedVideos);
@@ -961,6 +982,7 @@ function AppShell() {
             <Route path="/" element={
               <HomeView 
                 videos={videos} 
+                userProfile={userProfile}
                 onVideoSelect={handleVideoSelect}
                 onFetch={handleFetch}
                 onPreviewImage={setPreviewImage}
@@ -1008,7 +1030,7 @@ function AppShell() {
               />
             } />
             <Route path="/profile" element={
-              <ProfileView videos={videos} history={history} currentUser={currentUser} onVideoSelect={handleVideoSelect} />
+              <ProfileView videos={videos} history={history} currentUser={currentUser} userProfile={userProfile} onVideoSelect={handleVideoSelect} />
             } />
             <Route path="/settings" element={
               <SettingsView settings={settings} onUpdateSettings={handleUpdateSettings} onResetData={handleResetData} currentUser={currentUser} />

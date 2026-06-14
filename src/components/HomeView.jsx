@@ -4,7 +4,7 @@ import { Link as LinkIcon, Clipboard, Zap, Play, X } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import VideoCard from './VideoCard';
 
-export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImage, onDeleteVideo, onShareVideo, currentUser, settings = { autoFetch: true }, onUpdateSettings }) {
+export default function HomeView({ videos, userProfile, onVideoSelect, onFetch, onPreviewImage, onDeleteVideo, onShareVideo, currentUser, settings = { autoFetch: true }, onUpdateSettings }) {
   const [url, setUrl] = useState('');
   const [pasteFeedback, setPasteFeedback] = useState(false);
   const autoFetch = settings.autoFetch;
@@ -69,7 +69,7 @@ export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImag
     <div className="animate-fade-in flex-1 flex flex-col">
       <header className="rounded-3xl p-6 md:p-10 mb-12 border border-custom-border bg-[radial-gradient(circle_at_100%_0%,var(--color-accent-muted),transparent_40%)] bg-surface shadow-glass relative overflow-hidden flex flex-col justify-center">
         <h1 className="text-2xl md:text-3xl font-extrabold text-fg mb-2 tracking-tight">
-          Welcome back, {currentUser?.displayName || 'Streamer'}! 👋
+          Welcome back, {userProfile?.username || currentUser?.displayName || 'Streamer'}! 👋
         </h1>
         <p className="text-muted mb-6 text-sm font-medium">
           Paste your TeraBox, Dubox, or Teraboxapp link below to stream instantly.

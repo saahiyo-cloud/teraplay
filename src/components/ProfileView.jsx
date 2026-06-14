@@ -26,14 +26,15 @@ const PRESET_AVATARS = [
   { name: 'Gradient Spark', url: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&q=80&w=150' }
 ];
 
-export default function ProfileView({ videos = [], history = [], currentUser, onVideoSelect }) {
+export default function ProfileView({ videos = [], history = [], currentUser, userProfile, onVideoSelect }) {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState({
-    username: currentUser?.displayName || 'User',
-    email: currentUser?.email || '',
-    tier: 'Premium Pro',
-    avatar: currentUser?.photoURL || PRESET_AVATARS[0].url
-  });
+  
+  const [profile, setProfile] = useState(() => ({
+    username: userProfile?.username || currentUser?.displayName || 'User',
+    email: userProfile?.email || currentUser?.email || '',
+    tier: userProfile?.tier || 'Premium Pro',
+    avatar: userProfile?.avatar || currentUser?.photoURL || PRESET_AVATARS[0].url
+  }));
 
   const [username, setUsername] = useState(profile.username);
   const [avatar, setAvatar] = useState(profile.avatar);
@@ -41,29 +42,14 @@ export default function ProfileView({ videos = [], history = [], currentUser, on
   const [errorFeedback, setErrorFeedback] = useState(null);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
 
+  // Synchronize local edit states with global userProfile prop when it changes
   useEffect(() => {
-    if (!currentUser) return;
-    const profileRef = ref(db, `users/${currentUser.uid}/profile`);
-    const unsubscribe = onValue(profileRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        setProfile(data);
-        setUsername(data.username || data.displayName || currentUser.displayName || 'User');
-        setAvatar(data.avatar || data.photoURL || currentUser.photoURL || PRESET_AVATARS[0].url);
-      } else {
-        // DB profile doesn't exist yet: initialize from Auth user object
-        setUsername(currentUser.displayName || 'User');
-        setAvatar(currentUser.photoURL || PRESET_AVATARS[0].url);
-        setProfile({
-          username: currentUser.displayName || 'User',
-          email: currentUser.email || '',
-          tier: 'Premium Pro',
-          avatar: currentUser.photoURL || PRESET_AVATARS[0].url
-        });
-      }
-    });
-    return unsubscribe;
-  }, [currentUser]);
+    if (userProfile) {
+      setProfile(userProfile);
+      setUsername(userProfile.username || '');
+      setAvatar(userProfile.avatar || '');
+    }
+  }, [userProfile]);
 
   useEffect(() => {
     if (showAvatarModal) {
