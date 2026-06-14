@@ -45,7 +45,7 @@ export default function VideoCard({
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.25, ease: 'easeOut', layout: { type: 'tween', duration: 0.3, ease: [0.4, 0, 0.2, 1] } }}
-      className="glass-card group cursor-pointer overflow-hidden rounded-2xl flex flex-col border border-custom-border relative"
+      className="glass-card group cursor-pointer overflow-hidden rounded-2xl flex flex-col border border-custom-border relative transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] hover:scale-[1.018] hover:-translate-y-1.5 hover:border-accent/45 hover:shadow-[0_12px_24px_rgba(0,0,0,0.55),0_0_20px_var(--color-accent-muted)]"
       onClick={handleCardClick}
     >
       {/* Card Thumbnail Display */}
@@ -140,9 +140,9 @@ export default function VideoCard({
         )}
 
         {/* Central Play overlay */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="w-12 h-12 bg-accent rounded-full grid place-items-center text-bg scale-90 group-hover:scale-100 transition-transform duration-300 shadow-[0_4px_12px_var(--color-accent-muted)]">
-            <Play fill="currentColor" size={20} className="ml-0.5" />
+        <div className="absolute inset-0 flex items-center justify-center bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="w-12 h-12 bg-accent rounded-full grid place-items-center text-bg scale-90 group-hover:scale-105 transition-all duration-300 shadow-[0_4px_12px_var(--color-accent-muted)] group-hover:shadow-[0_0_25px_var(--color-accent)]">
+            <Play fill="currentColor" size={20} className="ml-0.5 transition-transform group-hover:scale-110" />
           </div>
         </div>
 
@@ -155,7 +155,7 @@ export default function VideoCard({
       </div>
 
       {/* Card Description Panel */}
-      <div className="p-4 md:p-5 flex-1 flex flex-col gap-3.5 bg-surface/30">
+      <div className="p-4 md:p-5 flex-1 flex flex-col gap-3.5 bg-surface/30 transition-transform duration-300 group-hover:translate-x-0.5">
         <h3 className="font-semibold text-sm leading-snug line-clamp-2 text-fg group-hover:text-accent transition-colors duration-200">
           {video.title}
         </h3>

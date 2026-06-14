@@ -63,6 +63,17 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     return isNaN(saved) ? 1 : saved;
   });
   const [isMuted, setIsMuted] = useState(false);
+
+  const volumeRef = useRef(volume);
+  const isMutedRef = useRef(isMuted);
+
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
+
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
@@ -225,12 +236,15 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     };
   }, []);
 
+  const handleVolumeAdjustRef = useRef(null);
+
   // Keep handler refs in sync with latest functions.
   useEffect(() => {
     handlePlayPauseRef.current = handlePlayPause;
     skipRef.current = skip;
     toggleFullscreenRef.current = toggleFullscreen;
     toggleMuteRef.current = toggleMute;
+    handleVolumeAdjustRef.current = handleVolumeAdjust;
   });
 
   // Keyboard Shortcuts — registered once, calls through refs so it always
@@ -255,6 +269,14 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
         case 'arrowleft':
           e.preventDefault();
           skipRef.current?.(-10);
+          break;
+        case 'arrowup':
+          e.preventDefault();
+          handleVolumeAdjustRef.current?.(0.05);
+          break;
+        case 'arrowdown':
+          e.preventDefault();
+          handleVolumeAdjustRef.current?.(-0.05);
           break;
         case 'f':
           e.preventDefault();
@@ -656,6 +678,30 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
       localStorage.setItem('teraplay_volume', restored.toString());
       videoRef.current.volume = restored;
     }
+  };
+
+  const handleVolumeAdjust = (amount) => {
+    if (!videoRef.current) return;
+    const currentVol = volumeRef.current;
+    const currentMuted = isMutedRef.current;
+
+    let targetVol = currentVol;
+    if (currentMuted && amount > 0) {
+      targetVol = 0;
+    }
+
+    targetVol = Math.min(Math.max(targetVol + amount, 0), 1);
+    targetVol = Math.round(targetVol * 100) / 100;
+
+    setVolume(targetVol);
+    localStorage.setItem('teraplay_volume', targetVol.toString());
+    videoRef.current.volume = targetVol;
+
+    const targetMuted = targetVol === 0;
+    setIsMuted(targetMuted);
+    videoRef.current.muted = targetMuted;
+
+    showToast(`Volume: ${Math.round(targetVol * 100)}%`, 'info');
   };
 
   const handleRelatedClick = (relVideo) => {
@@ -1226,7 +1272,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
             key={toast.id}
             className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-surface border border-custom-border shadow-glass backdrop-blur-md text-sm font-medium text-fg animate-fade-in pointer-events-auto"
           >
-            <span className={`w-2 h-2 rounded-full shrink-0 ${toast.type === 'error' ? 'bg-rose-400' : 'bg-emerald-400'}`} />
+            <span className={`w-2 h-2 rounded-full shrink-0 ${toast.type === 'error' ? 'bg-rose-400' : toast.type === 'info' ? 'bg-accent' : 'bg-emerald-400'}`} />
             {toast.message}
           </div>
         ))}
