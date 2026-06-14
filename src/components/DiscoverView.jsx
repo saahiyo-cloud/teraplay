@@ -5,8 +5,6 @@ import {
   Sparkles, Maximize2, Trash2, Heart, Award, User, Monitor
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DISCOVER_VIDEOS } from '../App';
-
 export default function DiscoverView({ videos = [], discoverVideos = [], onVideoSelect, onPreviewImage, onShareVideo, onImportVideo, currentUser }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,7 +13,7 @@ export default function DiscoverView({ videos = [], discoverVideos = [], onVideo
   const [sortKey, setSortKey] = useState('date');
   const [toasts, setToasts] = useState([]);
 
-  const activeDiscoverVideos = discoverVideos && discoverVideos.length > 0 ? discoverVideos : DISCOVER_VIDEOS;
+  const activeDiscoverVideos = discoverVideos || [];
 
   // Setup list of unique creators from discover videos
   const creators = React.useMemo(() => {
