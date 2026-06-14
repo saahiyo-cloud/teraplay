@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { auth, db } from '../firebase';
 import { updateProfile } from 'firebase/auth';
-import { ref, set, onValue } from 'firebase/database';
+import { ref, set, onValue, get, update } from 'firebase/database';
 
 const PRESET_AVATARS = [
   { name: 'Classic Male', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150' },
@@ -48,8 +48,18 @@ export default function ProfileView({ videos = [], history = [], currentUser, on
       const data = snapshot.val();
       if (data) {
         setProfile(data);
-        setUsername(data.username || data.displayName || '');
+        setUsername(data.username || data.displayName || currentUser.displayName || 'User');
         setAvatar(data.avatar || data.photoURL || currentUser.photoURL || PRESET_AVATARS[0].url);
+      } else {
+        // DB profile doesn't exist yet: initialize from Auth user object
+        setUsername(currentUser.displayName || 'User');
+        setAvatar(currentUser.photoURL || PRESET_AVATARS[0].url);
+        setProfile({
+          username: currentUser.displayName || 'User',
+          email: currentUser.email || '',
+          tier: 'Premium Pro',
+          avatar: currentUser.photoURL || PRESET_AVATARS[0].url
+        });
       }
     });
     return unsubscribe;
@@ -76,18 +86,43 @@ export default function ProfileView({ videos = [], history = [], currentUser, on
         throw new Error('Please enter a username');
       }
 
-      if (currentUser) {
-        await updateProfile(currentUser, {
+      const activeUser = auth.currentUser || currentUser;
+      if (activeUser) {
+        await updateProfile(activeUser, {
           displayName: username.trim(),
           photoURL: avatar.trim()
         });
 
-        await set(ref(db, `users/${currentUser.uid}/profile`), {
+        const updatedProfile = {
           ...profile,
           username: username.trim(),
           avatar: avatar.trim(),
-          email: currentUser.email
-        });
+          email: activeUser.email
+        };
+
+        await set(ref(db, `users/${activeUser.uid}/profile`), updatedProfile);
+        setProfile(updatedProfile);
+
+        // Also update uploader info on all videos in discoverVideos published by this user!
+        try {
+          const discoverRef = ref(db, 'discoverVideos');
+          const discoverSnap = await get(discoverRef);
+          const discoverData = discoverSnap.val();
+          if (discoverData) {
+            const updates = {};
+            Object.entries(discoverData).forEach(([vidId, videoObj]) => {
+              if (videoObj && videoObj.uploader && videoObj.uploader.uid === activeUser.uid) {
+                updates[`discoverVideos/${vidId}/uploader/username`] = username.trim();
+                updates[`discoverVideos/${vidId}/uploader/avatar`] = avatar.trim();
+              }
+            });
+            if (Object.keys(updates).length > 0) {
+              await update(ref(db), updates);
+            }
+          }
+        } catch (syncErr) {
+          console.error("Failed to sync discover videos uploader profile:", syncErr);
+        }
 
         setSaveFeedback(true);
         setTimeout(() => setSaveFeedback(false), 2000);
@@ -176,8 +211,8 @@ export default function ProfileView({ videos = [], history = [], currentUser, on
               className="relative w-24 h-24 rounded-full border-2 border-accent/40 p-1 mt-6 mb-4 shrink-0 cursor-pointer overflow-hidden select-none group/avatar"
               title="Click to change profile picture"
             >
-              <img src={avatar || profile.avatar} alt="User Avatar" className="w-full h-full object-cover rounded-full group-hover/avatar:scale-105 transition-transform duration-200" />
-              <div className="absolute inset-0 bg-black/40 rounded-full flex flex-col items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-200 text-[10px] font-semibold text-white">
+              <img src={avatar || profile.avatar} alt="User Avatar" className="w-full h-full object-cover rounded-full group-hover/avatar:scale-105 transition-transform duration-200 pointer-events-none" />
+              <div className="absolute inset-0 bg-black/40 rounded-full flex flex-col items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-200 text-[10px] font-semibold text-white pointer-events-none">
                 <Camera size={16} className="mb-0.5" />
                 <span>Change</span>
               </div>
@@ -277,7 +312,7 @@ export default function ProfileView({ videos = [], history = [], currentUser, on
                 <div className="bg-surface border border-custom-border px-4 py-2.5 rounded-xl text-fg text-sm flex items-center gap-3 focus-within:border-accent transition-colors duration-200">
                   <User size={16} className="text-muted shrink-0" />
                   <input 
-                    type="url" 
+                    type="text" 
                     id="avatarUrl"
                     placeholder="https://example.com/your-image.jpg"
                     value={avatar}
