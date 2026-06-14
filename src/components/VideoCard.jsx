@@ -44,8 +44,15 @@ export default function VideoCard({
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.25, ease: 'easeOut', layout: { type: 'tween', duration: 0.3, ease: [0.4, 0, 0.2, 1] } }}
-      className="glass-card group cursor-pointer overflow-hidden rounded-2xl flex flex-col border border-custom-border relative transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] hover:scale-[1.018] hover:-translate-y-1.5 hover:border-accent/45 hover:shadow-[0_12px_24px_rgba(0,0,0,0.55),0_0_20px_var(--color-accent-muted)]"
+      whileHover={{ y: -6, scale: 1.018 }}
+      transition={{ 
+        duration: 0.25, 
+        ease: 'easeOut', 
+        layout: { type: 'tween', duration: 0.3, ease: [0.4, 0, 0.2, 1] },
+        y: { type: 'spring', stiffness: 350, damping: 25 },
+        scale: { type: 'spring', stiffness: 350, damping: 25 }
+      }}
+      className="glass-card group cursor-pointer overflow-hidden rounded-2xl flex flex-col border border-custom-border relative transition-[border-color,box-shadow] duration-300 hover:border-accent/45 hover:shadow-[0_12px_24px_rgba(0,0,0,0.55),0_0_20px_var(--color-accent-muted)]"
       onClick={handleCardClick}
     >
       {/* Card Thumbnail Display */}
