@@ -464,7 +464,7 @@ function AppShell() {
       progress: videoProgress === 0 ? 1 : videoProgress,
       watchedAt: new Date().toISOString()
     };
-    const updatedHistory = [newRecord, ...filteredHistory];
+    const updatedHistory = [newRecord, ...filteredHistory].slice(0, 50);
 
     if (currentUser) {
       set(ref(db, `users/${currentUser.uid}/videos`), updatedVideos);
@@ -662,7 +662,7 @@ function AppShell() {
         progress: 0,
         watchedAt: new Date().toISOString()
       }));
-      const updatedHistory = [...historyRecords, ...currentHistory];
+      const updatedHistory = [...historyRecords, ...currentHistory].slice(0, 50);
 
       if (currentUser) {
         set(ref(db, `users/${currentUser.uid}/videos`), updatedVideos);

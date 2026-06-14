@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import VideoCard from './VideoCard';
 import { useNavigate } from 'react-router-dom';
 import { 
   Compass, Search, Filter, Play, Check, Plus, Share2, 
@@ -235,100 +236,18 @@ export default function DiscoverView({ videos = [], discoverVideos = [], onVideo
       {filtered.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           <AnimatePresence mode="popLayout" initial={false}>
-            {filtered.map(video => {
-              const inLibrary = isVideoInLibrary(video.id);
-              return (
-                <motion.div 
-                  layout="position"
-                  key={video.id} 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.25, ease: 'easeOut', layout: { type: 'tween', duration: 0.3, ease: [0.4, 0, 0.2, 1] } }}
-                  className="glass-card group cursor-pointer overflow-hidden rounded-2xl flex flex-col border border-custom-border relative"
-                  onClick={() => handleCardClick(video)}
-                >
-                  {/* Card Thumbnail Display */}
-                  <div className="aspect-video bg-surface-elevated relative overflow-hidden shrink-0 flex items-center justify-center">
-                    <img src={video.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover blur-md opacity-35 scale-110 pointer-events-none select-none" />
-                    <img src={video.thumbnail} alt={video.title} loading="lazy" className="relative z-10 max-w-full max-h-full object-contain opacity-90 transition-transform duration-500 ease-out group-hover:scale-105 group-hover:opacity-100" />
-                    
-                    {/* Share Button overlay */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onShareVideo(video);
-                      }}
-                      className="absolute top-2.5 left-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-accent hover:text-bg border border-white/10 hover:border-accent hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200 text-muted hover:text-white"
-                      title="Share Video"
-                    >
-                      <Share2 size={14} />
-                    </button>
-
-                    {/* Import to Library Button overlay */}
-                    <button
-                      type="button"
-                      disabled={inLibrary}
-                      onClick={(e) => handleImport(e, video)}
-                      className={`absolute top-2.5 left-12 z-20 w-8 h-8 rounded-lg border flex items-center justify-center transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200 cursor-pointer ${inLibrary ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 cursor-default scale-105' : 'bg-black/60 hover:bg-accent hover:text-bg border-white/10 hover:border-accent hover:scale-105 active:scale-95 text-muted hover:text-white'}`}
-                      title={inLibrary ? "In Library" : "Import to Library"}
-                    >
-                      {inLibrary ? <Check size={14} /> : <Plus size={14} />}
-                    </button>
-
-                    {/* Fullscreen Preview button */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onPreviewImage({ url: video.thumbnail, title: video.title });
-                      }}
-                      className="absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-black/90 text-white/80 hover:text-white border border-white/10 hover:border-white/20 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200"
-                      title="Enlarge Thumbnail"
-                    >
-                      <Maximize2 size={14} />
-                    </button>
-
-                    {/* Metadata tags */}
-                    <div className="absolute bottom-3 right-3 bg-black/75 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-mono font-bold border border-white/10 text-fg z-20">{video.duration}</div>
-                    
-                    {/* Resolution badge */}
-                    <div className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-sm px-2 py-1 rounded-md text-[9px] font-mono border border-white/10 text-accent font-semibold z-20">{video.resolution}</div>
-
-                    {/* Central Play overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="w-12 h-12 bg-accent rounded-full grid place-items-center text-bg scale-90 group-hover:scale-100 transition-transform duration-300 shadow-[0_4px_12px_var(--color-accent-muted)]">
-                        <Play fill="currentColor" size={20} className="ml-0.5" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card Description Panel */}
-                  <div className="p-4 flex-1 flex flex-col gap-3.5 bg-surface/30">
-                    <h3 className="font-semibold text-sm leading-snug line-clamp-2 text-fg group-hover:text-accent transition-colors duration-200">{video.title}</h3>
-                    
-                    {/* Uploader profile & file details */}
-                    <div className="flex justify-between items-center text-[10px] mt-auto border-t border-custom-border/40 pt-3">
-                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                        <img 
-                          src={video.uploader.avatar} 
-                          alt="" 
-                          className="w-4 h-4 rounded-full object-cover border border-white/10" 
-                        />
-                        <span className="text-muted truncate font-medium max-w-[80px]">{video.uploader.username}</span>
-                        <span className="px-1.5 py-0.5 rounded bg-accent/10 border border-accent/25 text-[8px] font-bold text-accent uppercase tracking-wider scale-90 origin-left shrink-0">{video.category || 'General'}</span>
-                      </div>
-                      
-                      <div className="flex items-center gap-1 text-muted font-mono font-medium shrink-0">
-                        {video.views > 0 && <span>{video.views >= 1000 ? `${(video.views/1000).toFixed(0)}K` : video.views} views •</span>}
-                        <span>{video.size}</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
+            {filtered.map(video => (
+              <VideoCard
+                key={video.id}
+                video={video}
+                variant="discover"
+                inLibrary={isVideoInLibrary(video.id)}
+                onSelect={handleCardClick}
+                onShare={onShareVideo}
+                onPreview={onPreviewImage}
+                onImport={handleImport}
+              />
+            ))}
           </AnimatePresence>
         </div>
       ) : (

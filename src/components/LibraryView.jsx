@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, Filter, Layers, Play, Maximize2, X, Trash2, Share2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Filter, Layers } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import VideoCard from './VideoCard';
 
 export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onDeleteVideo, onShareVideo }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -163,76 +164,15 @@ export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onD
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-8">
           <AnimatePresence initial={false}>
             {filtered.map(video => (
-              <motion.div 
-                layout="position"
-                key={video.id} 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.25, ease: 'easeOut', layout: { type: 'tween', duration: 0.3, ease: [0.4, 0, 0.2, 1] } }}
-                className="glass-card group cursor-pointer overflow-hidden rounded-2xl flex flex-col border border-custom-border"
-                onClick={() => handleCardClick(video)}
-              >
-                <div className="aspect-video bg-surface-elevated relative overflow-hidden shrink-0 flex items-center justify-center">
-                  <img src={video.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover blur-md opacity-35 scale-110 pointer-events-none select-none" />
-                  <img src={video.thumbnail} alt={video.title} loading="lazy" className="relative z-10 max-w-full max-h-full object-contain opacity-90 transition-transform duration-500 ease-out group-hover:scale-105 group-hover:opacity-100" />
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteVideo(video.id);
-                    }}
-                    className="absolute top-2.5 left-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-rose-500 hover:text-white border border-white/10 hover:border-rose-500 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200 text-muted hover:text-white"
-                    title="Delete Video"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onShareVideo(video);
-                    }}
-                    className="absolute top-2.5 left-12 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-accent hover:text-bg border border-white/10 hover:border-accent hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200 text-muted hover:text-white"
-                    title="Share Video"
-                  >
-                    <Share2 size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onPreviewImage({ url: video.thumbnail, title: video.title });
-                    }}
-                    className="absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-black/90 text-white/80 hover:text-white border border-white/10 hover:border-white/20 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200"
-                    title="Enlarge Thumbnail"
-                  >
-                    <Maximize2 size={14} />
-                  </button>
-                  <div className="absolute bottom-3 right-3 bg-black/75 backdrop-blur-sm px-2 py-1 rounded-md text-[11px] font-mono font-semibold border border-white/10 text-fg">{video.duration}</div>
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-12 h-12 bg-accent rounded-full grid place-items-center text-bg scale-90 group-hover:scale-100 transition-transform duration-300 shadow-[0_4px_12px_var(--color-accent-muted)]">
-                      <Play fill="currentColor" size={20} className="ml-0.5" />
-                    </div>
-                  </div>
-                  {video.progress > 0 && (
-                    <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 z-20">
-                      <div className="h-full bg-accent shadow-[0_0_8px_var(--color-accent)]" style={{ width: `${video.progress}%` }}></div>
-                    </div>
-                  )}
-                </div>
-                <div className="p-5 flex-1 flex flex-col gap-3 bg-surface/30">
-                  <h3 className="font-semibold text-base leading-snug line-clamp-2 text-fg group-hover:text-accent transition-colors duration-200">{video.title}</h3>
-                  <div className="flex justify-between items-center text-xs text-muted mt-auto font-medium">
-                    <span className="font-mono">{video.size}</span>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="px-1.5 py-0.5 rounded bg-accent/10 border border-accent/25 text-[8px] font-bold text-accent uppercase tracking-wider">{video.category || 'General'}</span>
-                      <span>•</span>
-                      <span>{video.relativeTime || 'Library'}</span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
+              <VideoCard
+                key={video.id}
+                video={video}
+                variant="library"
+                onSelect={handleCardClick}
+                onDelete={onDeleteVideo}
+                onShare={onShareVideo}
+                onPreview={onPreviewImage}
+              />
             ))}
           </AnimatePresence>
         </div>
