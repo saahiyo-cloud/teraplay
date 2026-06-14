@@ -29,8 +29,8 @@ export default function DiscoverView({ videos = [], onVideoSelect, onPreviewImag
         });
       }
     });
-    // Limit to "All Creators" + top 10 unique creators
-    return [list[0], ...list.slice(1, 11)];
+    // Limit to "All Creators" + top 20 unique creators
+    return [list[0], ...list.slice(1, 21)];
   }, []);
 
   // Filter categories
