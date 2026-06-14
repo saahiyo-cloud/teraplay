@@ -63,7 +63,7 @@ export default function HistoryView({ history, onClearHistory, onRemoveItem, onP
                     <Play size={14} fill="currentColor" className="ml-0.5" />
                   </div>
                 </div>
-                <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10">
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 z-20">
                   <div className="h-full bg-accent" style={{ width: `${item.progress}%` }}></div>
                 </div>
               </div>
