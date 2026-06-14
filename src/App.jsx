@@ -84,6 +84,18 @@ const calculateTopCreators = (discoverVideosList) => {
   return sorted.slice(0, 10);
 };
 
+const formatDurationHelper = (timeInSeconds) => {
+  if (isNaN(timeInSeconds) || timeInSeconds <= 0) return '02:00';
+  const hrs = Math.floor(timeInSeconds / 3600);
+  const mins = Math.floor((timeInSeconds % 3600) / 60);
+  const secs = Math.floor(timeInSeconds % 60);
+  
+  if (hrs > 0) {
+    return `${hrs}:${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  }
+  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+};
+
 
 
 function AppShell() {
@@ -572,7 +584,9 @@ function AppShell() {
           title: file.filename || `TeraBox Video #${fileId.substring(0, 6)}`,
           description: `Imported from TeraBox URL. High-speed HLS stream proxied via TeraBridge. Original Path: ${file.path || '/'}`,
           size: sizeStr,
-          duration: file.duration || '02:00',
+          duration: typeof file.duration === 'number' 
+            ? formatDurationHelper(file.duration) 
+            : (typeof file.duration === 'string' && file.duration.trim() ? file.duration : '02:00'),
           progress: 0,
           favorite: false,
           videoUrl: streamUrl,
@@ -715,8 +729,9 @@ function AppShell() {
         if (snap.exists()) {
           update(publicVideoRef, {
             views: typeof updatedVideo.views === 'number' ? updatedVideo.views : 0,
-            plays: typeof updatedVideo.plays === 'number' ? updatedVideo.plays : 0
-          }).catch(err => console.error('Failed to update discover video views:', err));
+            plays: typeof updatedVideo.plays === 'number' ? updatedVideo.plays : 0,
+            duration: updatedVideo.duration || '02:00'
+          }).catch(err => console.error('Failed to update discover video views/duration:', err));
         }
       });
     } else {
