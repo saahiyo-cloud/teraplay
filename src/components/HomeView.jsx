@@ -201,7 +201,7 @@ export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImag
                       <Play fill="currentColor" size={20} className="ml-0.5" />
                     </div>
                   </div>
-                  <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10">
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 z-20">
                     <div className="h-full bg-accent shadow-[0_0_8px_var(--color-accent)]" style={{ width: `${video.progress}%` }}></div>
                   </div>
                 </div>
@@ -275,7 +275,7 @@ export default function HomeView({ videos, onVideoSelect, onFetch, onPreviewImag
                     </div>
                   </div>
                   {video.progress > 0 && (
-                    <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10">
+                    <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 z-20">
                       <div className="h-full bg-accent shadow-[0_0_8px_var(--color-accent)]" style={{ width: `${video.progress}%` }}></div>
                     </div>
                   )}
