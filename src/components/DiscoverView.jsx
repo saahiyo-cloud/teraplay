@@ -79,21 +79,13 @@ export default function DiscoverView({ videos = [], discoverVideos = [], onVideo
   }
 
   // Apply category filter
-  if (selectedCategory !== 'All') {
-    if (selectedCategory === 'Trending') {
-      filtered = filtered.filter(v => v.trending);
-    } else if (selectedCategory === 'Popular') {
-      filtered = filtered.filter(v => (v.views && v.views > 30000));
-    } else if (selectedCategory === 'Recent') {
-      filtered = filtered.filter(v => ['discover_1', 'discover_2', 'discover_3'].includes(v.id));
-    } else {
-      filtered = filtered.filter(v => v.category === selectedCategory);
-    }
+  if (selectedCategory !== 'All' && selectedCategory !== 'Trending' && selectedCategory !== 'Popular' && selectedCategory !== 'Recent') {
+    filtered = filtered.filter(v => v.category === selectedCategory);
   }
 
   // Apply creator filter
   if (selectedCreator !== 'all') {
-    filtered = filtered.filter(v => v.uploader.uid === selectedCreator);
+    filtered = filtered.filter(v => v && v.uploader && v.uploader.uid === selectedCreator);
   }
 
   // Apply sorting
@@ -102,16 +94,20 @@ export default function DiscoverView({ videos = [], discoverVideos = [], onVideo
       return (b.views || 0) - (a.views || 0);
     }
     if (selectedCategory === 'Trending') {
+      const playsB = typeof b.plays === 'number' ? b.plays : 0;
+      const playsA = typeof a.plays === 'number' ? a.plays : 0;
+      if (playsB !== playsA) return playsB - playsA;
       return (b.views || 0) - (a.views || 0);
     }
     if (selectedCategory === 'Recent') {
-      return new Date(b.addedDate) - new Date(a.addedDate);
+      return new Date(b.addedDate || 0) - new Date(a.addedDate || 0);
     }
 
     if (sortKey === 'title') {
-      return a.title.localeCompare(b.title);
+      return (a.title || '').localeCompare(b.title || '');
     } else if (sortKey === 'size') {
       const getVal = (str) => {
+        if (typeof str !== 'string') return 0;
         const num = parseFloat(str);
         if (str.includes('GB')) return num * 1024;
         return num || 0;
@@ -119,6 +115,7 @@ export default function DiscoverView({ videos = [], discoverVideos = [], onVideo
       return getVal(b.size) - getVal(a.size);
     } else if (sortKey === 'duration') {
       const getVal = (str) => {
+        if (typeof str !== 'string') return 0;
         if (str === 'Live') return 99999;
         const parts = str.split(':').map(Number);
         if (parts.length === 2) return parts[0] * 60 + parts[1];
@@ -128,7 +125,7 @@ export default function DiscoverView({ videos = [], discoverVideos = [], onVideo
       return getVal(b.duration) - getVal(a.duration);
     } else {
       // Default: Date Added (Newest First)
-      return new Date(b.addedDate) - new Date(a.addedDate);
+      return new Date(b.addedDate || 0) - new Date(a.addedDate || 0);
     }
   });
 
