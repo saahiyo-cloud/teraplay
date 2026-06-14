@@ -89,19 +89,19 @@
 }
 
 .input-group-premium:focus-within {
-  border-color: oklch(65% 0.18 250 / 0.5);
+  border-color: color-mix(in oklch, var(--color-accent) 50%, transparent);
   background: oklch(100% 0 0 / 0.05);
   box-shadow: 
     0 20px 50px oklch(0% 0 0 / 0.5),
-    0 0 0 4px oklch(65% 0.18 250 / 0.1);
+    0 0 0 4px color-mix(in oklch, var(--color-accent) 10%, transparent);
 }
 
 .glow-accent {
-  box-shadow: 0 0 20px oklch(65% 0.18 250 / 0.2), 0 0 40px oklch(65% 0.18 250 / 0.1);
+  box-shadow: 0 0 20px color-mix(in oklch, var(--color-accent) 20%, transparent), 0 0 40px color-mix(in oklch, var(--color-accent) 10%, transparent);
 }
 
 .glow-text-accent {
-  text-shadow: 0 0 8px oklch(65% 0.18 250 / 0.4);
+  text-shadow: 0 0 8px color-mix(in oklch, var(--color-accent) 40%, transparent);
 }
 
 /* Scrollbars */
