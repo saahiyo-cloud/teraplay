@@ -87,22 +87,22 @@ export default function HomeView({ videos, userProfile, onVideoSelect, onFetch, 
         </p>
         
         <form onSubmit={handleFetchSubmit} className="w-full">
-          <div className="w-full max-w-2xl bg-white/5 border border-white/10 rounded-xl md:rounded-full flex flex-col md:flex-row items-stretch md:items-center p-2 md:p-2 md:pl-5 md:pr-2 gap-2 md:gap-3 shadow-glass transition-all duration-300 focus-within:border-accent/50 focus-within:bg-white/10">
-            <div className="flex items-center gap-1.5 md:gap-2 flex-1 min-w-0 bg-white/5 border border-white/10 md:bg-transparent md:border-none rounded-lg md:rounded-none px-2.5 py-1.5 md:p-0">
+          <div className="w-full max-w-2xl bg-surface-elevated/40 border border-custom-border/60 rounded-xl md:rounded-full flex flex-col md:flex-row items-stretch md:items-center p-2 md:p-2 md:pl-5 md:pr-2 gap-2 md:gap-3 shadow-glass transition-all duration-300 focus-within:border-accent/50 focus-within:bg-surface-elevated/70">
+            <div className="flex items-center gap-1.5 md:gap-2 flex-1 min-w-0 bg-surface border border-custom-border md:bg-transparent md:border-none rounded-lg md:rounded-none px-2.5 py-1.5 md:p-0">
               <LinkIcon size={18} className="text-muted shrink-0" />
               <input 
                 type="text" 
                 placeholder="Paste your TeraBox link here..." 
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                className="flex-1 min-w-0 bg-transparent border-none outline-none text-fg py-1.5 px-1 text-sm placeholder-white/30"
+                className="flex-1 min-w-0 bg-transparent border-none outline-none text-fg py-1.5 px-1 text-sm placeholder-muted/50"
                 aria-label="TeraBox video link"
               />
               {url && (
                 <button
                   type="button"
                   onClick={() => setUrl('')}
-                  className="p-1.5 text-muted hover:text-fg hover:bg-white/10 rounded-full transition-all cursor-pointer shrink-0 mr-1"
+                  className="p-1.5 text-muted hover:text-fg hover:bg-surface-elevated rounded-full transition-all cursor-pointer shrink-0 mr-1"
                   title="Clear input"
                 >
                   <X size={15} />
@@ -110,10 +110,10 @@ export default function HomeView({ videos, userProfile, onVideoSelect, onFetch, 
               )}
               <button 
                 type="button"
-                className="flex items-center justify-center gap-1 px-2.5 py-1 bg-white/5 border border-white/10 hover:bg-white/10 rounded-md md:rounded-lg transition-all text-[11px] md:text-xs font-semibold text-fg cursor-pointer shrink-0 select-none"
+                className="flex items-center justify-center gap-1 px-2.5 py-1 bg-surface border border-custom-border hover:bg-surface-elevated rounded-md md:rounded-lg transition-all text-[11px] md:text-xs font-semibold text-fg cursor-pointer shrink-0 select-none"
                 onClick={handlePaste}
                 style={{
-                  background: pasteFeedback ? 'oklch(65% 0.18 250 / 0.2)' : '',
+                  background: pasteFeedback ? 'var(--color-accent-muted)' : '',
                   borderColor: pasteFeedback ? 'var(--color-accent)' : ''
                 }}
               >
@@ -159,7 +159,7 @@ export default function HomeView({ videos, userProfile, onVideoSelect, onFetch, 
                     onUpdateSettings({ autoFetch: e.target.checked });
                   }
                 }}
-                className="rounded border-white/20 bg-white/5 text-accent focus:ring-accent/50 w-3.5 h-3.5 cursor-pointer accent-accent"
+                className="rounded border-custom-border bg-surface text-accent focus:ring-accent/50 w-3.5 h-3.5 cursor-pointer accent-accent"
               />
               <span className="group-hover:text-fg transition-colors">Auto-fetch valid links on paste</span>
             </label>

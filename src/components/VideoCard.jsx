@@ -59,7 +59,7 @@ export default function VideoCard({
       <div className="aspect-video bg-surface-elevated relative overflow-hidden shrink-0 flex items-center justify-center">
         {/* Shimmer Placeholder */}
         {!imageLoaded && (
-          <div className="absolute inset-0 bg-white/5 animate-pulse flex items-center justify-center z-10">
+          <div className="absolute inset-0 bg-fg/5 animate-pulse flex items-center justify-center z-10">
             <div className="w-8 h-8 border-2 border-accent/25 border-t-transparent rounded-full animate-spin"></div>
           </div>
         )}
@@ -84,7 +84,7 @@ export default function VideoCard({
             <button
               type="button"
               onClick={handleShareClick}
-              className="absolute top-2.5 left-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-accent hover:text-bg border border-white/10 hover:border-accent hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200 text-muted hover:text-white"
+              className="absolute top-2.5 left-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-accent hover:text-bg border border-white/10 hover:border-accent hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200 text-white/75 hover:text-white"
               title="Share Video"
             >
               <Share2 size={14} />
@@ -95,7 +95,7 @@ export default function VideoCard({
               type="button"
               disabled={inLibrary}
               onClick={handleImportClick}
-              className={`absolute top-2.5 left-12 z-20 w-8 h-8 rounded-lg border flex items-center justify-center transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200 cursor-pointer ${inLibrary ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 cursor-default scale-105' : 'bg-black/60 hover:bg-accent hover:text-bg border-white/10 hover:border-accent hover:scale-105 active:scale-95 text-muted hover:text-white'}`}
+              className={`absolute top-2.5 left-12 z-20 w-8 h-8 rounded-lg border flex items-center justify-center transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200 cursor-pointer ${inLibrary ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 cursor-default scale-105' : 'bg-black/60 hover:bg-accent hover:text-bg border-white/10 hover:border-accent hover:scale-105 active:scale-95 text-white/75 hover:text-white'}`}
               title={inLibrary ? "In Library" : "Import to Library"}
             >
               {inLibrary ? <Check size={14} /> : <Plus size={14} />}
@@ -107,7 +107,7 @@ export default function VideoCard({
             <button
               type="button"
               onClick={handleDeleteClick}
-              className="absolute top-2.5 left-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-rose-500 hover:text-white border border-white/10 hover:border-rose-500 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200 text-muted hover:text-white"
+              className="absolute top-2.5 left-2.5 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-rose-500 hover:text-white border border-white/10 hover:border-rose-500 hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200 text-white/75 hover:text-white"
               title="Delete Video"
             >
               <Trash2 size={14} />
@@ -117,7 +117,7 @@ export default function VideoCard({
             <button
               type="button"
               onClick={handleShareClick}
-              className="absolute top-2.5 left-12 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-accent hover:text-bg border border-white/10 hover:border-accent hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200 text-muted hover:text-white"
+              className="absolute top-2.5 left-12 z-20 w-8 h-8 rounded-lg bg-black/60 hover:bg-accent hover:text-bg border border-white/10 hover:border-accent hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200 text-white/75 hover:text-white"
               title="Share Video"
             >
               <Share2 size={14} />
@@ -136,7 +136,7 @@ export default function VideoCard({
         </button>
 
         {/* Metadata badges */}
-        <div className="absolute bottom-3 right-3 bg-black/75 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-mono font-bold border border-white/10 text-fg z-20">
+        <div className="absolute bottom-3 right-3 bg-black/75 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-mono font-bold border border-white/10 text-white z-20">
           {video.duration}
         </div>
         
@@ -155,7 +155,7 @@ export default function VideoCard({
 
         {/* Playback progress bar (Library and Home variants) */}
         {variant !== 'discover' && video.progress > 0 && (
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 z-20">
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-fg/10 z-20">
             <div className="h-full bg-accent shadow-[0_0_8px_var(--color-accent)]" style={{ width: `${video.progress}%` }}></div>
           </div>
         )}
@@ -176,7 +176,7 @@ export default function VideoCard({
                   <img 
                     src={video.uploader.avatar} 
                     alt="" 
-                    className="w-4 h-4 rounded-full object-cover border border-white/10" 
+                    className="w-4 h-4 rounded-full object-cover border border-custom-border/50" 
                   />
                   <span className="text-muted truncate font-medium max-w-[80px]">{video.uploader.username}</span>
                 </>
@@ -223,14 +223,14 @@ export function VideoCardSkeleton() {
   return (
     <div className="glass-card animate-pulse border border-custom-border rounded-2xl flex flex-col overflow-hidden">
       <div className="aspect-video bg-surface-elevated relative overflow-hidden shrink-0 flex items-center justify-center">
-        <div className="absolute inset-0 bg-white/5"></div>
+        <div className="absolute inset-0 bg-fg/5"></div>
       </div>
       <div className="p-3 md:p-5 flex-1 flex flex-col gap-2 md:gap-3 bg-surface/30">
-        <div className="h-4 bg-white/10 rounded w-5/6"></div>
-        <div className="h-3 bg-white/5 rounded w-2/3 mt-2"></div>
+        <div className="h-4 bg-fg/10 rounded w-5/6"></div>
+        <div className="h-3 bg-fg/5 rounded w-2/3 mt-2"></div>
         <div className="flex justify-between items-center mt-auto border-t border-custom-border/40 pt-3">
-          <div className="h-3 bg-white/5 rounded w-1/4"></div>
-          <div className="h-3 bg-white/5 rounded w-1/4"></div>
+          <div className="h-3 bg-fg/5 rounded w-1/4"></div>
+          <div className="h-3 bg-fg/5 rounded w-1/4"></div>
         </div>
       </div>
     </div>

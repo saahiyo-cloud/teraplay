@@ -14,7 +14,13 @@ export default function DiscoverView({ videos = [], discoverVideos = [], onVideo
   const [sortKey, setSortKey] = useState('date');
   const [toasts, setToasts] = useState([]);
 
-  const activeDiscoverVideos = discoverVideos || [];
+  const isVideoFile = (fileName) => {
+    if (!fileName) return false;
+    const ext = fileName.split('.').pop().toLowerCase();
+    return ['mp4', 'mkv', 'webm', 'avi', 'mov', 'flv', '3gp', 'm4v', 'ts', 'm3u8'].includes(ext);
+  };
+
+  const activeDiscoverVideos = (discoverVideos || []).filter(v => isVideoFile(v.title || v.name));
 
   // Setup list of unique creators from discover videos
   const creators = React.useMemo(() => {
@@ -170,7 +176,7 @@ export default function DiscoverView({ videos = [], discoverVideos = [], onVideo
               placeholder="Search by title or creator..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-transparent border-none outline-none text-fg py-1.5 md:py-2 placeholder-white/30 text-xs md:text-sm"
+              className="w-full bg-transparent border-none outline-none text-fg py-1.5 md:py-2 placeholder-muted/50 text-xs md:text-sm"
               aria-label="Search discover videos"
             />
           </div>

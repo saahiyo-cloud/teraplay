@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: oklch(12% 0.01 250);
-  --color-surface: oklch(18% 0.01 250);
-  --color-surface-elevated: oklch(22% 0.01 250);
-  --color-fg: oklch(98% 0.01 250);
-  --color-muted: oklch(65% 0.01 250);
-  --color-custom-border: oklch(25% 0.02 250);
-  --color-accent: oklch(65% 0.18 250);
-  --color-accent-muted: oklch(65% 0.18 250 / 0.15);
-  --color-glass: oklch(18% 0.01 250 / 0.65);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-custom-border: var(--custom-border);
+  --color-accent: var(--accent);
+  --color-accent-muted: var(--accent-muted);
+  --color-glass: var(--glass);
   
   --font-display: 'Inter', -apple-system, system-ui, sans-serif;
   --font-body: 'Inter', -apple-system, system-ui, sans-serif;
@@ -36,6 +36,48 @@
 }
 
 @layer base {
+  :root, .dark {
+    --bg: oklch(12% 0.01 250);
+    --surface: oklch(18% 0.01 250);
+    --surface-elevated: oklch(22% 0.01 250);
+    --fg: oklch(98% 0.01 250);
+    --muted: oklch(65% 0.01 250);
+    --custom-border: oklch(25% 0.02 250);
+    --accent: oklch(65% 0.18 250);
+    --accent-muted: oklch(65% 0.18 250 / 0.15);
+    --glass: oklch(18% 0.01 250 / 0.65);
+
+    --glass-card-bg: oklch(100% 0 0 / 0.03);
+    --glass-card-hover-bg: oklch(100% 0 0 / 0.05);
+    --input-bg: oklch(100% 0 0 / 0.03);
+    --input-focus-bg: oklch(100% 0 0 / 0.05);
+    --input-border: oklch(100% 0 0 / 0.1);
+    --shadow-inset: oklch(100% 0 0 / 0.1);
+    --shadow-primary: oklch(0% 0 0 / 0.4);
+    --shadow-primary-focus: oklch(0% 0 0 / 0.5);
+  }
+
+  .light {
+    --bg: oklch(97% 0.01 250);
+    --surface: oklch(100% 0 0);
+    --surface-elevated: oklch(93% 0.01 250);
+    --fg: oklch(15% 0.01 250);
+    --muted: oklch(48% 0.01 250);
+    --custom-border: oklch(88% 0.01 250);
+    --accent: oklch(65% 0.18 250);
+    --accent-muted: oklch(65% 0.18 250 / 0.15);
+    --glass: oklch(100% 0 0 / 0.75);
+
+    --glass-card-bg: oklch(0% 0 0 / 0.02);
+    --glass-card-hover-bg: oklch(0% 0 0 / 0.04);
+    --input-bg: oklch(0% 0 0 / 0.02);
+    --input-focus-bg: oklch(0% 0 0 / 0.04);
+    --input-border: oklch(0% 0 0 / 0.08);
+    --shadow-inset: oklch(0% 0 0 / 0.05);
+    --shadow-primary: oklch(0% 0 0 / 0.05);
+    --shadow-primary-focus: oklch(0% 0 0 / 0.08);
+  }
+
   body {
     background-color: var(--color-bg);
     color: var(--color-fg);
@@ -53,7 +95,7 @@
 }
 
 .glass-card {
-  background: oklch(100% 0 0 / 0.03);
+  background: var(--glass-card-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--color-custom-border);
@@ -64,7 +106,7 @@
 }
 
 .glass-card:hover {
-  background: oklch(100% 0 0 / 0.05);
+  background: var(--glass-card-hover-bg);
   border-color: var(--color-muted);
   transform: translateY(-1px);
 }
@@ -74,25 +116,25 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: oklch(100% 0 0 / 0.03);
+  background: var(--input-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   padding: 8px 8px 8px 20px;
   border-radius: var(--radius-xl);
-  border: 1px solid oklch(100% 0 0 / 0.1);
+  border: 1px solid var(--input-border);
   max-width: 720px;
   width: 100%;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 
-    0 20px 50px oklch(0% 0 0 / 0.4),
-    inset 0 1px 1px oklch(100% 0 0 / 0.1);
+    0 20px 50px var(--shadow-primary),
+    inset 0 1px 1px var(--shadow-inset);
 }
 
 .input-group-premium:focus-within {
   border-color: color-mix(in oklch, var(--color-accent) 50%, transparent);
-  background: oklch(100% 0 0 / 0.05);
+  background: var(--input-focus-bg);
   box-shadow: 
-    0 20px 50px oklch(0% 0 0 / 0.5),
+    0 20px 50px var(--shadow-primary-focus),
     0 0 0 4px color-mix(in oklch, var(--color-accent) 10%, transparent);
 }
 

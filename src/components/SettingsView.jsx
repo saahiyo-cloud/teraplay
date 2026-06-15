@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Play, Check, EyeOff, RefreshCw, Sliders, ChevronDown, Cloud } from 'lucide-react';
+import { Settings, Play, Check, EyeOff, RefreshCw, Sliders, ChevronDown, Cloud, Sun, Moon, Monitor } from 'lucide-react';
 import { db } from '../firebase';
 import { ref, set, onValue } from 'firebase/database';
 import ConfirmDialog from './ConfirmDialog';
@@ -12,11 +12,12 @@ export const ACCENT_COLORS = [
   { name: 'orange', value: 'oklch(68% 0.18 55)', muted: 'oklch(68% 0.18 55 / 0.15)', hex: '#f97316' }
 ];
 
-export default function SettingsView({ settings = { autoplay: true, rememberProgress: true, resolution: 'auto', accentColor: 'blue', autoFetch: true }, onUpdateSettings, onResetData, currentUser }) {
+export default function SettingsView({ settings = { autoplay: true, rememberProgress: true, resolution: 'auto', accentColor: 'blue', autoFetch: true, themeMode: 'dark' }, onUpdateSettings, onResetData, currentUser }) {
   const [selectedColor, setSelectedColor] = useState(settings.accentColor);
   const [autoplay, setAutoplay] = useState(settings.autoplay);
   const [rememberProgress, setRememberProgress] = useState(settings.rememberProgress);
   const [resolution, setResolution] = useState(settings.resolution);
+  const [themeMode, setThemeMode] = useState(settings.themeMode || 'dark');
 
   const [resetFeedback, setResetFeedback] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState(false);
@@ -27,6 +28,7 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
     setAutoplay(settings.autoplay);
     setRememberProgress(settings.rememberProgress);
     setResolution(settings.resolution);
+    setThemeMode(settings.themeMode || 'dark');
   }, [settings]);
 
   const applyColor = (color) => {
@@ -39,6 +41,13 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
     }
   };
 
+  const applyThemeMode = (mode) => {
+    setThemeMode(mode);
+    if (onUpdateSettings) {
+      onUpdateSettings({ themeMode: mode });
+    }
+  };
+
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     if (onUpdateSettings) {
@@ -46,7 +55,8 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
         await onUpdateSettings({
           autoplay,
           rememberProgress,
-          resolution
+          resolution,
+          themeMode
         });
         setSaveFeedback(true);
         setTimeout(() => setSaveFeedback(false), 2000);
@@ -158,28 +168,66 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
             <h2>Theme & Customization</h2>
           </div>
 
-          <div>
-            <label className="font-semibold text-sm text-fg block mb-2 select-none">Application Accent Theme</label>
-            <span className="text-xs text-muted block mb-5">Change the core highlight tint of links, glows, sliders, and progress indicators.</span>
-            
-            <div className="flex gap-4 items-center">
-              {ACCENT_COLORS.map(color => (
-                <button
-                  key={color.name}
-                  type="button"
-                  onClick={() => applyColor(color)}
-                  className="w-10 h-10 rounded-full flex items-center justify-center border-2 transition-transform duration-150 hover:scale-110 shadow-soft cursor-pointer relative"
-                  style={{ 
-                    backgroundColor: color.hex,
-                    borderColor: selectedColor === color.name ? '#ffffff' : 'transparent'
-                  }}
-                  aria-label={`Select ${color.name} theme`}
-                >
-                  {selectedColor === color.name && (
-                    <Check size={18} className="text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />
-                  )}
-                </button>
-              ))}
+          <div className="flex flex-col gap-6">
+            <div>
+              <label className="font-semibold text-sm text-fg block mb-2 select-none">Application Accent Theme</label>
+              <span className="text-xs text-muted block mb-5">Change the core highlight tint of links, glows, sliders, and progress indicators.</span>
+              
+              <div className="flex gap-4 items-center">
+                {ACCENT_COLORS.map(color => (
+                  <button
+                    key={color.name}
+                    type="button"
+                    onClick={() => applyColor(color)}
+                    className="w-10 h-10 rounded-full flex items-center justify-center border-2 transition-transform duration-150 hover:scale-110 shadow-soft cursor-pointer relative"
+                    style={{ 
+                      backgroundColor: color.hex,
+                      borderColor: selectedColor === color.name ? '#ffffff' : 'transparent'
+                    }}
+                    aria-label={`Select ${color.name} theme`}
+                  >
+                    {selectedColor === color.name && (
+                      <Check size={18} className="text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-custom-border/50 pt-6">
+              <label className="font-semibold text-sm text-fg block mb-2 select-none">Theme Mode</label>
+              <span className="text-xs text-muted block mb-5">Switch between dark, light, or OS-syncing system color scheme.</span>
+              
+              <div className="grid grid-cols-3 gap-3 md:gap-4 max-w-lg">
+                {[
+                  { mode: 'dark', label: 'Dark Mode', desc: 'Sleek & deep dark theme', icon: Moon },
+                  { mode: 'light', label: 'Light Mode', desc: 'Clean & high contrast', icon: Sun },
+                  { mode: 'system', label: 'System Mode', desc: 'Syncs with your device', icon: Monitor }
+                ].map(({ mode, label, desc, icon: Icon }) => {
+                  const isActive = themeMode === mode;
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => applyThemeMode(mode)}
+                      className={`flex flex-col items-center gap-2.5 p-3 md:p-4 rounded-xl border text-center transition-all duration-200 cursor-pointer select-none group relative overflow-hidden ${
+                        isActive 
+                          ? 'border-accent bg-accent-muted text-fg' 
+                          : 'border-custom-border hover:border-muted hover:bg-surface-elevated/40 text-muted hover:text-fg'
+                      }`}
+                    >
+                      <Icon size={18} className={isActive ? 'text-accent' : 'text-muted group-hover:text-fg transition-colors'} />
+                      <div>
+                        <div className="text-xs font-bold">{label}</div>
+                        <div className="text-[9px] opacity-65 mt-0.5 leading-tight hidden sm:block">{desc}</div>
+                      </div>
+                      {isActive && (
+                        <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-accent"></div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

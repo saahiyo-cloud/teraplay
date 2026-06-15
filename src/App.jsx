@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createHashRouter, RouterProvider, Routes, Route, useNavigate, Link, useLocation } from 'react-router-dom';
-import { Play, History, User, Settings, Loader2, AlertCircle, X } from 'lucide-react';
+import { Play, History, User, Settings, Loader2, AlertCircle, X, Sun, Moon } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import HomeView from './components/HomeView';
 import DiscoverView from './components/DiscoverView';
@@ -28,6 +28,25 @@ import { useFetch } from './hooks/useFetch';
 
 // Synchronously apply theme and migrate/clear mock data from localStorage
 (() => {
+  // Apply theme mode to prevent FOUC (Flash of Unstyled Content)
+  const savedTheme = localStorage.getItem('teraplay_theme_mode') || 'dark';
+  const root = document.documentElement;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (savedTheme === 'light') {
+    root.classList.add('light');
+    root.classList.remove('dark');
+    if (meta) meta.setAttribute('content', '#f7f8fa');
+  } else if (savedTheme === 'dark') {
+    root.classList.add('dark');
+    root.classList.remove('light');
+    if (meta) meta.setAttribute('content', '#0a0a0f');
+  } else if (savedTheme === 'system') {
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.classList.toggle('dark', isDark);
+    root.classList.toggle('light', !isDark);
+    if (meta) meta.setAttribute('content', isDark ? '#0a0a0f' : '#f7f8fa');
+  }
+
   const saved = localStorage.getItem('teraplay_accent');
   if (saved) {
     try {
@@ -76,6 +95,20 @@ function AppShell() {
   // Data hooks
   const { userProfile } = useProfile(currentUser);
   const { settings, handleUpdateSettings, handleResetData } = useSettings(currentUser);
+  
+  const handleToggleTheme = () => {
+    let nextTheme = 'dark';
+    if (settings.themeMode === 'dark') {
+      nextTheme = 'light';
+    } else if (settings.themeMode === 'light') {
+      nextTheme = 'dark';
+    } else {
+      const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      nextTheme = isSystemDark ? 'light' : 'dark';
+    }
+    handleUpdateSettings({ themeMode: nextTheme });
+  };
+
   const { discoverVideos, discoverVideosRef, dbCategories, topCreators } = useDiscover(currentUser);
   const { history, historyRef, setHistoryInDb, handleRemoveHistoryItem, clearAllHistory } = useHistory(currentUser);
   const {
@@ -275,7 +308,12 @@ function AppShell() {
 
   return (
     <div className="flex min-h-screen bg-bg relative text-fg">
-      <Sidebar isCollapsed={sidebarCollapsed} onToggleCollapse={handleToggleSidebar} />
+      <Sidebar 
+        isCollapsed={sidebarCollapsed} 
+        onToggleCollapse={handleToggleSidebar} 
+        settings={settings}
+        onUpdateSettings={handleUpdateSettings}
+      />
 
       <header className="fixed top-0 left-0 right-0 h-16 bg-glass backdrop-blur-3xl border-b border-custom-border z-[90] flex items-center justify-between px-4 md:hidden select-none">
         <Link to="/" className="flex items-center gap-2 font-bold text-base text-fg cursor-pointer">
@@ -285,6 +323,18 @@ function AppShell() {
           <span>TeraBox Player</span>
         </Link>
         <div className="flex items-center gap-1">
+          <button 
+            type="button"
+            onClick={handleToggleTheme}
+            className="p-2 text-muted hover:text-accent hover:bg-surface-elevated rounded-xl transition-all cursor-pointer border-none outline-none"
+            aria-label="Toggle theme mode"
+          >
+            {settings.themeMode === 'light' ? (
+              <Moon size={20} className="text-violet-500" />
+            ) : (
+              <Sun size={20} className="text-amber-400" />
+            )}
+          </button>
           <Link to="/history" className="p-2 text-muted hover:text-accent hover:bg-surface-elevated rounded-xl transition-all" aria-label="Watch history">
             <History size={20} />
           </Link>

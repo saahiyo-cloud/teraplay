@@ -75,12 +75,21 @@ export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onD
   const favoritesCount = videos.filter(v => v.favorite).length;
   const recentCount = videos.filter(v => v.progress > 0).length;
 
+  const isVideoFile = (fileName) => {
+    if (!fileName) return false;
+    const ext = fileName.split('.').pop().toLowerCase();
+    return ['mp4', 'mkv', 'webm', 'avi', 'mov', 'flv', '3gp', 'm4v', 'ts', 'm3u8'].includes(ext);
+  };
+
+  const libraryVideos = filtered.filter(v => isVideoFile(v.title || v.name));
+  const libraryOtherFiles = filtered.filter(v => !isVideoFile(v.title || v.name));
+
   return (
     <div className="animate-fade-in flex-1 flex flex-col">
       <header className="mb-6 md:mb-10 flex flex-col gap-4 md:gap-6">
         <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-fg mb-0.5 flex items-baseline gap-2 select-none">
           <span>My Library</span>
-          <span className="text-xs md:text-sm font-medium text-muted font-mono">({allCount} {allCount === 1 ? 'video' : 'videos'})</span>
+          <span className="text-xs md:text-sm font-medium text-muted font-mono">({allCount} {allCount === 1 ? 'file' : 'files'})</span>
         </h1>
         
         <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3 md:gap-4 flex-wrap">
@@ -124,7 +133,7 @@ export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onD
                 placeholder="Search your library..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-transparent border-none outline-none text-fg py-1.5 md:py-2 placeholder-white/30 text-xs md:text-sm"
+                className="w-full bg-transparent border-none outline-none text-fg py-1.5 md:py-2 placeholder-muted/50 text-xs md:text-sm"
                 aria-label="Search library"
               />
             </div>
@@ -161,28 +170,64 @@ export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onD
         </div>
       </header>
 
-      {filtered.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
-          <AnimatePresence initial={false}>
-            {filtered.map(video => (
-              <VideoCard
-                key={video.id}
-                video={video}
-                variant="library"
-                onSelect={handleCardClick}
-                onDelete={onDeleteVideo}
-                onShare={onShareVideo}
-                onPreview={onPreviewImage}
-              />
-            ))}
-          </AnimatePresence>
+      {libraryVideos.length > 0 || libraryOtherFiles.length > 0 ? (
+        <div className="flex flex-col gap-10">
+          {libraryVideos.length > 0 && (
+            <section>
+              <h2 className="text-sm md:text-base font-bold tracking-tight text-fg mb-4 flex items-center gap-2 select-none uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>
+                <span>Videos</span>
+                <span className="text-xs font-normal text-muted font-mono">({libraryVideos.length})</span>
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
+                <AnimatePresence initial={false}>
+                  {libraryVideos.map(video => (
+                    <VideoCard
+                      key={video.id}
+                      video={video}
+                      variant="library"
+                      onSelect={handleCardClick}
+                      onDelete={onDeleteVideo}
+                      onShare={onShareVideo}
+                      onPreview={onPreviewImage}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+            </section>
+          )}
+
+          {libraryOtherFiles.length > 0 && (
+            <section className={libraryVideos.length > 0 ? "border-t border-custom-border/40 pt-8" : ""}>
+              <h2 className="text-sm md:text-base font-bold tracking-tight text-fg mb-4 flex items-center gap-2 select-none uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-muted"></span>
+                <span>Images & Other Files</span>
+                <span className="text-xs font-normal text-muted font-mono">({libraryOtherFiles.length})</span>
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
+                <AnimatePresence initial={false}>
+                  {libraryOtherFiles.map(video => (
+                    <VideoCard
+                      key={video.id}
+                      video={video}
+                      variant="library"
+                      onSelect={handleCardClick}
+                      onDelete={onDeleteVideo}
+                      onShare={onShareVideo}
+                      onPreview={onPreviewImage}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+            </section>
+          )}
         </div>
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center py-24 px-6 text-center border border-dashed border-custom-border rounded-3xl bg-white/[0.01]">
           <div className="w-16 h-16 bg-surface-elevated border border-custom-border rounded-full grid place-items-center mb-6 text-muted">
             <Layers size={28} />
           </div>
-          <h2 className="font-bold text-xl mb-2 text-fg">No videos found</h2>
+          <h2 className="font-bold text-xl mb-2 text-fg">No items found</h2>
           <p className="text-muted text-sm max-w-xs leading-relaxed">
             {searchQuery 
               ? 'No matching files match your search query. Try another keyword.' 
