@@ -221,9 +221,8 @@ export default function LandingPage({ onNavigateToAuth }) {
                   <SlotText 
                     text={words[wordIndex]} 
                     options={{
-                      duration: 1100,
-                      stagger: 60,
-                      bounce: 0.2
+                      duration: 900,
+                      stagger: 80,
                     }}
                   />
                 </span>
@@ -277,7 +276,7 @@ export default function LandingPage({ onNavigateToAuth }) {
                 {/* Background Video Simulator image */}
                 <div className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-[10000ms] ease-out scale-105" 
                   style={{ 
-                    backgroundImage: `url('https://i.pinimg.com/736x/74/a8/38/74a8385a0536dd47167c37ed0123c4d8.jpg')`,
+                    backgroundImage: `var(--mock-video-bg-url)`,
                     filter: isPlaying ? 'brightness(0.65)' : 'brightness(0.4) contrast(1.1) blur(1px)'
                   }}
                 ></div>

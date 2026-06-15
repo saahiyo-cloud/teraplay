@@ -182,3 +182,15 @@
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/* Custom background for mock video simulator depending on screen orientation */
+:root {
+  --mock-video-bg-url: url('https://i.pinimg.com/736x/74/a8/38/74a8385a0536dd47167c37ed0123c4d8.jpg');
+}
+
+@media (orientation: portrait) {
+  :root {
+    --mock-video-bg-url: url('https://i.pinimg.com/1200x/c1/a8/4c/c1a84c05b380dd321ef7765f031f1fa8.jpg');
+  }
+}
+
