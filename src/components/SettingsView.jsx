@@ -69,14 +69,14 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
 
   return (
     <div className="animate-fade-in max-w-4xl flex flex-col gap-6">
-      <header className="mb-4">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-fg">Settings</h1>
-        <p className="text-muted text-sm mt-2">Adjust application configurations, playback rules, and color palettes.</p>
+      <header className="mb-2 md:mb-4">
+        <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-fg">Settings</h1>
+        <p className="text-muted text-xs md:text-sm mt-1 md:mt-2">Adjust application configurations, playback rules, and color palettes.</p>
       </header>
 
       {/* Firebase Cloud Connection Card */}
-      <div className="glass-card p-6 border border-custom-border rounded-2xl">
-        <div className="flex items-center gap-3 mb-4 select-none text-fg font-bold text-lg border-b border-custom-border/50 pb-3">
+      <div className="glass-card p-5 md:p-6 border border-custom-border rounded-2xl">
+        <div className="flex items-center gap-3 mb-4 select-none text-fg font-bold text-base md:text-lg border-b border-custom-border/50 pb-3">
           <Cloud size={20} className="text-accent" />
           <h2>Cloud Sync Status</h2>
         </div>
@@ -92,8 +92,8 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
       <form onSubmit={handleSaveSettings} className="flex flex-col gap-6">
         
         {/* Playback Settings Card */}
-        <div className="glass-card p-6 border border-custom-border rounded-2xl">
-          <div className="flex items-center gap-3 mb-6 select-none text-fg font-bold text-lg border-b border-custom-border/50 pb-3">
+        <div className="glass-card p-5 md:p-6 border border-custom-border rounded-2xl">
+          <div className="flex items-center gap-3 mb-6 select-none text-fg font-bold text-base md:text-lg border-b border-custom-border/50 pb-3">
             <Sliders size={20} className="text-accent" />
             <h2>Playback Options</h2>
           </div>
@@ -152,8 +152,8 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
         </div>
 
         {/* Theme customization */}
-        <div className="glass-card p-6 border border-custom-border rounded-2xl">
-          <div className="flex items-center gap-3 mb-6 select-none text-fg font-bold text-lg border-b border-custom-border/50 pb-3">
+        <div className="glass-card p-5 md:p-6 border border-custom-border rounded-2xl">
+          <div className="flex items-center gap-3 mb-6 select-none text-fg font-bold text-base md:text-lg border-b border-custom-border/50 pb-3">
             <Settings size={20} className="text-accent" />
             <h2>Theme & Customization</h2>
           </div>
@@ -185,8 +185,8 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
         </div>
 
         {/* Danger zone / resets */}
-        <div className="glass-card p-6 border border-rose-500/20 bg-rose-500/[0.02] rounded-2xl">
-          <div className="flex items-center gap-3 mb-6 select-none text-rose-400 font-bold text-lg border-b border-rose-500/10 pb-3">
+        <div className="glass-card p-5 md:p-6 border border-rose-500/20 bg-rose-500/[0.02] rounded-2xl">
+          <div className="flex items-center gap-3 mb-6 select-none text-rose-400 font-bold text-base md:text-lg border-b border-rose-500/10 pb-3">
             <EyeOff size={20} />
             <h2>Danger Zone</h2>
           </div>

@@ -296,7 +296,7 @@ function AppShell() {
         </div>
       </header>
 
-      <main className={`flex-1 ${sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'} transition-all duration-300 p-4 pt-20 md:p-10 w-full min-h-screen pb-28 md:pb-10 box-border flex flex-col`}>
+      <main className={`flex-1 ${sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'} transition-all duration-300 p-4 pt-24 md:p-10 w-full min-h-screen pb-28 md:pb-10 box-border flex flex-col`}>
         <div className="max-w-[1400px] w-full mx-auto flex-1 flex flex-col">
           <Routes>
             <Route path="/" element={

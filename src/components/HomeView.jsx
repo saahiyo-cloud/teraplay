@@ -67,9 +67,9 @@ export default function HomeView({ videos, userProfile, onVideoSelect, onFetch, 
 
   return (
     <div className="animate-fade-in flex-1 flex flex-col">
-      <header className="rounded-3xl p-6 md:p-10 mb-12 border border-custom-border bg-[radial-gradient(circle_at_100%_0%,var(--color-accent-muted),transparent_40%)] bg-surface shadow-glass relative overflow-hidden flex flex-col justify-center">
-        <div className="flex items-center gap-4 mb-2">
-          <div className="w-11 h-11 md:w-13 md:h-13 rounded-full overflow-hidden shrink-0 bg-surface-elevated hover:scale-105 transition-transform duration-200">
+      <header className="rounded-2xl md:rounded-3xl p-5 md:p-10 mb-8 md:mb-12 border border-custom-border bg-[radial-gradient(circle_at_100%_0%,var(--color-accent-muted),transparent_40%)] bg-surface shadow-glass relative overflow-hidden flex flex-col justify-center">
+        <div className="flex items-center gap-3 md:gap-4 mb-1 md:mb-2">
+          <div className="w-9 h-9 md:w-13 md:h-13 rounded-full overflow-hidden shrink-0 bg-surface-elevated hover:scale-105 transition-transform duration-200">
             {(userProfile?.avatar || currentUser?.photoURL) ? (
               <img src={userProfile?.avatar || currentUser?.photoURL} alt="Profile" className="w-full h-full object-cover" />
             ) : (
@@ -78,17 +78,17 @@ export default function HomeView({ videos, userProfile, onVideoSelect, onFetch, 
               </div>
             )}
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-fg tracking-tight">
+          <h1 className="text-xl md:text-3xl font-extrabold text-fg tracking-tight">
             Welcome back, {userProfile?.username || currentUser?.displayName || 'Streamer'}! 👋
           </h1>
         </div>
-        <p className="text-muted mb-4 mt-5 text-sm font-medium">
+        <p className="text-muted mb-3 md:mb-4 mt-4 md:mt-5 text-xs md:text-sm font-medium">
           Paste your TeraBox, Dubox, or Teraboxapp link below to stream instantly.
         </p>
         
         <form onSubmit={handleFetchSubmit} className="w-full">
-          <div className="w-full max-w-2xl bg-white/5 border border-white/10 rounded-2xl md:rounded-full flex flex-col md:flex-row items-stretch md:items-center p-2.5 md:p-2 md:pl-5 md:pr-2 gap-3 shadow-glass transition-all duration-300 focus-within:border-accent/50 focus-within:bg-white/10">
-            <div className="flex items-center gap-2 flex-1 min-w-0 bg-white/5 border border-white/10 md:bg-transparent md:border-none rounded-xl md:rounded-none px-3 py-1.5 md:p-0">
+          <div className="w-full max-w-2xl bg-white/5 border border-white/10 rounded-xl md:rounded-full flex flex-col md:flex-row items-stretch md:items-center p-2 md:p-2 md:pl-5 md:pr-2 gap-2 md:gap-3 shadow-glass transition-all duration-300 focus-within:border-accent/50 focus-within:bg-white/10">
+            <div className="flex items-center gap-1.5 md:gap-2 flex-1 min-w-0 bg-white/5 border border-white/10 md:bg-transparent md:border-none rounded-lg md:rounded-none px-2.5 py-1.5 md:p-0">
               <LinkIcon size={18} className="text-muted shrink-0" />
               <input 
                 type="text" 
@@ -110,7 +110,7 @@ export default function HomeView({ videos, userProfile, onVideoSelect, onFetch, 
               )}
               <button 
                 type="button"
-                className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 hover:bg-white/10 rounded-lg transition-all text-xs font-semibold text-fg cursor-pointer shrink-0 select-none"
+                className="flex items-center justify-center gap-1 px-2.5 py-1 bg-white/5 border border-white/10 hover:bg-white/10 rounded-md md:rounded-lg transition-all text-[11px] md:text-xs font-semibold text-fg cursor-pointer shrink-0 select-none"
                 onClick={handlePaste}
                 style={{
                   background: pasteFeedback ? 'oklch(65% 0.18 250 / 0.2)' : '',
@@ -124,7 +124,7 @@ export default function HomeView({ videos, userProfile, onVideoSelect, onFetch, 
             
             <button 
               type="submit" 
-              className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 md:py-2.5 bg-accent text-bg rounded-xl md:rounded-full font-bold text-sm shadow-[0_4px_12px_var(--color-accent-muted)] hover:-translate-y-0.5 hover:shadow-[0_8px_20px_var(--color-accent-muted)] transition-all cursor-pointer shrink-0"
+              className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-2.5 md:py-2.5 bg-accent text-bg rounded-lg md:rounded-full font-bold text-xs md:text-sm shadow-[0_4px_12px_var(--color-accent-muted)] hover:-translate-y-0.5 hover:shadow-[0_8px_20px_var(--color-accent-muted)] transition-all cursor-pointer shrink-0"
             >
               <Zap size={16} fill="currentColor" />
               <span>Fetch Video</span>
@@ -142,7 +142,7 @@ export default function HomeView({ videos, userProfile, onVideoSelect, onFetch, 
               ) : (
                 <span className="text-amber-400/90 flex items-center gap-1.5 font-medium">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                  Please enter a valid TeraBox, Dubox, or Teraboxapp link (should start with http/https).
+                  Please enter a valid TeraBox link.
                 </span>
               )}
             </div>
@@ -175,9 +175,9 @@ export default function HomeView({ videos, userProfile, onVideoSelect, onFetch, 
       </header>
 
       {continueWatching.length > 0 && (
-        <section className="mb-12">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-fg">Continue Watching</h2>
+        <section className="mb-8 md:mb-12">
+          <div className="flex justify-between items-center mb-5 md:mb-6">
+            <h2 className="text-lg md:text-2xl font-bold tracking-tight text-fg">Continue Watching</h2>
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">

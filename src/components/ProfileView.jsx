@@ -176,12 +176,12 @@ export default function ProfileView({ videos = [], history = [], currentUser, us
 
   return (
     <div className="animate-fade-in max-w-4xl">
-      <header className="mb-10 select-none">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-fg">My Profile</h1>
-        <p className="text-muted text-sm mt-2">Manage your account credentials and monitor streaming metrics.</p>
+      <header className="mb-6 md:mb-10 select-none">
+        <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-fg">My Profile</h1>
+        <p className="text-muted text-xs md:text-sm mt-1 md:mt-2">Manage your account credentials and monitor streaming metrics.</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 mb-6">
         {/* Left Column: User & Subscription Details */}
         <div className="md:col-span-1 self-start">
           <div className="glass-card p-6 flex flex-col items-center border border-custom-border rounded-2xl relative overflow-hidden h-full">
@@ -231,28 +231,28 @@ export default function ProfileView({ videos = [], history = [], currentUser, us
         {/* Right Column: Stats, Profile Form & Activity */}
         <div className="md:col-span-2 flex flex-col gap-6">
           {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="glass-card p-5 border border-custom-border rounded-2xl flex flex-col items-center text-center gap-2 hover:-translate-y-0.5 transition-all duration-200">
-              <PlayCircle size={22} className="text-accent shrink-0" />
+          <div className="grid grid-cols-3 gap-3 md:gap-4">
+            <div className="glass-card p-3 md:p-5 border border-custom-border rounded-xl md:rounded-2xl flex flex-col items-center text-center gap-1.5 md:gap-2 hover:-translate-y-0.5 transition-all duration-200">
+              <PlayCircle className="text-accent shrink-0 w-[20px] h-[20px] md:w-[22px] md:h-[22px]" />
               <div>
-                <div className="text-2xl md:text-3xl font-mono font-bold text-fg leading-tight">{history.length}</div>
-                <div className="text-[9px] md:text-[10px] text-muted font-semibold mt-1 uppercase tracking-wider block whitespace-nowrap">Total Streamed</div>
+                <div className="text-lg md:text-3xl font-mono font-bold text-fg leading-tight">{history.length}</div>
+                <div className="text-[8px] md:text-[10px] text-muted font-semibold mt-0.5 md:mt-1 uppercase tracking-wider block whitespace-nowrap">Total Streamed</div>
               </div>
             </div>
 
-            <div className="glass-card p-5 border border-custom-border rounded-2xl flex flex-col items-center text-center gap-2 hover:-translate-y-0.5 transition-all duration-200">
-              <Clock size={22} className="text-accent shrink-0" />
+            <div className="glass-card p-3 md:p-5 border border-custom-border rounded-xl md:rounded-2xl flex flex-col items-center text-center gap-1.5 md:gap-2 hover:-translate-y-0.5 transition-all duration-200">
+              <Clock className="text-accent shrink-0 w-[20px] h-[20px] md:w-[22px] md:h-[22px]" />
               <div>
-                <div className="text-2xl md:text-3xl font-mono font-bold text-fg leading-tight">{formattedPlayback}</div>
-                <div className="text-[9px] md:text-[10px] text-muted font-semibold mt-1 uppercase tracking-wider block whitespace-nowrap">Playback Time</div>
+                <div className="text-lg md:text-3xl font-mono font-bold text-fg leading-tight">{formattedPlayback}</div>
+                <div className="text-[8px] md:text-[10px] text-muted font-semibold mt-0.5 md:mt-1 uppercase tracking-wider block whitespace-nowrap">Playback Time</div>
               </div>
             </div>
 
-            <div className="glass-card p-5 border border-custom-border rounded-2xl flex flex-col items-center text-center gap-2 hover:-translate-y-0.5 transition-all duration-200">
-              <Heart size={22} className="text-accent shrink-0" />
+            <div className="glass-card p-3 md:p-5 border border-custom-border rounded-xl md:rounded-2xl flex flex-col items-center text-center gap-1.5 md:gap-2 hover:-translate-y-0.5 transition-all duration-200">
+              <Heart className="text-accent shrink-0 w-[20px] h-[20px] md:w-[22px] md:h-[22px]" />
               <div>
-                <div className="text-2xl md:text-3xl font-mono font-bold text-fg leading-tight">{favoriteVideosCount}</div>
-                <div className="text-[9px] md:text-[10px] text-muted font-semibold mt-1 uppercase tracking-wider block whitespace-nowrap">Saved Favorites</div>
+                <div className="text-lg md:text-3xl font-mono font-bold text-fg leading-tight">{favoriteVideosCount}</div>
+                <div className="text-[8px] md:text-[10px] text-muted font-semibold mt-0.5 md:mt-1 uppercase tracking-wider block whitespace-nowrap">Saved Favorites</div>
               </div>
             </div>
           </div>

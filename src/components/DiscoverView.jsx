@@ -147,48 +147,49 @@ export default function DiscoverView({ videos = [], discoverVideos = [], onVideo
   return (
     <div className="animate-fade-in flex-1 flex flex-col relative pb-10">
       {/* Page Header */}
-      <div className="flex items-center gap-3 mb-8 select-none">
-        <div className="w-10 h-10 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent glow-accent">
-          <Compass size={22} className="animate-[pulse_3s_infinite]" />
+      <div className="flex items-center gap-2 md:gap-3 mb-5 md:mb-8 select-none">
+        <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent glow-accent">
+          <Compass className="animate-[pulse_3s_infinite] w-[18px] h-[18px] md:w-[22px] md:h-[22px]" />
         </div>
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-fg">Discover</h1>
-          <p className="text-xs text-muted mt-0.5">Stream shared vaults or import videos to your private library.</p>
+          <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-fg">Discover</h1>
+          <p className="text-[10px] md:text-xs text-muted mt-0.5">Stream shared vaults or import videos to your private library.</p>
         </div>
       </div>
 
 
 
       {/* Smart Filters Toolbar */}
-      <section className="mb-10 flex flex-col gap-6">
+      <section className="mb-6 md:mb-10 flex flex-col gap-4 md:gap-6">
         {/* Search and Sort Row */}
-        <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
-          <div className="flex-1 bg-surface border border-custom-border px-4 py-1.5 rounded-2xl text-fg text-sm flex items-center gap-3 focus-within:border-accent transition-colors duration-200 shadow-glass">
-            <Search size={18} className="text-muted shrink-0" />
+        <div className="flex items-center gap-2 md:gap-4">
+          <div className="flex-1 bg-surface border border-custom-border px-3 md:px-4 py-1 md:py-1.5 rounded-xl md:rounded-2xl text-fg text-sm flex items-center gap-2 md:gap-3 focus-within:border-accent transition-colors duration-200 shadow-glass">
+            <Search className="text-muted shrink-0 w-[16px] h-[16px] md:w-[18px] md:h-[18px]" />
             <input 
               type="text" 
               placeholder="Search by title or creator..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-transparent border-none outline-none text-fg py-2 placeholder-white/30"
+              className="w-full bg-transparent border-none outline-none text-fg py-1.5 md:py-2 placeholder-white/30 text-xs md:text-sm"
               aria-label="Search discover videos"
             />
           </div>
           
           <button 
-            className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-surface border border-custom-border font-semibold text-xs text-fg hover:bg-surface-elevated hover:border-muted transition-all duration-200 select-none cursor-pointer shadow-glass shrink-0"
+            className="flex items-center justify-center gap-1.5 px-3 py-2.5 md:px-5 md:py-3 rounded-xl md:rounded-2xl bg-surface border border-custom-border font-semibold text-xs text-fg hover:bg-surface-elevated hover:border-muted transition-all duration-200 select-none cursor-pointer shadow-glass shrink-0"
             onClick={cycleSort} 
             aria-label="Sort discover videos"
           >
-            <Filter size={16} className="shrink-0" />
-            <span>{getSortLabel()}</span>
+            <Filter className="shrink-0 w-[14px] h-[14px] md:w-[16px] md:h-[16px]" />
+            <span className="hidden sm:inline">{getSortLabel()}</span>
+            <span className="inline sm:hidden">{getSortLabel().replace('Sort: ', '')}</span>
           </button>
         </div>
 
         {/* Creators Carousel Horizontal Row */}
-        <div className="flex flex-col gap-2">
-          <div className="text-[10px] font-bold text-muted uppercase tracking-wider pl-1">Creators Directory</div>
-          <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-none snap-x snap-mandatory select-none">
+        <div className="flex flex-col gap-1.5 md:gap-2 mt-2.5 md:mt-4">
+          <div className="text-[9px] md:text-[10px] font-bold text-muted uppercase tracking-wider pl-1">Creators Directory</div>
+          <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2 md:pb-3 scrollbar-none snap-x snap-mandatory select-none">
             {creators.map(creator => {
               const isSelected = selectedCreator === creator.uid;
               const count = creators.indexOf(creator) === 0 ? activeDiscoverVideos.length : activeDiscoverVideos.filter(v => v.uploader.uid === creator.uid).length;
@@ -196,18 +197,18 @@ export default function DiscoverView({ videos = [], discoverVideos = [], onVideo
                 <button
                   key={creator.uid}
                   onClick={() => setSelectedCreator(creator.uid)}
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl border snap-start cursor-pointer transition-all duration-200 whitespace-nowrap text-left shrink-0 ${isSelected ? 'bg-accent/10 border-accent/50 text-accent glow-accent shadow-[0_4px_12px_var(--color-accent-muted)]' : 'bg-surface border-custom-border text-muted hover:border-muted hover:text-fg hover:bg-surface-elevated'}`}
+                  className={`flex items-center gap-2 md:gap-3 px-3 py-2 md:px-4 md:py-2.5 rounded-xl md:rounded-2xl border snap-start cursor-pointer transition-all duration-200 whitespace-nowrap text-left shrink-0 ${isSelected ? 'bg-accent/10 border-accent/50 text-accent glow-accent shadow-[0_4px_12px_var(--color-accent-muted)]' : 'bg-surface border-custom-border text-muted hover:border-muted hover:text-fg hover:bg-surface-elevated'}`}
                 >
                   {creator.avatar ? (
-                    <img src={creator.avatar} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                    <img src={creator.avatar} alt="" className="w-5 h-5 md:w-6 md:h-6 rounded-full object-cover shrink-0" />
                   ) : (
-                    <div className={`w-6 h-6 rounded-full bg-accent/25 flex items-center justify-center text-[10px] font-bold ${isSelected ? 'text-accent' : 'text-muted hover:text-fg'}`}>
+                    <div className={`w-5 h-5 md:w-6 md:h-6 rounded-full bg-accent/25 flex items-center justify-center text-[9px] md:text-[10px] font-bold ${isSelected ? 'text-accent' : 'text-muted hover:text-fg'}`}>
                       All
                     </div>
                   )}
                   <div>
-                    <div className="text-xs font-bold leading-tight">{creator.username}</div>
-                    <div className="text-[9px] opacity-70 mt-0.5">{count} {count === 1 ? 'video' : 'videos'}</div>
+                    <div className="text-[11px] md:text-xs font-bold leading-tight">{creator.username}</div>
+                    <div className="text-[8px] md:text-[9px] opacity-70 mt-0.5">{count} {count === 1 ? 'video' : 'videos'}</div>
                   </div>
                 </button>
               );
@@ -216,14 +217,14 @@ export default function DiscoverView({ videos = [], discoverVideos = [], onVideo
         </div>
 
         {/* Category Pill Tabs */}
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-none flex-nowrap py-1">
+        <div className="flex gap-1 md:gap-1.5 overflow-x-auto scrollbar-none flex-nowrap py-1">
           {categories.map(cat => {
             const isSelected = selectedCategory === cat;
             return (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-1.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap select-none border border-transparent ${isSelected ? 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)] font-bold' : 'bg-surface-elevated text-muted hover:text-fg hover:bg-surface-elevated/85 border-custom-border/50'}`}
+                className={`px-3 py-1.5 md:px-4 md:py-1.5 rounded-lg md:rounded-xl font-semibold text-[11px] md:text-xs transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap select-none border border-transparent ${isSelected ? 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)] font-bold' : 'bg-surface-elevated text-muted hover:text-fg hover:bg-surface-elevated/85 border-custom-border/50'}`}
               >
                 {cat}
               </button>

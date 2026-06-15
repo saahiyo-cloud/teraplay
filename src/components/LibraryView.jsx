@@ -77,17 +77,17 @@ export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onD
 
   return (
     <div className="animate-fade-in flex-1 flex flex-col">
-      <header className="mb-10 flex flex-col gap-6">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-fg mb-1 flex items-baseline gap-3 select-none">
+      <header className="mb-6 md:mb-10 flex flex-col gap-4 md:gap-6">
+        <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-fg mb-0.5 flex items-baseline gap-2 select-none">
           <span>My Library</span>
           <span className="text-xs md:text-sm font-medium text-muted font-mono">({allCount} {allCount === 1 ? 'video' : 'videos'})</span>
         </h1>
         
-        <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 flex-wrap">
+        <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3 md:gap-4 flex-wrap">
           {/* Tabs */}
-          <div className="flex gap-1 bg-surface p-1 rounded-2xl border border-custom-border shrink-0 overflow-x-auto scrollbar-none flex-nowrap max-w-full">
+          <div className="flex gap-1 bg-surface p-1 rounded-xl md:rounded-2xl border border-custom-border shrink-0 overflow-x-auto scrollbar-none flex-nowrap max-w-full">
             <button 
-              className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap flex items-center gap-2 ${activeTab === 'all' ? 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)]' : 'text-muted hover:text-fg'}`}
+              className={`px-3.5 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl font-semibold text-xs md:text-sm transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap flex items-center gap-2 ${activeTab === 'all' ? 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)]' : 'text-muted hover:text-fg'}`}
               onClick={() => setActiveTab('all')}
             >
               <span>All Videos</span>
@@ -96,7 +96,7 @@ export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onD
               </span>
             </button>
             <button 
-              className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap flex items-center gap-2 ${activeTab === 'favorites' ? 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)]' : 'text-muted hover:text-fg'}`}
+              className={`px-3.5 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl font-semibold text-xs md:text-sm transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap flex items-center gap-2 ${activeTab === 'favorites' ? 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)]' : 'text-muted hover:text-fg'}`}
               onClick={() => setActiveTab('favorites')}
             >
               <span>Favorites</span>
@@ -105,7 +105,7 @@ export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onD
               </span>
             </button>
             <button 
-              className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap flex items-center gap-2 ${activeTab === 'recent' ? 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)]' : 'text-muted hover:text-fg'}`}
+              className={`px-3.5 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl font-semibold text-xs md:text-sm transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap flex items-center gap-2 ${activeTab === 'recent' ? 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)]' : 'text-muted hover:text-fg'}`}
               onClick={() => setActiveTab('recent')}
             >
               <span>Recent</span>
@@ -116,31 +116,32 @@ export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onD
           </div>
 
           {/* Search and Sort */}
-          <div className="flex flex-col sm:flex-row gap-3 flex-1 lg:max-w-2xl">
-            <div className="flex-1 bg-surface border border-custom-border px-4 py-1.5 rounded-2xl text-fg text-sm flex items-center gap-3 focus-within:border-accent transition-colors duration-200">
-              <Search size={18} className="text-muted shrink-0" />
+          <div className="flex gap-2 md:gap-3 flex-1 lg:max-w-2xl mt-2 md:mt-0">
+            <div className="flex-1 bg-surface border border-custom-border px-3 md:px-4 py-1 md:py-1.5 rounded-xl md:rounded-2xl text-fg text-sm flex items-center gap-2 md:gap-3 focus-within:border-accent transition-colors duration-200">
+              <Search className="text-muted shrink-0 w-[16px] h-[16px] md:w-[18px] md:h-[18px]" />
               <input 
                 type="text" 
                 placeholder="Search your library..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-transparent border-none outline-none text-fg py-2 placeholder-white/30"
+                className="w-full bg-transparent border-none outline-none text-fg py-1.5 md:py-2 placeholder-white/30 text-xs md:text-sm"
                 aria-label="Search library"
               />
             </div>
             <button 
-              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-surface border border-custom-border font-semibold text-sm text-fg hover:bg-surface-elevated hover:border-muted transition-all duration-200 select-none cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 md:px-5 md:py-2.5 rounded-xl md:rounded-2xl bg-surface border border-custom-border font-semibold text-xs md:text-sm text-fg hover:bg-surface-elevated hover:border-muted transition-all duration-200 select-none cursor-pointer shrink-0"
               onClick={cycleSort} 
               aria-label="Sort library"
             >
-              <Filter size={18} className="shrink-0" />
-              <span>{getSortLabel()}</span>
+              <Filter className="shrink-0 w-[14px] h-[14px] md:w-[18px] md:h-[18px]" />
+              <span className="hidden sm:inline">{getSortLabel()}</span>
+              <span className="inline sm:hidden">{getSortLabel().replace('Sort: ', '')}</span>
             </button>
           </div>
         </div>
 
         {/* Category Pill Tabs */}
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-none flex-nowrap py-1 border-t border-custom-border/30 pt-4">
+        <div className="flex gap-1 md:gap-1.5 overflow-x-auto scrollbar-none flex-nowrap py-1 border-t border-custom-border/30 pt-3 md:pt-4">
           {categories.map(cat => {
             const isSelected = selectedCategory === cat;
             const count = cat === 'All' ? filteredBeforeCategory.length : filteredBeforeCategory.filter(v => (v.category || 'General') === cat).length;
@@ -148,7 +149,7 @@ export default function LibraryView({ videos, onVideoSelect, onPreviewImage, onD
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-1.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap select-none border border-transparent flex items-center gap-1.5 ${isSelected ? 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)] font-bold' : 'bg-surface border-custom-border text-muted hover:text-fg hover:bg-surface-elevated'}`}
+                className={`px-3 py-1.5 md:px-4 md:py-1.5 rounded-lg md:rounded-xl font-semibold text-[11px] md:text-xs transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap select-none border border-transparent flex items-center gap-1.5 ${isSelected ? 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)] font-bold' : 'bg-surface border-custom-border text-muted hover:text-fg hover:bg-surface-elevated'}`}
               >
                 <span>{cat}</span>
                 <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold font-mono transition-colors ${isSelected ? 'bg-black/10 text-bg' : 'bg-surface-elevated text-muted'}`}>

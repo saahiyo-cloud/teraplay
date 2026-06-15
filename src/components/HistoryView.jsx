@@ -103,17 +103,17 @@ export default function HistoryView({ history, onClearHistory, onRemoveItem, onP
 
   return (
     <div className="animate-fade-in max-w-4xl flex-1 flex flex-col">
-      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-10">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6 md:mb-10">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-fg">Watch History</h1>
-          <p className="text-muted text-sm mt-2">Monitor streaming logs and manage your chronological watch log.</p>
+          <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-fg">Watch History</h1>
+          <p className="text-muted text-xs md:text-sm mt-1 md:mt-2">Monitor streaming logs and manage your chronological watch log.</p>
         </div>
         {history.length > 0 && (
           <button 
             onClick={onClearHistory}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-muted hover:text-fg hover:bg-surface-elevated text-sm transition-all duration-200 cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg md:rounded-xl text-muted hover:text-fg hover:bg-surface-elevated text-xs md:text-sm transition-all duration-200 cursor-pointer"
           >
-            <Trash2 size={16} />
+            <Trash2 className="w-[14px] h-[14px] md:w-[16px] md:h-[16px]" />
             <span>Clear History</span>
           </button>
         )}
