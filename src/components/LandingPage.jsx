@@ -146,16 +146,16 @@ export default function LandingPage({ onNavigateToAuth }) {
       {/* Background container wrapper */}
 
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 h-20 bg-glass/65 backdrop-blur-2xl border-b border-custom-border/80 z-[100] select-none">
+      <header className="fixed top-0 left-0 right-0 h-16 sm:h-20 bg-glass/65 backdrop-blur-2xl border-b border-custom-border/80 z-[100] select-none">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-accent rounded-xl grid place-items-center text-bg">
-              <Play fill="currentColor" size={18} className="ml-0.5" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent rounded-lg sm:rounded-xl grid place-items-center text-bg">
+              <Play fill="currentColor" size={14} className="ml-0.5" />
             </div>
-            <span className="text-xl font-extrabold tracking-tight text-fg">TeraPlay</span>
+            <span className="text-lg sm:text-xl font-extrabold tracking-tight text-fg">TeraPlay</span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {/* Quick customization toggles directly on header for Wow factor */}
             <div className="hidden sm:flex items-center gap-2 bg-surface/50 border border-custom-border/60 p-1.5 rounded-xl">
               {/* Color Accents */}
@@ -188,13 +188,13 @@ export default function LandingPage({ onNavigateToAuth }) {
 
             <button
               onClick={() => openAuth('signin')}
-              className="text-sm font-semibold text-fg hover:text-accent px-4 py-2 transition-colors cursor-pointer"
+              className="text-xs sm:text-sm font-semibold text-fg hover:text-accent px-2.5 py-1.5 sm:px-4 sm:py-2 transition-colors cursor-pointer"
             >
               Sign In
             </button>
             <button
               onClick={() => openAuth('signup')}
-              className="px-5 py-2.5 bg-accent text-bg hover:opacity-95 font-bold rounded-xl text-xs transition-all hover:-translate-y-0.5 cursor-pointer"
+              className="px-3.5 py-2 sm:px-5 sm:py-2.5 bg-accent text-bg hover:opacity-95 font-bold rounded-lg sm:rounded-xl text-xs transition-all hover:-translate-y-0.5 cursor-pointer"
             >
               Get Started
             </button>
@@ -203,7 +203,7 @@ export default function LandingPage({ onNavigateToAuth }) {
       </header>
 
       {/* Hero Section */}
-      <section className="relative pt-36 pb-20 md:pt-44 md:pb-28 lg:py-32">
+      <section className="relative pt-28 pb-12 sm:pt-36 sm:pb-20 md:pt-44 md:pb-28 lg:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-12 gap-12 items-center">
             
@@ -538,39 +538,39 @@ export default function LandingPage({ onNavigateToAuth }) {
       </section>
 
       {/* Pricing / Public Beta Access Tier */}
-      <section className="py-20 md:py-28 lg:py-32">
+      <section className="py-12 sm:py-20 md:py-28 lg:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 select-none">
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-fg">
+          <div className="text-center mb-8 sm:mb-16 select-none">
+            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-fg">
               Pricing Options
             </h2>
-            <p className="mt-4 text-muted text-sm sm:text-base max-w-xl mx-auto">
+            <p className="mt-2 sm:mt-4 text-muted text-xs sm:text-base max-w-xl mx-auto">
               Our beta release offers full premium capabilities at no cost.
             </p>
           </div>
 
-          <div className="max-w-md mx-auto">
+          <div className="max-w-md mx-auto px-2 sm:px-0">
             {/* Pro Plan Card - Highly styled */}
-            <div className="glass-card border-2 border-accent relative p-8 rounded-3xl bg-surface/50 backdrop-blur-md shadow-2xl scale-105">
+            <div className="glass-card border-2 border-accent relative p-6 sm:p-8 rounded-3xl bg-surface/50 backdrop-blur-md shadow-2xl scale-100 sm:scale-105">
               
-              <div className="absolute top-0 right-1/2 translate-x-1/2 -translate-y-1/2 bg-accent text-bg px-4 py-1.5 rounded-full font-bold text-[9px] uppercase tracking-wider">
+              <div className="absolute top-0 right-1/2 translate-x-1/2 -translate-y-1/2 bg-accent text-bg px-4 py-1.5 rounded-full font-bold text-[9px] uppercase tracking-wider whitespace-nowrap">
                 Most Popular / Public Beta
               </div>
 
               <div className="text-left select-none">
-                <h3 className="text-xl font-bold text-fg">Premium Pro</h3>
-                <p className="text-muted text-xs mt-1">Full access to HLS streaming tools.</p>
-                <div className="mt-6 flex items-baseline gap-1.5">
-                  <span className="text-5xl font-black text-fg">$0</span>
-                  <span className="text-muted text-sm font-semibold">/ lifetime</span>
+                <h3 className="text-lg sm:text-xl font-bold text-fg">Premium Pro</h3>
+                <p className="text-muted text-[10px] sm:text-xs mt-1">Full access to HLS streaming tools.</p>
+                <div className="mt-4 sm:mt-6 flex items-baseline gap-1.5">
+                  <span className="text-4xl sm:text-5xl font-black text-fg">$0</span>
+                  <span className="text-muted text-xs sm:text-sm font-semibold">/ lifetime</span>
                 </div>
-                <div className="mt-2 text-accent text-xs font-bold bg-accent/10 py-1.5 px-3 rounded-lg inline-block">
+                <div className="mt-2 text-accent text-[10px] sm:text-xs font-bold bg-accent/10 py-1.5 px-3 rounded-lg inline-block">
                   Free Access in Public Beta
                 </div>
               </div>
 
               {/* Feature check list */}
-              <ul className="mt-8 space-y-4 border-t border-custom-border/60 pt-6 text-left text-xs select-none">
+              <ul className="mt-6 sm:mt-8 space-y-3 sm:space-y-4 border-t border-custom-border/60 pt-5 sm:pt-6 text-left text-[11px] sm:text-xs select-none">
                 {[
                   "Unlimited TeraBox resolutions & link decodes",
                   "HD quality switcher option (1080p / 720p / 480p / 360p)",
@@ -580,7 +580,7 @@ export default function LandingPage({ onNavigateToAuth }) {
                   "Priority server stream proxies (Zero-Stall)"
                 ].map((feature, idx) => (
                   <li key={idx} className="flex items-center gap-3">
-                    <div className="w-4 h-4 rounded-full bg-accent/15 grid place-items-center text-accent">
+                    <div className="w-4 h-4 rounded-full bg-accent/15 grid place-items-center text-accent shrink-0">
                       <Check size={10} />
                     </div>
                     <span className="text-fg/90">{feature}</span>
@@ -588,16 +588,16 @@ export default function LandingPage({ onNavigateToAuth }) {
                 ))}
               </ul>
 
-              <div className="mt-8">
+              <div className="mt-6 sm:mt-8">
                 <button
                   onClick={() => openAuth('signup')}
-                  className="w-full py-3.5 bg-accent text-bg hover:opacity-95 font-bold rounded-xl text-sm transition-all hover:-translate-y-0.5 cursor-pointer"
+                  className="w-full py-3 sm:py-3.5 bg-accent text-bg hover:opacity-95 font-bold rounded-xl text-sm transition-all hover:-translate-y-0.5 cursor-pointer animate-none"
                 >
                   Register Free Account
                 </button>
               </div>
 
-              <p className="mt-4 text-[10px] text-muted text-center">
+              <p className="mt-4 text-[9px] sm:text-[10px] text-muted text-center">
                 Instant registration. Cloud synchronization via secure database.
               </p>
             </div>
@@ -606,21 +606,21 @@ export default function LandingPage({ onNavigateToAuth }) {
       </section>
 
       {/* FAQs Section */}
-      <section className="py-20 md:py-28 lg:py-32 bg-surface/5 border-t border-custom-border/60">
+      <section className="py-12 sm:py-20 md:py-28 lg:py-32 bg-surface/5 border-t border-custom-border/60">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 select-none flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/30 text-accent grid place-items-center mb-4">
-              <HelpCircle size={22} />
+          <div className="text-center mb-8 sm:mb-16 select-none flex flex-col items-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-accent/10 border border-accent/30 text-accent grid place-items-center mb-3 sm:mb-4">
+              <HelpCircle size={20} className="sm:w-[22px] sm:h-[22px]" />
             </div>
-            <h2 className="text-3xl font-bold tracking-tight text-fg">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-fg">
               Frequently Asked Questions
             </h2>
-            <p className="mt-2 text-muted text-sm">
+            <p className="mt-2 text-muted text-xs sm:text-sm">
               Answers to common technical queries about TeraPlay streaming infrastructure.
             </p>
           </div>
 
-          <div className="space-y-4 text-left">
+          <div className="space-y-3 sm:space-y-4 text-left">
             {faqs.map((faq, idx) => {
               const isOpen = openFaq === idx;
               return (
@@ -630,17 +630,17 @@ export default function LandingPage({ onNavigateToAuth }) {
                 >
                   <button
                     onClick={() => toggleFaq(idx)}
-                    className="w-full px-6 py-5 flex items-center justify-between text-left font-bold text-sm sm:text-base text-fg hover:bg-white/5 transition-all cursor-pointer"
+                    className="w-full px-4 py-4 sm:px-6 sm:py-5 flex items-center justify-between text-left font-bold text-xs sm:text-base text-fg hover:bg-white/5 transition-all cursor-pointer"
                   >
                     <span>{faq.q}</span>
                     <ChevronDown 
-                      size={18} 
+                      size={16} 
                       className={`text-muted transition-transform duration-300 ${isOpen ? 'rotate-180 text-accent' : 'rotate-0'}`} 
                     />
                   </button>
                   
                   {isOpen && (
-                    <div className="px-6 pb-6 text-xs sm:text-sm text-muted leading-relaxed border-t border-custom-border/40 pt-4 animate-fade-in">
+                    <div className="px-4 pb-4 sm:px-6 sm:pb-6 text-[11px] sm:text-sm text-muted leading-relaxed border-t border-custom-border/40 pt-3 sm:pt-4 animate-fade-in">
                       {faq.a}
                     </div>
                   )}
@@ -652,25 +652,25 @@ export default function LandingPage({ onNavigateToAuth }) {
       </section>
 
       {/* Final Call to Action Section */}
-      <section className="py-20 md:py-28 lg:py-32 bg-gradient-to-b from-transparent to-accent-muted/10 relative overflow-hidden select-none">
+      <section className="py-12 sm:py-20 md:py-28 lg:py-32 bg-gradient-to-b from-transparent to-accent-muted/10 relative overflow-hidden select-none">
         
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 flex flex-col items-center gap-6">
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-fg">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 flex flex-col items-center gap-4 sm:gap-6">
+          <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-fg">
             Ready to Upgrade Your Streaming?
           </h2>
-          <p className="text-muted text-sm sm:text-base max-w-xl">
+          <p className="text-muted text-xs sm:text-base max-w-xl">
             Register your free account today during our public beta and experience instantaneous, high-definition streaming directly from the cloud.
           </p>
 
           <button
             onClick={() => openAuth('signup')}
-            className="px-8 py-4 bg-accent text-bg hover:opacity-95 font-bold rounded-xl text-base transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer mt-4"
+            className="px-6 py-3 sm:px-8 sm:py-4 bg-accent text-bg hover:opacity-95 font-bold rounded-xl text-sm sm:text-base transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer mt-2 sm:mt-4"
           >
             <span>Get Started for Free</span>
-            <ArrowRight size={18} />
+            <ArrowRight size={16} className="sm:w-[18px] sm:h-[18px]" />
           </button>
 
-          <p className="text-[10px] text-muted">
+          <p className="text-[9px] sm:text-[10px] text-muted">
             Unlimited streams • Zero buffering delays • Complete personal library syncing
           </p>
         </div>
