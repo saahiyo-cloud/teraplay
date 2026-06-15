@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createHashRouter, RouterProvider, Routes, Route, useNavigate, Link, useLocation } from 'react-router-dom';
-import { Play, History, User, Settings, Loader2, AlertCircle, X, Sun, Moon } from 'lucide-react';
+import { Play, History, User, Settings, Loader2, AlertCircle, X } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import HomeView from './components/HomeView';
 import DiscoverView from './components/DiscoverView';
@@ -96,18 +96,7 @@ function AppShell() {
   const { userProfile } = useProfile(currentUser);
   const { settings, handleUpdateSettings, handleResetData } = useSettings(currentUser);
   
-  const handleToggleTheme = () => {
-    let nextTheme = 'dark';
-    if (settings.themeMode === 'dark') {
-      nextTheme = 'light';
-    } else if (settings.themeMode === 'light') {
-      nextTheme = 'dark';
-    } else {
-      const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      nextTheme = isSystemDark ? 'light' : 'dark';
-    }
-    handleUpdateSettings({ themeMode: nextTheme });
-  };
+
 
   const { discoverVideos, discoverVideosRef, dbCategories, topCreators } = useDiscover(currentUser);
   const { history, historyRef, setHistoryInDb, handleRemoveHistoryItem, clearAllHistory } = useHistory(currentUser);
@@ -323,18 +312,7 @@ function AppShell() {
           <span>TeraBox Player</span>
         </Link>
         <div className="flex items-center gap-1">
-          <button 
-            type="button"
-            onClick={handleToggleTheme}
-            className="p-2 text-muted hover:text-accent hover:bg-surface-elevated rounded-xl transition-all cursor-pointer border-none outline-none"
-            aria-label="Toggle theme mode"
-          >
-            {settings.themeMode === 'light' ? (
-              <Moon size={20} className="text-violet-500" />
-            ) : (
-              <Sun size={20} className="text-amber-400" />
-            )}
-          </button>
+
           <Link to="/history" className="p-2 text-muted hover:text-accent hover:bg-surface-elevated rounded-xl transition-all" aria-label="Watch history">
             <History size={20} />
           </Link>

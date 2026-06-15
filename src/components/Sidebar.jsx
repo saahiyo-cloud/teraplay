@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Play, Home, Layers, Heart, History, User, Settings, LogOut, Compass, ChevronLeft, ChevronRight, Sun, Moon } from 'lucide-react';
+import { Play, Home, Layers, Heart, History, User, Settings, LogOut, Compass, ChevronLeft, ChevronRight } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 
 /* Minimal tooltip that shows to the right of collapsed sidebar items */
@@ -48,20 +48,7 @@ export default function Sidebar({ isCollapsed = false, onToggleCollapse, setting
   const location = useLocation();
   const [signOutConfirm, setSignOutConfirm] = useState(false);
 
-  const handleToggleTheme = () => {
-    if (onUpdateSettings) {
-      let nextTheme = 'dark';
-      if (settings.themeMode === 'dark') {
-        nextTheme = 'light';
-      } else if (settings.themeMode === 'light') {
-        nextTheme = 'dark';
-      } else {
-        const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        nextTheme = isSystemDark ? 'light' : 'dark';
-      }
-      onUpdateSettings({ themeMode: nextTheme });
-    }
-  };
+
 
   const isLibraryActive = (tab = 'all') => {
     if (location.pathname !== '/library') return false;
@@ -164,22 +151,7 @@ export default function Sidebar({ isCollapsed = false, onToggleCollapse, setting
         </nav>
 
         <div className="mt-auto flex flex-col gap-1">
-          <Tooltip label={`Switch to ${settings.themeMode === 'light' ? 'Dark' : 'Light'} Theme`} show={isCollapsed}>
-            <button 
-              type="button"
-              onClick={handleToggleTheme}
-              className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-3'} py-2.5 rounded-xl text-muted hover:bg-surface hover:text-fg transition-all duration-200 font-medium text-left cursor-pointer border-none outline-none group`}
-            >
-              {settings.themeMode === 'light' ? (
-                <Moon size={20} className="shrink-0 text-violet-500 transition-transform duration-300 group-hover:rotate-12" />
-              ) : (
-                <Sun size={20} className="shrink-0 text-amber-400 transition-transform duration-500 group-hover:rotate-45" />
-              )}
-              <span className={`transition-all duration-300 origin-left truncate ${isCollapsed ? 'opacity-0 w-0 scale-95 pointer-events-none' : 'opacity-100 w-auto'}`}>
-                {settings.themeMode === 'light' ? 'Dark Mode' : 'Light Mode'}
-              </span>
-            </button>
-          </Tooltip>
+
           <Tooltip label="Profile" show={isCollapsed}>
             <Link 
               to="/profile" 
