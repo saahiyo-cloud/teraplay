@@ -4,11 +4,17 @@ import Hls from 'hls.js';
 import { 
   ChevronLeft, Play, Pause, RotateCcw, Volume2, VolumeX, Maximize2, Minimize2,
   Download, Heart, Share2, Copy, SkipForward,
-  HelpCircle, Check, AlertCircle, X, Trash2
+  HelpCircle, Check, AlertCircle, X, Trash2, ChevronDown
 } from 'lucide-react';
 import { db } from '../firebase';
 import { ref, set, get } from 'firebase/database';
 import { API_BASE, API_KEY } from '../config';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem
+} from "@/components/ui/dropdown-menu";
 
 class CustomLoader extends Hls.DefaultConfig.loader {
   constructor(config) {
@@ -593,6 +599,8 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
 
   const handleLoadedMetadata = async () => {
     if (videoRef.current) {
+      // Restore playback rate
+      videoRef.current.playbackRate = playbackRate;
       const dur = videoRef.current.duration;
       console.log("[PlayerView] loadedmetadata event fired. duration:", dur);
       if (dur && !isNaN(dur) && dur > 0 && dur !== Infinity) {
@@ -653,13 +661,10 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     setScrubHover({ pct: pct * 100, time: formatTime(pct * duration) });
   };
 
-  const cycleSpeed = () => {
-    const rates = [1, 1.25, 1.5, 2];
-    const nextIdx = (rates.indexOf(playbackRate) + 1) % rates.length;
-    const nextRate = rates[nextIdx];
-    setPlaybackRate(nextRate);
+  const handleSpeedChange = (rate) => {
+    setPlaybackRate(rate);
     if (videoRef.current) {
-      videoRef.current.playbackRate = nextRate;
+      videoRef.current.playbackRate = rate;
     }
     resetControlsTimer();
   };
@@ -1207,10 +1212,29 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
                 )}
               </div>
 
-              {/* Speed rate */}
-              <button onClick={cycleSpeed} className="text-white hover:text-accent font-mono text-xs font-semibold cursor-pointer">
-                {playbackRate.toFixed(1)}x
-              </button>
+              {/* Speed selection Dropdown Menu */}
+              <div className="relative">
+                <DropdownMenu>
+                  <DropdownMenuTrigger render={
+                    <button className="text-white hover:text-accent font-mono text-xs font-semibold cursor-pointer flex items-center gap-0.5 outline-none">
+                      <span>{playbackRate.toFixed(1)}x</span>
+                      <ChevronDown size={12} className="opacity-70" />
+                    </button>
+                  } />
+                  <DropdownMenuContent align="end" side="top" className="w-20 bg-zinc-950 border border-white/10 rounded-xl overflow-hidden shadow-2xl p-1 flex flex-col z-[110]">
+                    {[0.5, 1.0, 1.25, 1.5, 2.0].map(speed => (
+                      <DropdownMenuItem
+                        key={speed}
+                        onClick={() => handleSpeedChange(speed)}
+                        className={`px-2.5 py-1.5 text-left hover:bg-white/10 w-full transition-colors flex items-center justify-between text-xs cursor-pointer rounded-md outline-none ${playbackRate === speed ? 'text-accent font-bold' : 'text-white/80'}`}
+                      >
+                        <span>{speed.toFixed(1)}x</span>
+                        {playbackRate === speed && <Check size={12} />}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
 
               {/* Help Keyboard map shortcuts panel */}
               <button 

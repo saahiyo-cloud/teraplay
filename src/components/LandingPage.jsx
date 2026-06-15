@@ -65,10 +65,10 @@ export default function LandingPage({ onNavigateToAuth }) {
           }
           return prev + 1;
         });
-      }, 1000);
+      }, 1000 / playbackSpeed);
     }
     return () => clearInterval(interval);
-  }, [isPlaying, isBuffering]);
+  }, [isPlaying, isBuffering, playbackSpeed]);
 
   const togglePlay = () => {
     if (!isPlaying) {
@@ -95,6 +95,12 @@ export default function LandingPage({ onNavigateToAuth }) {
       setToastMessage(`Quality updated: HLS segment pre-warmed`);
       setTimeout(() => setToastMessage(''), 2500);
     }, 600);
+  };
+
+  const handleSpeedChange = (speed) => {
+    setPlaybackSpeed(speed);
+    setToastMessage(`Playback speed: ${speed}x`);
+    setTimeout(() => setToastMessage(''), 2000);
   };
 
   // Convert seconds to MM:SS
@@ -286,7 +292,15 @@ export default function LandingPage({ onNavigateToAuth }) {
             </div>
 
             {/* Hero Right Visual: Interactive Mockup Player */}
-            <div className="lg:col-span-5 relative w-full flex justify-center">
+            <div className="lg:col-span-5 relative w-full flex justify-center group/mockup-container">
+              {/* Dynamic Ambilight Glow */}
+              <div 
+                className="absolute inset-2 -z-10 rounded-[36px] bg-cover bg-center transition-all duration-[600ms] ease-out opacity-45 blur-[45px] saturate-[1.6] pointer-events-none scale-95 group-hover/mockup-container:opacity-60 group-hover/mockup-container:scale-100"
+                style={{ 
+                  backgroundImage: `var(--mock-video-bg-url)`,
+                }}
+              ></div>
+
               <div className="w-full max-w-sm sm:max-w-md aspect-[4/3] sm:aspect-[4/5] bg-gradient-to-tr from-accent/5 to-accent/20 rounded-3xl p-3 md:p-4 border border-accent/20 shadow-2xl relative overflow-hidden backdrop-blur-sm flex flex-col justify-between">
                 
                 {/* Background Video Simulator image */}
@@ -356,9 +370,31 @@ export default function LandingPage({ onNavigateToAuth }) {
                       <span>{formatTime(playbackTime)} / 23:40</span>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <Volume2 size={12} className="opacity-70" />
+                    <div className="flex items-center gap-2">
+                      <Volume2 size={12} className="opacity-70 mr-1" />
                       
+                      {/* Speed selection popup */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger render={
+                          <button className="px-2 py-0.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded text-white flex items-center gap-1 font-semibold cursor-pointer outline-none">
+                            <span>{playbackSpeed}x</span>
+                            <ChevronDown size={8} />
+                          </button>
+                        } />
+                        <DropdownMenuContent align="end" side="top" className="w-20 bg-zinc-950 border border-white/10 rounded-xl overflow-hidden shadow-2xl p-1 flex flex-col z-[110]">
+                          {[0.5, 1, 1.25, 1.5, 2].map(speed => (
+                            <DropdownMenuItem
+                              key={speed}
+                              onClick={() => handleSpeedChange(speed)}
+                              className={`px-2.5 py-1.5 text-left hover:bg-white/10 w-full transition-colors flex items-center justify-between text-[9px] cursor-pointer rounded-md outline-none ${playbackSpeed === speed ? 'text-accent font-bold' : 'text-white/80'}`}
+                            >
+                              <span>{speed}x</span>
+                              {playbackSpeed === speed && <Check size={8} />}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+
                       {/* Quality selection popup */}
                       <DropdownMenu>
                         <DropdownMenuTrigger render={
@@ -439,7 +475,7 @@ export default function LandingPage({ onNavigateToAuth }) {
           <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
             
             {/* Bento Grid Card 1: Main feature (Spans 4 col on md, 2 col by default) */}
-            <div className="col-span-2 md:col-span-4 bg-gradient-to-br from-accent/5 via-accent/10 to-accent-muted rounded-3xl p-5 sm:p-8 border border-accent/20 min-h-[240px] sm:min-h-[300px] flex flex-col justify-between text-left relative overflow-hidden group">
+            <div className="col-span-2 md:col-span-4 bg-gradient-to-br from-accent/5 via-accent/10 to-accent-muted rounded-3xl p-5 sm:p-8 border border-accent/20 min-h-[240px] sm:min-h-[300px] flex flex-col justify-between text-left relative overflow-hidden group hover:translate-y-[-4px] hover:shadow-[0_8px_30px_var(--color-accent-muted)] hover:border-accent/40 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]">
               <div className="absolute top-5 right-5 p-2 sm:p-3 bg-accent/20 rounded-2xl text-accent">
                 <CloudLightning size={20} className="sm:w-6 sm:h-6" />
               </div>
@@ -455,7 +491,7 @@ export default function LandingPage({ onNavigateToAuth }) {
             </div>
 
             {/* Bento Grid Card 2: Personal Library (Spans 2 col on md, 1 col by default) */}
-            <div className="col-span-1 md:col-span-2 bg-surface/30 border border-custom-border/80 hover:border-accent/40 rounded-3xl p-5 sm:p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
+            <div className="col-span-1 md:col-span-2 bg-surface/30 border border-custom-border/80 hover:border-accent/40 hover:shadow-[0_8px_30px_var(--color-accent-muted)] rounded-3xl p-5 sm:p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
               <div className="w-9 h-9 sm:w-12 sm:h-12 bg-accent/15 border border-accent/25 rounded-2xl grid place-items-center text-accent">
                 <Bookmark size={16} className="sm:w-5 sm:h-5" />
               </div>
@@ -468,7 +504,7 @@ export default function LandingPage({ onNavigateToAuth }) {
             </div>
 
             {/* Bento Grid Card 3: Theme Personalization (Spans 2 col on md, 1 col by default) */}
-            <div className="col-span-1 md:col-span-2 bg-surface/30 border border-custom-border/80 hover:border-accent/40 rounded-3xl p-5 sm:p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
+            <div className="col-span-1 md:col-span-2 bg-surface/30 border border-custom-border/80 hover:border-accent/40 hover:shadow-[0_8px_30px_var(--color-accent-muted)] rounded-3xl p-5 sm:p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
               <div className="w-9 h-9 sm:w-12 sm:h-12 bg-accent/15 border border-accent/25 rounded-2xl grid place-items-center text-accent">
                 <Sliders size={16} className="sm:w-5 sm:h-5" />
               </div>
@@ -481,7 +517,7 @@ export default function LandingPage({ onNavigateToAuth }) {
             </div>
 
             {/* Bento Grid Card 4: Link compatibility (Spans 4 col on md, 2 col by default) */}
-            <div className="col-span-2 md:col-span-4 bg-gradient-to-tr from-surface/20 to-surface-elevated/40 border border-custom-border/80 hover:border-accent/40 rounded-3xl p-5 sm:p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
+            <div className="col-span-2 md:col-span-4 bg-gradient-to-tr from-surface/20 to-surface-elevated/40 border border-custom-border/80 hover:border-accent/40 hover:shadow-[0_8px_30px_var(--color-accent-muted)] rounded-3xl p-5 sm:p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
               <div className="flex justify-between items-start">
                 <div className="w-9 h-9 sm:w-12 sm:h-12 bg-accent/15 border border-accent/25 rounded-2xl grid place-items-center text-accent">
                   <Database size={16} className="sm:w-5 sm:h-5" />
