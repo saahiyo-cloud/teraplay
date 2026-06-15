@@ -498,38 +498,38 @@ export default function LandingPage({ onNavigateToAuth }) {
             Get Streaming in 3 Steps
           </h2>
           
-          <div className="grid md:grid-cols-3 gap-12 relative">
+          <div className="grid grid-cols-3 gap-3 sm:gap-8 md:gap-12 relative">
             
-            {/* Visual arrow guides in desktop grid */}
-            <div className="hidden md:block absolute top-12 left-1/3 right-1/3 h-[2px] bg-gradient-to-r from-accent/40 via-transparent to-accent/40 z-0"></div>
+            {/* Visual guide line behind circle indicators */}
+            <div className="absolute top-5 sm:top-8 left-[16%] right-[16%] h-[1px] sm:h-[2px] bg-gradient-to-r from-accent/40 via-transparent to-accent/40 z-0"></div>
 
             <div className="text-center relative z-10 flex flex-col items-center">
-              <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/30 text-accent font-extrabold text-lg flex items-center justify-center shadow-lg shadow-accent/5 mb-6">
+              <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-accent/10 border border-accent/30 text-accent font-extrabold text-xs sm:text-lg flex items-center justify-center shadow-lg shadow-accent/5 mb-3 sm:mb-6">
                 1
               </div>
-              <h3 className="text-lg font-bold text-fg mb-2">Copy TeraBox URL</h3>
-              <p className="text-muted text-xs max-w-xs leading-relaxed">
-                Grab any sharing URL from your TeraBox account, whether it is a private share or community link.
+              <h3 className="text-[11px] sm:text-lg font-bold text-fg mb-1 sm:mb-2">Copy TeraBox URL</h3>
+              <p className="text-muted text-[9px] sm:text-xs max-w-xs leading-normal sm:leading-relaxed px-1 sm:px-0">
+                Grab any sharing URL from your TeraBox account, private share or community link.
               </p>
             </div>
 
             <div className="text-center relative z-10 flex flex-col items-center">
-              <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/30 text-accent font-extrabold text-lg flex items-center justify-center shadow-lg shadow-accent/5 mb-6">
+              <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-accent/10 border border-accent/30 text-accent font-extrabold text-xs sm:text-lg flex items-center justify-center shadow-lg shadow-accent/5 mb-3 sm:mb-6">
                 2
               </div>
-              <h3 className="text-lg font-bold text-fg mb-2">Paste & Resolve</h3>
-              <p className="text-muted text-xs max-w-xs leading-relaxed">
-                Insert it into our high-speed input interface. Our cloud workers fetch signatures and verify streams.
+              <h3 className="text-[11px] sm:text-lg font-bold text-fg mb-1 sm:mb-2">Paste & Resolve</h3>
+              <p className="text-muted text-[9px] sm:text-xs max-w-xs leading-normal sm:leading-relaxed px-1 sm:px-0">
+                Insert it into our input interface. Our cloud workers resolve signatures.
               </p>
             </div>
 
             <div className="text-center relative z-10 flex flex-col items-center">
-              <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/30 text-accent font-extrabold text-lg flex items-center justify-center shadow-lg shadow-accent/5 mb-6">
+              <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-accent/10 border border-accent/30 text-accent font-extrabold text-xs sm:text-lg flex items-center justify-center shadow-lg shadow-accent/5 mb-3 sm:mb-6">
                 3
               </div>
-              <h3 className="text-lg font-bold text-fg mb-2">Stream in High Definition</h3>
-              <p className="text-muted text-xs max-w-xs leading-relaxed">
-                Enjoy zero-latency loading and adaptive qualities. Add bookmark cards or review your playback history logs.
+              <h3 className="text-[11px] sm:text-lg font-bold text-fg mb-1 sm:mb-2">Stream in HD</h3>
+              <p className="text-muted text-[9px] sm:text-xs max-w-xs leading-normal sm:leading-relaxed px-1 sm:px-0">
+                Enjoy zero-latency loading and select custom quality streams.
               </p>
             </div>
 
