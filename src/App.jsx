@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createHashRouter, RouterProvider, Routes, Route, useNavigate, useParams, Link } from 'react-router-dom';
+import { createHashRouter, RouterProvider, Routes, Route, useNavigate, useParams, Link, useLocation } from 'react-router-dom';
 import { Play, History, User, Settings, Loader2, AlertCircle, X, LogOut } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import HomeView from './components/HomeView';
@@ -101,6 +101,8 @@ const formatDurationHelper = (timeInSeconds) => {
 
 function AppShell() {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -145,6 +147,31 @@ function AppShell() {
   const historyRef = useRef([]);
   const discoverVideosRef = useRef([]);
   const deletingVideoIdRef = useRef(null);
+
+  // Scroll restoration and dynamic browser title syncing
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
+    const routeTitles = {
+      '/': 'Home | TeraPlay',
+      '/discover': 'Discover | TeraPlay',
+      '/library': 'My Library | TeraPlay',
+      '/profile': 'Profile | TeraPlay',
+      '/settings': 'Settings | TeraPlay',
+      '/history': 'History | TeraPlay',
+    };
+
+    const pathname = location.pathname;
+    if (pathname.startsWith('/player')) {
+      const parts = pathname.split('/');
+      const videoId = parts[parts.length - 1];
+      const allVideos = [...videos, ...discoverVideos];
+      const video = allVideos.find(v => String(v.id) === String(videoId));
+      document.title = video ? `${video.title} | TeraPlay` : 'Playing | TeraPlay';
+    } else {
+      document.title = routeTitles[pathname] || 'TeraPlay';
+    }
+  }, [location.pathname, videos, discoverVideos]);
 
   useEffect(() => {
     videosRef.current = videos;
