@@ -14,6 +14,7 @@ import ConfirmDialog from './components/ConfirmDialog';
 import ShareModal from './components/ShareModal';
 import NotFoundView from './components/NotFoundView';
 import PlayerRouteWrapper from './components/PlayerRouteWrapper';
+import FilesView from './components/FilesView';
 import { db } from './firebase';
 import { ref, set } from 'firebase/database';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -339,6 +340,9 @@ function AppShell() {
                 dbCategories={dbCategories}
                 topCreators={topCreators}
               />
+            } />
+            <Route path="/files" element={
+              <FilesView onPreviewImage={setPreviewImage} />
             } />
             <Route path="/library" element={
               <LibraryView

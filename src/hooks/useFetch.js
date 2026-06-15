@@ -52,8 +52,14 @@ export function useFetch(currentUser, navigate, { videosRef, historyRef, userPro
         const name = (file.filename || '').toLowerCase();
         return VIDEO_EXTENSIONS.some(ext => name.endsWith(ext));
       });
+      
       if (videoFiles.length === 0) {
-        throw new Error('No playable video files found in this share link.');
+        const otherFiles = (data.files || []).filter(file => !file.is_directory);
+        if (otherFiles.length > 0) {
+          navigate(`/files?url=${encodeURIComponent(url)}`, { state: { resolvedData: data } });
+          return;
+        }
+        throw new Error('No files found in this share link.');
       }
 
       const newVideos = videoFiles.map((file, idx) => {
