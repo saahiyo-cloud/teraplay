@@ -5,11 +5,31 @@ import {
   createUserWithEmailAndPassword, 
   updateProfile,
   GoogleAuthProvider,
+  signInWithPopup,
   signInWithRedirect,
   getRedirectResult
 } from 'firebase/auth';
 import { ref, set, get } from 'firebase/database';
 import { Play, Mail, Lock, User, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+
+/**
+ * Ensure the Google user has a profile node in the Realtime Database.
+ * Called after both popup and redirect flows.
+ */
+async function ensureGoogleUserProfile(user) {
+  const profileRef = ref(db, `users/${user.uid}/profile`);
+  const profileSnap = await get(profileRef);
+
+  if (!profileSnap.exists()) {
+    await set(profileRef, {
+      username: user.displayName || user.email.split('@')[0],
+      email: user.email,
+      tier: 'Premium Pro',
+      avatar: user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
+      createdAt: new Date().toISOString()
+    });
+  }
+}
 
 export default function AuthScreen() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -72,29 +92,21 @@ export default function AuthScreen() {
     }
   };
 
+  // Handle redirect result for the rare fallback case where popup was blocked
   useEffect(() => {
     const handleRedirectResult = async () => {
       try {
         const result = await getRedirectResult(auth);
         if (result) {
           setLoading(true);
-          const user = result.user;
-          const profileRef = ref(db, `users/${user.uid}/profile`);
-          const profileSnap = await get(profileRef);
-          
-          if (!profileSnap.exists()) {
-            await set(profileRef, {
-              username: user.displayName || user.email.split('@')[0],
-              email: user.email,
-              tier: 'Premium Pro',
-              avatar: user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
-              createdAt: new Date().toISOString()
-            });
-          }
+          await ensureGoogleUserProfile(result.user);
         }
       } catch (err) {
         console.error('Redirect result error:', err);
-        setError(err.message || 'Failed to complete Google Sign-In.');
+        // Only show error if it's not a trivial "no redirect" scenario
+        if (err.code !== 'auth/popup-closed-by-user') {
+          setError(err.message || 'Failed to complete Google Sign-In.');
+        }
       } finally {
         setLoading(false);
       }
@@ -105,12 +117,31 @@ export default function AuthScreen() {
   const handleGoogleSignIn = async () => {
     setError(null);
     setLoading(true);
+    const provider = new GoogleAuthProvider();
+
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithRedirect(auth, provider);
+      // Primary: use popup (reliable across all environments)
+      const result = await signInWithPopup(auth, provider);
+      await ensureGoogleUserProfile(result.user);
+      // onAuthStateChanged in AuthContext will handle the rest
     } catch (err) {
-      console.error('Google auth error:', err);
-      setError(err.message || 'Failed to redirect to Google.');
+      // If popup was blocked by browser, fall back to redirect
+      if (err.code === 'auth/popup-blocked') {
+        try {
+          await signInWithRedirect(auth, provider);
+          return; // page will reload on redirect
+        } catch (redirectErr) {
+          console.error('Redirect fallback error:', redirectErr);
+          setError(redirectErr.message || 'Failed to sign in with Google.');
+        }
+      } else if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        // User closed the popup — not an error, just reset loading
+        setLoading(false);
+        return;
+      } else {
+        console.error('Google auth error:', err);
+        setError(err.message || 'Failed to sign in with Google.');
+      }
       setLoading(false);
     }
   };
