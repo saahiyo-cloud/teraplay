@@ -1,0 +1,24 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    "discoverVideos": {
+      ".read": "auth != null",
+      "$videoId": {
+        ".write": "auth != null && (!data.exists() || data.child('uploader/uid').val() == auth.uid) && (!newData.exists() || newData.child('uploader/uid').val() == auth.uid)"
+      }
+    },
+    "categories": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "topCreators": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
+  }
+}
