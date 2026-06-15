@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   updateProfile,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithRedirect,
+  getRedirectResult
 } from 'firebase/auth';
 import { ref, set, get } from 'firebase/database';
 import { Play, Mail, Lock, User, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
@@ -71,34 +72,45 @@ export default function AuthScreen() {
     }
   };
 
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          setLoading(true);
+          const user = result.user;
+          const profileRef = ref(db, `users/${user.uid}/profile`);
+          const profileSnap = await get(profileRef);
+          
+          if (!profileSnap.exists()) {
+            await set(profileRef, {
+              username: user.displayName || user.email.split('@')[0],
+              email: user.email,
+              tier: 'Premium Pro',
+              avatar: user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
+              createdAt: new Date().toISOString()
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Redirect result error:', err);
+        setError(err.message || 'Failed to complete Google Sign-In.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    handleRedirectResult();
+  }, []);
+
   const handleGoogleSignIn = async () => {
     setError(null);
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      const userCredential = await signInWithPopup(auth, provider);
-      const user = userCredential.user;
-
-      // Check if user database profile exists
-      const profileRef = ref(db, `users/${user.uid}/profile`);
-      const profileSnap = await get(profileRef);
-      
-      if (!profileSnap.exists()) {
-        // Create initial database profile for first-time Google signups
-        await set(profileRef, {
-          username: user.displayName || user.email.split('@')[0],
-          email: user.email,
-          tier: 'Premium Pro',
-          avatar: user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
-          createdAt: new Date().toISOString()
-        });
-      }
+      await signInWithRedirect(auth, provider);
     } catch (err) {
       console.error('Google auth error:', err);
-      if (err.code !== 'auth/popup-closed-by-user') {
-        setError(err.message || 'Failed to authenticate with Google.');
-      }
-    } finally {
+      setError(err.message || 'Failed to redirect to Google.');
       setLoading(false);
     }
   };
