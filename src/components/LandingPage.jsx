@@ -281,7 +281,7 @@ export default function LandingPage({ onNavigateToAuth }) {
 
             {/* Hero Right Visual: Interactive Mockup Player */}
             <div className="lg:col-span-5 relative w-full flex justify-center">
-              <div className="w-full max-w-sm aspect-[4/3] sm:aspect-square bg-gradient-to-tr from-accent/5 to-accent/20 rounded-3xl p-3 md:p-4 border border-accent/20 shadow-2xl relative overflow-hidden backdrop-blur-sm flex flex-col justify-between">
+              <div className="w-full max-w-sm sm:max-w-md aspect-[4/3] sm:aspect-[4/5] bg-gradient-to-tr from-accent/5 to-accent/20 rounded-3xl p-3 md:p-4 border border-accent/20 shadow-2xl relative overflow-hidden backdrop-blur-sm flex flex-col justify-between">
                 
                 {/* Background Video Simulator image */}
                 <div className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-[10000ms] ease-out scale-105" 
