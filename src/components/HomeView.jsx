@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Link as LinkIcon, Clipboard, Zap, Play, X } from 'lucide-react';
+import { Link as LinkIcon, Clipboard, Zap, Play, X, User } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import VideoCard from './VideoCard';
 
@@ -68,10 +68,21 @@ export default function HomeView({ videos, userProfile, onVideoSelect, onFetch, 
   return (
     <div className="animate-fade-in flex-1 flex flex-col">
       <header className="rounded-3xl p-6 md:p-10 mb-12 border border-custom-border bg-[radial-gradient(circle_at_100%_0%,var(--color-accent-muted),transparent_40%)] bg-surface shadow-glass relative overflow-hidden flex flex-col justify-center">
-        <h1 className="text-2xl md:text-3xl font-extrabold text-fg mb-2 tracking-tight">
-          Welcome back, {userProfile?.username || currentUser?.displayName || 'Streamer'}! 👋
-        </h1>
-        <p className="text-muted mb-6 text-sm font-medium">
+        <div className="flex items-center gap-4 mb-2">
+          <div className="w-11 h-11 md:w-13 md:h-13 rounded-full overflow-hidden shrink-0 bg-surface-elevated hover:scale-105 transition-transform duration-200">
+            {(userProfile?.avatar || currentUser?.photoURL) ? (
+              <img src={userProfile?.avatar || currentUser?.photoURL} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-muted">
+                <User size={22} />
+              </div>
+            )}
+          </div>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-fg tracking-tight">
+            Welcome back, {userProfile?.username || currentUser?.displayName || 'Streamer'}! 👋
+          </h1>
+        </div>
+        <p className="text-muted mb-4 mt-5 text-sm font-medium">
           Paste your TeraBox, Dubox, or Teraboxapp link below to stream instantly.
         </p>
         

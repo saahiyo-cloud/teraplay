@@ -13,6 +13,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import AuthScreen from './components/AuthScreen';
 import ConfirmDialog from './components/ConfirmDialog';
 import ShareModal from './components/ShareModal';
+import NotFoundView from './components/NotFoundView';
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { ref, onValue, set, get, update, increment } from 'firebase/database';
@@ -1043,6 +1044,7 @@ function AppShell() {
                 onPlayVideo={handlePlayFromHistory}
               />
             } />
+            <Route path="*" element={<NotFoundView />} />
           </Routes>
         </div>
       </main>
