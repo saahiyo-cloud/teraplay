@@ -222,9 +222,12 @@ export default function FilesView({ onPreviewImage }) {
                 {/* Actions */}
                 <div className="flex items-center gap-2 shrink-0">
                   {/* Image Lightbox Trigger */}
-                  {meta.isImage && file.thumbnails?.original && (
+                  {meta.isImage && (file.thumbnails?.url3 || file.thumbnails?.url2 || file.thumbnails?.url1 || file.dlink) && (
                     <button
-                      onClick={() => onPreviewImage && onPreviewImage({ url: file.thumbnails.original, title: file.filename })}
+                      onClick={() => onPreviewImage && onPreviewImage({ 
+                        url: file.thumbnails?.url3 || file.thumbnails?.url2 || file.thumbnails?.url1 || file.dlink, 
+                        title: file.filename 
+                      })}
                       className="p-2 md:p-2.5 rounded-xl bg-surface border border-custom-border text-muted hover:text-fg hover:scale-105 active:scale-95 transition-all cursor-pointer"
                       title="Preview Image"
                     >
