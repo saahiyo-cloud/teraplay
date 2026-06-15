@@ -10,6 +10,21 @@ import { ACCENT_COLORS } from './SettingsView';
 import { SlotText } from 'slot-text/react';
 import 'slot-text/style.css';
 
+// shadcn components
+import { Button } from '@/components/ui/button';
+import { 
+  Accordion, 
+  AccordionItem, 
+  AccordionTrigger, 
+  AccordionContent 
+} from "@/components/ui/accordion";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem
+} from "@/components/ui/dropdown-menu";
+
 export default function LandingPage({ onNavigateToAuth }) {
   const { settings, handleUpdateSettings } = useSettings(null);
   
@@ -33,14 +48,10 @@ export default function LandingPage({ onNavigateToAuth }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackTime, setPlaybackTime] = useState(0);
   const [quality, setQuality] = useState('1080p');
-  const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [prewarmIndicator, setPrewarmIndicator] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-
-  // FAQs open state (accordion)
-  const [openFaq, setOpenFaq] = useState(null);
 
   // Playback timer simulation
   useEffect(() => {
@@ -77,7 +88,6 @@ export default function LandingPage({ onNavigateToAuth }) {
 
   const handleQualityChange = (q) => {
     setQuality(q);
-    setShowQualityMenu(false);
     setIsBuffering(true);
     setToastMessage(`Switching to ${q}...`);
     setTimeout(() => {
@@ -85,10 +95,6 @@ export default function LandingPage({ onNavigateToAuth }) {
       setToastMessage(`Quality updated: HLS segment pre-warmed`);
       setTimeout(() => setToastMessage(''), 2500);
     }, 600);
-  };
-
-  const toggleFaq = (index) => {
-    setOpenFaq(openFaq === index ? null : index);
   };
 
   // Convert seconds to MM:SS
@@ -102,6 +108,8 @@ export default function LandingPage({ onNavigateToAuth }) {
   const handleSelectAccent = (colorObj) => {
     document.documentElement.style.setProperty('--color-accent', colorObj.value);
     document.documentElement.style.setProperty('--color-accent-muted', colorObj.muted);
+    document.documentElement.style.setProperty('--accent', colorObj.value);
+    document.documentElement.style.setProperty('--accent-muted', colorObj.muted);
     localStorage.setItem('teraplay_accent', JSON.stringify(colorObj));
     handleUpdateSettings({ accentColor: colorObj.name });
   };
@@ -186,18 +194,19 @@ export default function LandingPage({ onNavigateToAuth }) {
               </button>
             </div>
 
-            <button
+            <Button
+              variant="ghost"
               onClick={() => openAuth('signin')}
-              className="text-xs sm:text-sm font-semibold text-fg hover:text-accent px-2.5 py-1.5 sm:px-4 sm:py-2 transition-colors cursor-pointer"
+              className="text-xs sm:text-sm font-semibold text-fg hover:text-accent hover:bg-transparent px-2.5 py-1.5 sm:px-4 sm:py-2 transition-colors cursor-pointer"
             >
               Sign In
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => openAuth('signup')}
-              className="px-3.5 py-2 sm:px-5 sm:py-2.5 bg-accent text-bg hover:opacity-95 font-bold rounded-lg sm:rounded-xl text-xs transition-all hover:-translate-y-0.5 cursor-pointer"
+              className="px-3.5 py-2 h-auto sm:px-5 sm:py-2.5 bg-accent text-bg hover:opacity-95 font-bold rounded-lg sm:rounded-xl text-xs transition-all hover:-translate-y-0.5 cursor-pointer"
             >
               Get Started
-            </button>
+            </Button>
           </div>
         </div>
       </header>
@@ -249,19 +258,20 @@ export default function LandingPage({ onNavigateToAuth }) {
               </div>
 
               <div className="mt-4 flex flex-col sm:flex-row items-center gap-4 max-w-md">
-                <button
+                <Button
                   onClick={() => openAuth('signup')}
-                  className="w-full sm:w-auto px-8 py-3.5 sm:py-4 bg-accent text-bg hover:opacity-95 font-bold rounded-xl text-sm sm:text-base transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto px-8 py-3.5 h-auto sm:py-4 bg-accent text-bg hover:opacity-95 font-bold rounded-xl text-sm sm:text-base transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Start Streaming Now</span>
                   <ArrowRight size={18} />
-                </button>
-                <a 
-                  href="#how-it-works"
-                  className="w-full sm:w-auto text-center py-3.5 sm:py-4 text-muted hover:text-fg hover:bg-white/5 border border-transparent hover:border-custom-border/80 px-6 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-1.5"
+                </Button>
+                <Button
+                  variant="outline"
+                  render={<a href="#how-it-works" />}
+                  className="w-full sm:w-auto text-center py-3.5 h-auto sm:py-4 text-muted hover:text-fg bg-transparent hover:bg-white/5 border border-transparent hover:border-custom-border/80 px-6 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-1.5"
                 >
                   Learn More
-                </a>
+                </Button>
               </div>
 
               <p className="text-[9px] sm:text-[10px] text-muted-500 pl-1 mt-1">
@@ -305,8 +315,9 @@ export default function LandingPage({ onNavigateToAuth }) {
 
                 {/* Center play state */}
                 <div className="relative z-10 flex flex-col items-center justify-center my-auto">
-                  <button
+                  <Button
                     onClick={togglePlay}
+                    size="icon"
                     className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-accent text-bg flex items-center justify-center transition-all hover:scale-110 shadow-lg cursor-pointer"
                     aria-label={isPlaying ? 'Pause Demo' : 'Play Demo'}
                   >
@@ -317,7 +328,7 @@ export default function LandingPage({ onNavigateToAuth }) {
                     ) : (
                       <Play size={20} className="sm:w-6 sm:h-6 sm:ml-1 ml-0.5" fill="currentColor" />
                     )}
-                  </button>
+                  </Button>
                   {!isPlaying && (
                     <span className="text-[9px] sm:text-[10px] font-bold text-white/80 mt-2 sm:mt-3 bg-black/40 backdrop-blur-md px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full border border-white/5 uppercase tracking-wider">
                       Demo Live HLS Switcher
@@ -343,30 +354,26 @@ export default function LandingPage({ onNavigateToAuth }) {
                       <Volume2 size={12} className="opacity-70" />
                       
                       {/* Quality selection popup */}
-                      <div className="relative">
-                        <button 
-                          onClick={() => setShowQualityMenu(!showQualityMenu)}
-                          className="px-2 py-0.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded text-white flex items-center gap-1 font-semibold"
-                        >
-                          <span>{quality}</span>
-                          <ChevronDown size={8} />
-                        </button>
-                        
-                        {showQualityMenu && (
-                          <div className="absolute bottom-6 right-0 w-24 bg-zinc-950 border border-white/10 rounded-xl overflow-hidden shadow-2xl flex flex-col text-[9px] z-50">
-                            {['1080p', '720p', '480p', 'Auto'].map(q => (
-                              <button
-                                key={q}
-                                onClick={() => handleQualityChange(q)}
-                                className={`px-2.5 py-1.5 text-left hover:bg-white/10 w-full transition-colors flex items-center justify-between ${quality === q ? 'text-accent font-bold' : 'text-white/80'}`}
-                              >
-                                <span>{q}</span>
-                                {quality === q && <Check size={8} />}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger render={
+                          <button className="px-2 py-0.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded text-white flex items-center gap-1 font-semibold cursor-pointer outline-none">
+                            <span>{quality}</span>
+                            <ChevronDown size={8} />
+                          </button>
+                        } />
+                        <DropdownMenuContent align="end" side="top" className="w-24 bg-zinc-950 border border-white/10 rounded-xl overflow-hidden shadow-2xl p-1 flex flex-col z-[110]">
+                          {['1080p', '720p', '480p', 'Auto'].map(q => (
+                            <DropdownMenuItem
+                              key={q}
+                              onClick={() => handleQualityChange(q)}
+                              className={`px-2.5 py-1.5 text-left hover:bg-white/10 w-full transition-colors flex items-center justify-between text-[9px] cursor-pointer rounded-md outline-none ${quality === q ? 'text-accent font-bold' : 'text-white/80'}`}
+                            >
+                              <span>{q}</span>
+                              {quality === q && <Check size={8} />}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
 
@@ -620,34 +627,22 @@ export default function LandingPage({ onNavigateToAuth }) {
             </p>
           </div>
 
-          <div className="space-y-3 sm:space-y-4 text-left">
-            {faqs.map((faq, idx) => {
-              const isOpen = openFaq === idx;
-              return (
-                <div 
-                  key={idx}
-                  className="glass-card border border-custom-border/80 rounded-2xl overflow-hidden backdrop-blur-sm"
-                >
-                  <button
-                    onClick={() => toggleFaq(idx)}
-                    className="w-full px-4 py-4 sm:px-6 sm:py-5 flex items-center justify-between text-left font-bold text-xs sm:text-base text-fg hover:bg-white/5 transition-all cursor-pointer"
-                  >
-                    <span>{faq.q}</span>
-                    <ChevronDown 
-                      size={16} 
-                      className={`text-muted transition-transform duration-300 ${isOpen ? 'rotate-180 text-accent' : 'rotate-0'}`} 
-                    />
-                  </button>
-                  
-                  {isOpen && (
-                    <div className="px-4 pb-4 sm:px-6 sm:pb-6 text-[11px] sm:text-sm text-muted leading-relaxed border-t border-custom-border/40 pt-3 sm:pt-4 animate-fade-in">
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <Accordion type="single" collapsible className="space-y-3 sm:space-y-4 text-left">
+            {faqs.map((faq, idx) => (
+              <AccordionItem 
+                key={idx} 
+                value={`faq-${idx}`}
+                className="glass-card border border-custom-border/80 rounded-2xl overflow-hidden backdrop-blur-sm px-4 sm:px-6 py-1"
+              >
+                <AccordionTrigger className="w-full py-4 sm:py-5 flex items-center justify-between text-left font-bold text-xs sm:text-base text-fg hover:no-underline transition-all cursor-pointer">
+                  {faq.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-[11px] sm:text-sm text-muted leading-relaxed border-t border-custom-border/40 pt-3 sm:pt-4">
+                  {faq.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
       </section>
 

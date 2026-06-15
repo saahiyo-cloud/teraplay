@@ -35,6 +35,8 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
   const applyColor = (color) => {
     document.documentElement.style.setProperty('--color-accent', color.value);
     document.documentElement.style.setProperty('--color-accent-muted', color.muted);
+    document.documentElement.style.setProperty('--accent', color.value);
+    document.documentElement.style.setProperty('--accent-muted', color.muted);
     localStorage.setItem('teraplay_accent', JSON.stringify(color));
     setSelectedColor(color.name);
     if (onUpdateSettings) {

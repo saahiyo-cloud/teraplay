@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Check, Copy } from 'lucide-react';
+import { Check, Copy } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 function getShareUrl(videoId) {
   return `${window.location.origin}/?id=${videoId}`;
@@ -54,22 +56,12 @@ export default function ShareModal({ isOpen, onClose, video }) {
 
   const shareUrl = video ? getShareUrl(video.id) : '';
 
-  // Close on Escape key
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKey = (e) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [isOpen, onClose]);
-
   // Reset copied state when modal opens
   useEffect(() => {
     if (isOpen) setCopied(false);
   }, [isOpen]);
 
-  if (!isOpen || !video) return null;
+  if (!video) return null;
 
   const handleCopy = async () => {
     try {
@@ -93,27 +85,14 @@ export default function ShareModal({ isOpen, onClose, video }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-bg/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-fade-in"
-      onClick={onClose}
-      aria-modal="true"
-      role="dialog"
-      aria-labelledby="share-modal-title"
-    >
-      <div
-        className="glass-card p-6 rounded-2xl border border-custom-border max-w-md w-full shadow-glass relative flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-200"
-        onClick={(e) => e.stopPropagation()}
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent 
+        showCloseButton={true} 
+        className="glass-card p-6 rounded-2xl border border-custom-border max-w-md w-full shadow-glass relative flex flex-col gap-6 bg-popover"
       >
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h3 id="share-modal-title" className="text-lg font-bold text-fg">Share Video</h3>
-          <button
-            onClick={onClose}
-            className="text-muted hover:text-fg rounded-full w-8 h-8 grid place-items-center hover:bg-white/5 transition-all cursor-pointer"
-            aria-label="Close"
-          >
-            <X size={18} />
-          </button>
+          <DialogTitle className="text-lg font-bold text-fg">Share Video</DialogTitle>
         </div>
 
         {/* Copy Link Section */}
@@ -128,17 +107,17 @@ export default function ShareModal({ isOpen, onClose, video }) {
               className="flex-1 bg-transparent border-none outline-none text-sm text-fg font-mono truncate select-all"
               onClick={(e) => e.target.select()}
             />
-            <button
+            <Button
               onClick={handleCopy}
-              className={`shrink-0 px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer flex items-center gap-2 ${
+              className={`shrink-0 px-5 py-2.5 h-auto rounded-lg font-bold text-sm transition-all duration-200 cursor-pointer flex items-center gap-2 ${
                 copied
-                  ? 'bg-emerald-500 text-white shadow-[0_4px_12px_rgba(16,185,129,0.3)]'
+                  ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-[0_4px_12px_rgba(16,185,129,0.3)]'
                   : 'bg-accent text-bg shadow-[0_4px_12px_var(--color-accent-muted)] hover:shadow-[0_8px_20px_var(--color-accent-muted)] hover:-translate-y-0.5 active:translate-y-0'
               }`}
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}
               {copied ? 'COPIED!' : 'COPY'}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -174,7 +153,7 @@ export default function ShareModal({ isOpen, onClose, video }) {
         <p className="text-center text-[11px] text-muted select-none pt-1 border-t border-custom-border">
           Share this link to open directly in iTeraPlay
         </p>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
