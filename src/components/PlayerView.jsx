@@ -98,6 +98,10 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [bufferingResolution, setBufferingResolution] = useState('');
 
+  // Quality switch tracking — suppresses false buffering overlays during HLS level transitions
+  const qualitySwitchingRef = useRef(false);
+  const bufferDebounceRef = useRef(null);
+
   // Quality / resolution
   const [currentResolution, setCurrentResolution] = useState(video.resolution || 'Auto');
   const [activeResolution, setActiveResolution] = useState('');
@@ -312,9 +316,16 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     if (video.videoUrl) {
       if (Hls.isSupported()) {
         hls = new Hls({
-          maxMaxBufferLength: 30, // Keep buffer efficient for high speeds
+          maxMaxBufferLength: 60,        // Allow larger buffer for smooth quality transitions
+          maxBufferLength: 30,           // Target 30s of buffer ahead
+          maxBufferSize: 60 * 1000 * 1000, // 60MB max buffer size
+          maxBufferHole: 0.5,            // Tolerate 0.5s gaps in buffer
           enableWorker: true,
           lowLatencyMode: false,
+          startLevel: -1,                // Auto-select initial quality
+          abrEwmaDefaultEstimate: 1000000, // 1Mbps initial bandwidth estimate
+          abrBandWidthUpFactor: 0.7,     // Conservative upswitch (70% confidence)
+          abrBandWidthFactor: 0.95,      // Aggressive downswitch (keep playback smooth)
           loader: CustomLoader,
           fLoader: CustomLoader,
           pLoader: CustomLoader
@@ -324,6 +335,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
         hlsRef.current = hls;
 
         hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+          console.log("[PlayerView][HLS] MANIFEST_PARSED event. Raw HLS levels:", hls.levels);
           const levels = hls.levels.map((level, index) => {
             let name = level.name;
             if (!name || /^level\s+\d+$/i.test(name.trim())) {
@@ -341,20 +353,37 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
             }
             return { id: index, name };
           });
-          setQualities([{ id: -1, name: "Auto" }, ...levels]);
+          
+          // Deduplicate levels by name, avoiding duplicates of "Auto" or identical resolution labels
+          const seen = new Set();
+          const uniqueQualities = [];
+          
+          uniqueQualities.push({ id: -1, name: "Auto" });
+          seen.add("Auto");
+          
+          levels.forEach(lvl => {
+            if (!seen.has(lvl.name)) {
+              uniqueQualities.push(lvl);
+              seen.add(lvl.name);
+            }
+          });
+          
+          console.log("[PlayerView][HLS] Mapped qualities list (deduplicated):", uniqueQualities);
+          setQualities(uniqueQualities);
           setCurrentResolution("Auto");
           
           const activeLvlName = levels[hls.currentLevel]?.name || levels[0]?.name || '';
           setActiveResolution(activeLvlName);
 
-          // ── Apply saved resolution preference ──
+          // ── Apply saved resolution preference (smooth, no buffer flush) ──
           const savedRes = settings.resolution || 'auto';
           const resHeightMap = { '4k': 2160, '1080p': 1080, '720p': 720, '480p': 480 };
           const targetHeight = resHeightMap[savedRes];
           if (targetHeight) {
             const matchIdx = hls.levels.findIndex(l => l.height && Math.abs(l.height - targetHeight) < targetHeight * 0.25);
             if (matchIdx >= 0) {
-              hls.currentLevel = matchIdx;
+              // Use nextLoadLevel to avoid buffer flush on initial load
+              hls.nextLoadLevel = matchIdx;
               const matched = hls.levels[matchIdx];
               const mName = matched.name || `${matched.height}p`;
               setCurrentResolution(mName);
@@ -367,7 +396,15 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
             .catch(err => console.log("Auto-play blocked: ", err));
         });
 
+        // ── LEVEL_SWITCHING: fires BEFORE the switch happens (new segments being fetched) ──
+        hls.on(Hls.Events.LEVEL_SWITCHING, (event, data) => {
+          console.log("[PlayerView][HLS] LEVEL_SWITCHING to level:", data.level);
+          qualitySwitchingRef.current = true;
+        });
+
+        // ── LEVEL_SWITCHED: fires AFTER the switch is complete ──
         hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
+          console.log("[PlayerView][HLS] LEVEL_SWITCHED event. Level Index:", data.level);
           const currentLevel = hls.levels[data.level];
           if (currentLevel) {
             let name = currentLevel.name;
@@ -384,28 +421,50 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
                 name = name || `Level ${data.level}`;
               }
             }
+            console.log("[PlayerView][HLS] Active resolution switched to:", name);
             setActiveResolution(name);
             if (hls.autoLevelEnabled) {
               setBufferingResolution(name);
             }
           }
         });
-        hls.on(Hls.Events.ERROR, (event, data) => {
-          if (data.fatal) {
-            switch (data.type) {
-              case Hls.ErrorTypes.NETWORK_ERROR:
-                console.warn("HLS fatal network error, trying to recover...", data);
-                hls.startLoad();
-                break;
-              case Hls.ErrorTypes.MEDIA_ERROR:
-                console.warn("HLS fatal media error, recovering...", data);
-                hls.recoverMediaError();
-                break;
-              default:
-                console.error("HLS fatal unrecoverable error:", data);
-                setVideoError("HLS playback failed. The proxy server returned an error.");
-                break;
+
+        // ── FRAG_BUFFERED: new-quality segment is in the buffer, transition is done ──
+        hls.on(Hls.Events.FRAG_BUFFERED, () => {
+          if (qualitySwitchingRef.current) {
+            qualitySwitchingRef.current = false;
+            // Clear any pending buffer debounce and dismiss the overlay immediately
+            if (bufferDebounceRef.current) {
+              clearTimeout(bufferDebounceRef.current);
+              bufferDebounceRef.current = null;
             }
+            setIsBuffering(false);
+          }
+        });
+
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          // Non-fatal errors during quality switching are expected — suppress them
+          if (!data.fatal) {
+            if (qualitySwitchingRef.current) {
+              console.log("[PlayerView][HLS] Non-fatal error during quality switch (suppressed):", data.details);
+              return;
+            }
+            return;
+          }
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              console.warn("HLS fatal network error, trying to recover...", data);
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              console.warn("HLS fatal media error, recovering...", data);
+              hls.recoverMediaError();
+              break;
+            default:
+              console.error("HLS fatal unrecoverable error:", data);
+              qualitySwitchingRef.current = false;
+              setVideoError("HLS playback failed. The proxy server returned an error.");
+              break;
           }
         });
       } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
@@ -428,6 +487,11 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
       if (hls) {
         hls.destroy();
         hlsRef.current = null;
+      }
+      // Clear any pending buffer debounce timer
+      if (bufferDebounceRef.current) {
+        clearTimeout(bufferDebounceRef.current);
+        bufferDebounceRef.current = null;
       }
     };
   }, [video.videoUrl, video.id]);
@@ -721,49 +785,84 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     }
   };
 
-  // Video Quality Switcher (Leverages HLS seamless switching or brief fallback simulation)
+  // ── Production-grade HLS Quality Switcher (Zero-Stall) ──
+  // Uses `nextLoadLevel` which tells HLS.js: "load the NEXT segment at this
+  // quality, but keep playing the existing buffer at the OLD quality until
+  // then." This means:
+  //   - NO buffer flush
+  //   - NO playback interruption
+  //   - NO seeking
+  //   - The old quality keeps playing seamlessly until new segments arrive
+  // This is how YouTube, Netflix, and all production players work.
   const handleQualityChange = (quality) => {
     const qName = typeof quality === 'string' ? quality : quality.name;
     if (qName === currentResolution) return;
     
-    setBufferingResolution(qName);
     setShowQualityMenu(false);
+    setCurrentResolution(qName);
     
     if (hlsRef.current && typeof quality === 'object' && quality.id !== undefined) {
-      hlsRef.current.currentLevel = quality.id;
-      setCurrentResolution(qName);
-    } else {
-      // Non-HLS or direct stream fallback path: simulate quality switch briefly
-      setIsBuffering(true);
-      const timeSnapshot = videoRef.current ? videoRef.current.currentTime : 0;
-      const wasPlaying = isPlaying;
+      // Mark transition so we suppress any false buffering events
+      qualitySwitchingRef.current = true;
       
-      if (videoRef.current) {
-        videoRef.current.pause();
+      if (quality.id === -1) {
+        // "Auto" — re-enable ABR controller, let it pick the best level
+        hlsRef.current.nextLoadLevel = -1;  // ABR picks next segment quality
+        hlsRef.current.loadLevel = -1;       // Unlock load level
+        hlsRef.current.nextLevel = -1;       // Unlock next level
+        // Remove any capping so ABR can use all levels
+        hlsRef.current.autoLevelCapping = -1;
+      } else {
+        // Manual quality selection:
+        // nextLoadLevel = changes quality for the NEXT segment to be loaded.
+        // The existing buffered segments at the old quality keep playing.
+        // Zero stall. Zero flush. Zero gap.
+        hlsRef.current.nextLoadLevel = quality.id;
       }
-
+      
+      console.log(`[PlayerView][HLS] Quality switch requested: ${qName} (level ${quality.id}) via nextLoadLevel (no buffer flush)`);
+      
+      // Safety timeout: clear the flag if FRAG_BUFFERED doesn't fire within 10s
       setTimeout(() => {
-        setCurrentResolution(qName);
-        setIsBuffering(false);
-        
-        if (videoRef.current) {
-          videoRef.current.currentTime = timeSnapshot;
-          if (wasPlaying) {
-            videoRef.current.play()
-               .then(() => setIsPlaying(true))
-               .catch(e => console.log(e));
-          }
+        if (qualitySwitchingRef.current) {
+          console.log("[PlayerView][HLS] Quality switch safety timeout, clearing flag");
+          qualitySwitchingRef.current = false;
         }
-      }, 500);
+      }, 10000);
     }
+    // For non-HLS sources, just update the resolution label
   };
 
+  // ── Debounced buffering indicator ──
+  // During HLS quality switches, the video element fires rapid waiting/playing
+  // events as HLS.js flushes and refills the source buffer. A raw `waiting`
+  // handler would flash a full-screen overlay for 100–300ms, which looks broken.
+  // Instead, we debounce: only show the overlay after 750ms of continuous stall.
+  // During an active quality switch we suppress the overlay entirely.
   const handleWaiting = () => {
-    setIsBuffering(true);
-    setBufferingResolution(''); // Clear quality-specific text for standard network buffering
+    // During a quality switch, HLS.js manages the buffer gap internally.
+    // Suppress the overlay — playback will resume once new segments arrive.
+    if (qualitySwitchingRef.current) return;
+    
+    // Debounce: only show overlay if the stall persists for 750ms.
+    // Brief stalls (< 750ms) during normal playback are invisible to the user.
+    if (bufferDebounceRef.current) clearTimeout(bufferDebounceRef.current);
+    bufferDebounceRef.current = setTimeout(() => {
+      // Double-check the video is actually still waiting
+      if (videoRef.current && videoRef.current.readyState < 3) {
+        setIsBuffering(true);
+        setBufferingResolution('');
+      }
+      bufferDebounceRef.current = null;
+    }, 750);
   };
 
   const handlePlaying = () => {
+    // Cancel any pending buffer debounce — playback resumed before the threshold
+    if (bufferDebounceRef.current) {
+      clearTimeout(bufferDebounceRef.current);
+      bufferDebounceRef.current = null;
+    }
     setIsBuffering(false);
   };
 
@@ -845,8 +944,6 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           onError={handleVideoError}
           onWaiting={handleWaiting}
           onPlaying={handlePlaying}
-          onSeeking={handleWaiting}
-          onSeeked={handlePlaying}
           onCanPlay={handlePlaying}
           onLoadedData={handleLoadedData}
         />
@@ -1080,7 +1177,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
                         {qualities.length > 0 ? (
                           qualities.map(q => (
                             <button 
-                              key={q.name} 
+                              key={`${q.id}-${q.name}`} 
                               onClick={() => handleQualityChange(q)}
                               className={`px-3 py-2 text-left rounded-lg text-xs font-semibold hover:bg-white/5 cursor-pointer flex items-center justify-between ${currentResolution === q.name ? 'text-accent' : 'text-fg'}`}
                             >
