@@ -18,12 +18,12 @@ import { updateProfile } from 'firebase/auth';
 import { ref, set, onValue, get, update } from 'firebase/database';
 
 const PRESET_AVATARS = [
-  { name: 'Classic Male', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150' },
-  { name: 'Classic Female', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150' },
-  { name: 'Cyber Neon', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150' },
-  { name: 'Creative Red', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150' },
-  { name: 'Tech Orange', url: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=150' },
-  { name: 'Gradient Spark', url: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&q=80&w=150' }
+  { name: 'ice bear', url: 'https://i.pinimg.com/736x/a6/3d/14/a63d14faa4ff5b932100e7625937cf0a.jpg' },
+  { name: 'panda', url: 'https://i.pinimg.com/736x/c3/bd/3e/c3bd3e992aaaba421ba7e8887d4f847d.jpg' },
+  { name: 'grizzly', url: 'https://i.pinimg.com/webp87/736x/4c/f0/c0/4cf0c013275b728119b37a4c39d3f183.webp' },
+  { name: 'zoro', url: 'https://i.pinimg.com/736x/b8/25/56/b82556f1d42b334d7fef7aa60a8e308a.jpg' },
+  { name: 'luffy', url: 'https://i.pinimg.com/736x/11/9d/55/119d55a552d58707573a3972f09964b2.jpg' },
+  { name: 'sanji', url: 'https://i.pinimg.com/736x/16/07/f7/1607f77ab59fd1a5c5df1da2b668c41e.jpg' }
 ];
 
 export default function ProfileView({ videos = [], history = [], currentUser, userProfile, onVideoSelect }) {
