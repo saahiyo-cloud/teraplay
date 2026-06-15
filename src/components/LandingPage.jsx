@@ -652,47 +652,55 @@ export default function LandingPage({ onNavigateToAuth }) {
       </section>
 
       {/* Final Call to Action Section */}
-      <section className="py-12 sm:py-20 md:py-28 lg:py-32 bg-gradient-to-b from-transparent to-accent-muted/10 relative overflow-hidden select-none">
-        
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 flex flex-col items-center gap-4 sm:gap-6">
-          <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-fg">
+      <section className="py-16 sm:py-24 bg-gradient-to-b from-transparent to-accent-muted/10 relative overflow-hidden select-none">
+        {/* Glowing background spotlight */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] sm:w-[500px] sm:h-[500px] bg-accent/5 rounded-full blur-[80px] sm:blur-[120px] pointer-events-none z-0"></div>
+
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 flex flex-col items-center gap-5">
+          <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-fg leading-tight">
             Ready to Upgrade Your Streaming?
           </h2>
-          <p className="text-muted text-xs sm:text-base max-w-xl">
+          <p className="text-muted text-xs sm:text-base max-w-xl leading-relaxed">
             Register your free account today during our public beta and experience instantaneous, high-definition streaming directly from the cloud.
           </p>
 
           <button
             onClick={() => openAuth('signup')}
-            className="px-6 py-3 sm:px-8 sm:py-4 bg-accent text-bg hover:opacity-95 font-bold rounded-xl text-sm sm:text-base transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer mt-2 sm:mt-4"
+            className="px-6 py-3.5 sm:px-8 sm:py-4 bg-accent text-bg hover:opacity-95 font-bold rounded-xl text-sm sm:text-base transition-all hover:scale-105 hover:shadow-[0_0_25px_var(--accent-muted)] flex items-center justify-center gap-2 cursor-pointer mt-2 sm:mt-4"
           >
             <span>Get Started for Free</span>
             <ArrowRight size={16} className="sm:w-[18px] sm:h-[18px]" />
           </button>
 
-          <p className="text-[9px] sm:text-[10px] text-muted">
-            Unlimited streams • Zero buffering delays • Complete personal library syncing
-          </p>
+          <div className="flex items-center gap-2 text-[9px] sm:text-[10px] text-muted mt-2">
+            <span>Unlimited streams</span>
+            <span className="opacity-40">•</span>
+            <span>Zero buffering</span>
+            <span className="opacity-40">•</span>
+            <span>Cloud sync</span>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="bg-zinc-950 border-t border-custom-border/80 py-12 text-center text-xs text-muted select-none">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center gap-6">
           
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-accent rounded-lg grid place-items-center text-bg">
-              <Play fill="currentColor" size={10} className="ml-0.5" />
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-surface border border-custom-border/80 rounded-xl grid place-items-center text-accent hover:border-accent/40 transition-colors cursor-pointer">
+              <Play fill="currentColor" size={14} className="ml-0.5" />
             </div>
-            <span className="font-bold text-fg">TeraPlay</span>
+            <span className="text-xs sm:text-sm font-bold tracking-wider text-fg uppercase">TeraPlay</span>
           </div>
 
-          <p className="max-w-md text-center md:text-right leading-relaxed text-[10px]">
-            © {new Date().getFullYear()} TeraPlay. All rights reserved. <br />
-            <span className="text-[9px] opacity-60">
+          <div className="flex flex-col items-center gap-2 w-full border-t border-custom-border/30 pt-6">
+            <p className="text-[10px] text-muted leading-relaxed text-center opacity-70">
+              © {new Date().getFullYear()} TeraPlay. All rights reserved.
+            </p>
+            <p className="max-w-2xl text-[9px] text-muted leading-relaxed text-center opacity-40 px-4 sm:px-0 mt-1">
               Disclaimer: TeraPlay is an independent application tool utilizing public streaming endpoints. We are not associated, affiliated, authorized, endorsed by, or in any way officially connected with TeraBox or its subsidiaries.
-            </span>
-          </p>
+            </p>
+          </div>
 
         </div>
       </footer>
