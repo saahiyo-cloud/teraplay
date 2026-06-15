@@ -239,6 +239,8 @@ export default function FilesView({ onPreviewImage }) {
                   <a
                     href={file.dlink}
                     download={file.filename}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-accent text-bg font-bold text-xs shadow-[0_4px_12px_var(--color-accent-muted)] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
                     title="Download File"
                   >
