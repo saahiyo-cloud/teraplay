@@ -345,7 +345,7 @@ export default function LandingPage({ onNavigateToAuth }) {
                 {/* Player Controls Bar */}
                 <div className="relative z-10 bg-black/70 border border-white/10 p-3 rounded-2xl backdrop-blur-lg flex flex-col gap-2">
                   <div className="text-[10px] text-white/90 font-medium truncate">
-                    Solo_Leveling_S01E12_1080p_Dual.mkv
+                    Cinematic_Demo_1080p.mp4
                   </div>
 
                   <div className="flex items-center justify-between text-[9px] text-white/70">

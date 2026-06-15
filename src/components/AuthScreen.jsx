@@ -231,7 +231,7 @@ export default function AuthScreen({ onClose, initialIsSignUp = false }) {
                   placeholder="e.g. Shakir" 
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
-                  className="w-full bg-bg border border-custom-border/60 focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none px-4 py-2.5 rounded-xl text-sm text-fg placeholder-muted/50 transition-all animate-fade-in"
+                  className="w-full bg-bg border border-custom-border/60 focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none px-4 py-2.5 rounded-xl text-sm text-fg placeholder:text-muted-foreground/60 transition-all animate-fade-in"
                   required={isSignUp}
                 />
               </div>
@@ -244,7 +244,7 @@ export default function AuthScreen({ onClose, initialIsSignUp = false }) {
                 placeholder="hi@hextastudio.in" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-bg border border-custom-border/60 focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none px-4 py-2.5 rounded-xl text-sm text-fg placeholder-muted/50 transition-all"
+                className="w-full bg-bg border border-custom-border/60 focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none px-4 py-2.5 rounded-xl text-sm text-fg placeholder:text-muted-foreground/60 transition-all"
                 required
               />
             </div>
@@ -259,7 +259,7 @@ export default function AuthScreen({ onClose, initialIsSignUp = false }) {
                   placeholder="••••••••••••" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-bg border border-custom-border/60 focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none px-4 py-2.5 rounded-xl text-sm text-fg placeholder-muted/50 transition-all"
+                  className="w-full bg-bg border border-custom-border/60 focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none px-4 py-2.5 rounded-xl text-sm text-fg placeholder:text-muted-foreground/60 transition-all"
                   required
                 />
                 <button 

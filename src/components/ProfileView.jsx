@@ -303,7 +303,7 @@ export default function ProfileView({ videos = [], history = [], currentUser, us
                     placeholder="https://example.com/your-image.jpg"
                     value={avatar}
                     onChange={(e) => setAvatar(e.target.value)}
-                    className="w-full bg-transparent border-none outline-none text-fg"
+                    className="w-full bg-transparent border-none outline-none text-fg placeholder:text-muted-foreground/60"
                   />
                 </div>
               </div>

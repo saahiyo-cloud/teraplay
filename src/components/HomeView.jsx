@@ -95,7 +95,7 @@ export default function HomeView({ videos, userProfile, onVideoSelect, onFetch, 
                 placeholder="Paste your TeraBox link here..." 
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                className="flex-1 min-w-0 bg-transparent border-none outline-none text-fg py-1.5 px-1 text-sm placeholder-muted/50"
+                className="flex-1 min-w-0 bg-transparent border-none outline-none text-fg py-1.5 px-1 text-sm placeholder:text-muted-foreground/60"
                 aria-label="TeraBox video link"
               />
               {url && (

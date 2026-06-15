@@ -176,7 +176,7 @@ export default function DiscoverView({ videos = [], discoverVideos = [], onVideo
               placeholder="Search by title or creator..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-transparent border-none outline-none text-fg py-1.5 md:py-2 placeholder-muted/50 text-xs md:text-sm"
+              className="w-full bg-transparent border-none outline-none text-fg py-1.5 md:py-2 placeholder:text-muted-foreground/60 text-xs md:text-sm"
               aria-label="Search discover videos"
             />
           </div>
