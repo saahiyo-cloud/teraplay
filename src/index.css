@@ -20,7 +20,7 @@
   --radius-md: 12px;
   --radius-sm: 8px;
 
-  --animate-fade-in: fadeIn 0.4s ease forwards;
+  --animate-fade-in: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-hud-ping: hudPing 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -84,6 +84,17 @@
     font-family: var(--font-body);
     overflow-x: hidden;
   }
+
+  /* Keep autofill backgrounds white for inputs inside white panels */
+  .bg-white input:-webkit-autofill,
+  .bg-white input:-webkit-autofill:hover, 
+  .bg-white input:-webkit-autofill:focus,
+  .bg-white input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+    box-shadow: 0 0 0 1000px #ffffff inset !important;
+    -webkit-text-fill-color: #111827 !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
 }
 
 /* Visual system utility presets to keep code minimal and clean */
@@ -100,15 +111,16 @@
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--color-custom-border);
   border-radius: var(--radius-lg);
-  transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-card:hover {
   background: var(--glass-card-hover-bg);
   border-color: var(--color-muted);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 /* Premium input groups */

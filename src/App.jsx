@@ -9,6 +9,7 @@ import ProfileView from './components/ProfileView';
 import SettingsView from './components/SettingsView';
 import HistoryView from './components/HistoryView';
 import ErrorBoundary from './components/ErrorBoundary';
+import LandingPage from './components/LandingPage';
 import AuthScreen from './components/AuthScreen';
 import ConfirmDialog from './components/ConfirmDialog';
 import ShareModal from './components/ShareModal';
@@ -292,7 +293,11 @@ function AppShell() {
   }
 
   if (!currentUser) {
-    return <AuthScreen />;
+    if (location.pathname === '/auth') {
+      const initialIsSignUp = location.state?.isSignUp || false;
+      return <AuthScreen onClose={() => navigate('/')} initialIsSignUp={initialIsSignUp} />;
+    }
+    return <LandingPage onNavigateToAuth={(isSignUp) => navigate('/auth', { state: { isSignUp } })} />;
   }
 
   return (
