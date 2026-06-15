@@ -7,9 +7,10 @@ const DEFAULT_SETTINGS = {
   autoplay: true,
   rememberProgress: true,
   resolution: 'auto',
-  accentColor: 'blue',
+  accentColor: 'mono',
   autoFetch: true,
-  themeMode: 'dark'
+  themeMode: 'dark',
+  showBackground: true
 };
 
 function loadLocalSettings() {
@@ -18,18 +19,19 @@ function loadLocalSettings() {
   const resolution = localStorage.getItem('teraplay_resolution') || 'auto';
   const autoFetch = localStorage.getItem('teraplay_autofetch') !== 'false';
   const themeMode = localStorage.getItem('teraplay_theme_mode') || 'dark';
+  const showBackground = localStorage.getItem('teraplay_show_background') !== 'false';
 
-  let accentColor = 'blue';
+  let accentColor = 'mono';
   const savedAccent = localStorage.getItem('teraplay_accent');
   if (savedAccent) {
     try {
-      accentColor = JSON.parse(savedAccent).name || 'blue';
+      accentColor = JSON.parse(savedAccent).name || 'mono';
     } catch (e) {
-      accentColor = 'blue';
+      accentColor = 'mono';
     }
   }
 
-  return { autoplay, rememberProgress, resolution, accentColor, autoFetch, themeMode };
+  return { autoplay, rememberProgress, resolution, accentColor, autoFetch, themeMode, showBackground };
 }
 
 export function useSettings(currentUser) {
@@ -49,9 +51,10 @@ export function useSettings(currentUser) {
           autoplay: data.autoplay !== undefined ? data.autoplay : true,
           rememberProgress: data.rememberProgress !== undefined ? data.rememberProgress : true,
           resolution: data.resolution || 'auto',
-          accentColor: data.accentColor || 'blue',
+          accentColor: data.accentColor || 'mono',
           autoFetch: data.autoFetch !== undefined ? data.autoFetch : true,
-          themeMode: data.themeMode || 'dark'
+          themeMode: data.themeMode || 'dark',
+          showBackground: data.showBackground !== undefined ? data.showBackground : true
         });
       } else {
         const initialSettings = loadLocalSettings();
@@ -69,6 +72,8 @@ export function useSettings(currentUser) {
     if (color) {
       document.documentElement.style.setProperty('--color-accent', color.value);
       document.documentElement.style.setProperty('--color-accent-muted', color.muted);
+      document.documentElement.style.setProperty('--accent', color.value);
+      document.documentElement.style.setProperty('--accent-muted', color.muted);
       localStorage.setItem('teraplay_accent', JSON.stringify(color));
     }
   }, [settings.accentColor]);
@@ -129,7 +134,10 @@ export function useSettings(currentUser) {
         localStorage.setItem('teraplay_autofetch', updated.autoFetch.toString());
       }
       
-      // Sync theme mode to localStorage in either case to prevent boot flash of unstyled content
+      // Sync theme mode and background preference to localStorage in either case to prevent boot flash of unstyled content
+      if (updated.showBackground !== undefined) {
+        localStorage.setItem('teraplay_show_background', updated.showBackground.toString());
+      }
       if (updated.themeMode) {
         localStorage.setItem('teraplay_theme_mode', updated.themeMode);
       }

@@ -303,7 +303,16 @@ function AppShell() {
   }
 
   return (
-    <div className="flex min-h-screen bg-bg relative text-fg">
+    <div className="flex min-h-screen bg-bg relative text-fg overflow-x-hidden">
+      {/* Background container wrapper for authenticated routes */}
+      {settings.showBackground !== false && (
+        <div className="absolute top-0 left-0 right-0 h-[750px] pointer-events-none z-0 overflow-hidden opacity-65">
+          <div className="premium-wave-bg"></div>
+          <div className="premium-wave-tint"></div>
+          <div className="premium-wave-fade"></div>
+        </div>
+      )}
+
       <Sidebar 
         isCollapsed={sidebarCollapsed} 
         onToggleCollapse={handleToggleSidebar} 

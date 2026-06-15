@@ -48,8 +48,8 @@
     --fg: oklch(98% 0.01 250);
     --muted: oklch(65% 0.01 250);
     --custom-border: oklch(25% 0.02 250);
-    --accent: oklch(65% 0.18 250);
-    --accent-muted: oklch(65% 0.18 250 / 0.15);
+    --accent: oklch(62% 0.01 250);
+    --accent-muted: oklch(62% 0.01 250 / 0.15);
     --mono-accent: oklch(62% 0.01 250);
     --mono-accent-muted: oklch(62% 0.01 250 / 0.15);
     --glass: oklch(18% 0.01 250 / 0.65);
@@ -71,8 +71,8 @@
     --fg: oklch(15% 0.01 250);
     --muted: oklch(48% 0.01 250);
     --custom-border: oklch(88% 0.01 250);
-    --accent: oklch(65% 0.18 250);
-    --accent-muted: oklch(65% 0.18 250 / 0.15);
+    --accent: oklch(45% 0.01 250);
+    --accent-muted: oklch(45% 0.01 250 / 0.15);
     --mono-accent: oklch(45% 0.01 250);
     --mono-accent-muted: oklch(45% 0.01 250 / 0.15);
     --glass: oklch(100% 0 0 / 0.75);
@@ -197,7 +197,7 @@
 
 /* Custom background for mock video simulator depending on screen orientation */
 :root {
-  --mock-video-bg-url: url('https://i.pinimg.com/736x/74/a8/38/74a8385a0536dd47167c37ed0123c4d8.jpg');
+  --mock-video-bg-url: url('https://i.pinimg.com/736x/c2/65/dd/c265dd0c4d45294b16466cabde3d7931.jpg');
   --background: var(--bg);
   --foreground: var(--fg);
   --card: var(--surface);
@@ -231,7 +231,7 @@
 
 @media (orientation: portrait) {
   :root {
-    --mock-video-bg-url: url('https://i.pinimg.com/1200x/c1/a8/4c/c1a84c05b380dd321ef7765f031f1fa8.jpg');
+    --mock-video-bg-url: url('https://i.pinimg.com/736x/c2/65/dd/c265dd0c4d45294b16466cabde3d7931.jpg');
   }
 }
 
@@ -286,4 +286,46 @@
 /* Preserve light grey text color for original .text-muted classes */
 .text-muted {
   color: var(--muted) !important;
+}
+
+/* Premium wave background image based on user design reference */
+.premium-wave-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('./assets/image2.png');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  opacity: 0.35;
+  filter: saturate(1.2);
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+/* Color tint overlay to dynamically colorize the waves to the active accent */
+.premium-wave-tint {
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-accent);
+  mix-blend-mode: color;
+  opacity: 0.65;
+  transition: background-color 0.3s ease;
+}
+
+/* Smooth fade to blend the image seamlessly into the page background */
+.premium-wave-fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in oklch, var(--bg) 35%, transparent) 40%,
+    color-mix(in oklch, var(--bg) 85%, transparent) 75%,
+    var(--bg) 100%
+  );
+}
+
+/* Support light theme natively by inverting the dark background to light */
+.light .premium-wave-bg {
+  filter: invert(0.92) brightness(1.05) contrast(0.95);
+  opacity: 0.25;
 }

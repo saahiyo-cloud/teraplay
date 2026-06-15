@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Play, Check, EyeOff, RefreshCw, Sliders, ChevronDown, Cloud, Sun, Moon, Monitor } from 'lucide-react';
+import { Settings, Play, Check, EyeOff, RefreshCw, Sliders, ChevronDown, Cloud, Sun, Moon, Monitor, Image } from 'lucide-react';
 import { db } from '../firebase';
 import { ref, set, onValue } from 'firebase/database';
 import ConfirmDialog from './ConfirmDialog';
@@ -13,12 +13,13 @@ export const ACCENT_COLORS = [
   { name: 'mono', value: 'var(--mono-accent)', muted: 'var(--mono-accent-muted)', hex: '#71717a' }
 ];
 
-export default function SettingsView({ settings = { autoplay: true, rememberProgress: true, resolution: 'auto', accentColor: 'blue', autoFetch: true, themeMode: 'dark' }, onUpdateSettings, onResetData, currentUser }) {
+export default function SettingsView({ settings = { autoplay: true, rememberProgress: true, resolution: 'auto', accentColor: 'mono', autoFetch: true, themeMode: 'dark' }, onUpdateSettings, onResetData, currentUser }) {
   const [selectedColor, setSelectedColor] = useState(settings.accentColor);
   const [autoplay, setAutoplay] = useState(settings.autoplay);
   const [rememberProgress, setRememberProgress] = useState(settings.rememberProgress);
   const [resolution, setResolution] = useState(settings.resolution);
   const [themeMode, setThemeMode] = useState(settings.themeMode || 'dark');
+  const [showBackground, setShowBackground] = useState(settings.showBackground !== false);
 
   const [resetFeedback, setResetFeedback] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState(false);
@@ -30,6 +31,7 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
     setRememberProgress(settings.rememberProgress);
     setResolution(settings.resolution);
     setThemeMode(settings.themeMode || 'dark');
+    setShowBackground(settings.showBackground !== false);
   }, [settings]);
 
   const applyColor = (color) => {
@@ -230,6 +232,27 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            <div className="border-t border-custom-border/50 pt-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <label className="font-semibold text-sm text-fg block select-none">Custom Background</label>
+                  <span className="text-xs text-muted">Show the dynamic wave backdrop image behind page content.</span>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    const next = !showBackground;
+                    setShowBackground(next);
+                    if (onUpdateSettings) onUpdateSettings({ showBackground: next });
+                  }}
+                  className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors duration-200 ${showBackground ? 'bg-accent' : 'bg-surface-elevated border border-custom-border'}`}
+                  aria-label="Toggle custom background"
+                >
+                  <div className={`w-4 h-4 rounded-full transition-transform duration-200 ${showBackground ? 'translate-x-6 bg-bg' : 'translate-x-0 bg-muted'}`} />
+                </button>
               </div>
             </div>
           </div>

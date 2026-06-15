@@ -150,8 +150,14 @@ export default function LandingPage({ onNavigateToAuth }) {
 
   return (
     <div className="min-h-screen bg-bg text-fg font-body relative overflow-x-hidden select-none">
-      
       {/* Background container wrapper */}
+      {settings.showBackground !== false && (
+        <div className="absolute top-0 left-0 right-0 h-[950px] pointer-events-none z-0 overflow-hidden">
+          <div className="premium-wave-bg"></div>
+          <div className="premium-wave-tint"></div>
+          <div className="premium-wave-fade"></div>
+        </div>
+      )}
 
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 h-16 sm:h-20 bg-glass/65 backdrop-blur-2xl border-b border-custom-border/80 z-[100] select-none">
@@ -287,7 +293,7 @@ export default function LandingPage({ onNavigateToAuth }) {
                 <div className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-[10000ms] ease-out scale-105" 
                   style={{ 
                     backgroundImage: `var(--mock-video-bg-url)`,
-                    filter: isPlaying ? 'brightness(0.65)' : 'brightness(0.4) contrast(1.1) blur(1px)'
+                    filter: isPlaying ? 'none' : 'brightness(0.85) contrast(1.02) blur(0.5px)'
                   }}
                 ></div>
 
