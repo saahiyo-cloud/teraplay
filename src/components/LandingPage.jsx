@@ -210,14 +210,14 @@ export default function LandingPage({ onNavigateToAuth }) {
             {/* Hero Left Content */}
             <div className="lg:col-span-7 flex flex-col gap-6 text-left">
               {/* Beta Badge */}
-              <div className="inline-flex items-center gap-2 self-start rounded-full bg-accent-muted border border-accent/20 px-3.5 py-1 text-xs font-semibold text-accent animate-pulse select-none">
-                <Sparkles size={13} className="shrink-0" />
+              <div className="inline-flex items-center gap-2 self-start rounded-full bg-accent-muted border border-accent/20 px-3.5 py-1 text-[10px] sm:text-xs font-semibold text-accent animate-pulse select-none">
+                <Sparkles size={12} className="shrink-0" />
                 <span>Free Premium Pro Beta Access</span>
               </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-fg leading-[1.1] md:max-w-2xl">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-fg leading-[1.1] md:max-w-2xl">
                 Stream TeraBox Videos <br className="hidden sm:inline" />
-                <span className="text-accent inline-block min-w-[280px] sm:min-w-[360px] md:min-w-[420px] text-left">
+                <span className="text-accent inline-block min-w-[220px] sm:min-w-[360px] md:min-w-[420px] text-left">
                   <SlotText 
                     text={words[wordIndex]} 
                     options={{
@@ -228,50 +228,50 @@ export default function LandingPage({ onNavigateToAuth }) {
                 </span>
               </h1>
 
-              <p className="text-muted text-sm sm:text-base lg:text-lg leading-relaxed max-w-xl">
+              <p className="text-muted text-xs sm:text-base lg:text-lg leading-relaxed max-w-xl">
                 Convert files from TeraBox sharing links into premium high-definition HLS streams. Experience instantaneous playback, quality controls, and watch history synchronization.
               </p>
 
-              {/* Stats badges */}
-              <div className="grid grid-cols-3 gap-3 max-w-md mt-2">
-                <div className="bg-surface/30 border border-custom-border/50 p-3 rounded-xl backdrop-blur-sm">
-                  <div className="text-lg font-bold text-accent">0.8s</div>
-                  <div className="text-[10px] text-muted font-medium uppercase tracking-wider">Start Time</div>
+              {/* Stats badges - Bento Grid on small screens, row on sm+ */}
+              <div className="grid grid-cols-2 gap-2 max-w-md mt-2 sm:grid-cols-3 sm:gap-3">
+                <div className="bg-surface/30 border border-custom-border/50 p-2.5 sm:p-3 rounded-xl backdrop-blur-sm col-span-1 sm:col-span-1">
+                  <div className="text-base sm:text-lg font-bold text-accent">0.8s</div>
+                  <div className="text-[9px] sm:text-[10px] text-muted font-medium uppercase tracking-wider">Start Time</div>
                 </div>
-                <div className="bg-surface/30 border border-custom-border/50 p-3 rounded-xl backdrop-blur-sm">
-                  <div className="text-lg font-bold text-accent">HLS Client</div>
-                  <div className="text-[10px] text-muted font-medium uppercase tracking-wider">Adaptive Quality</div>
+                <div className="bg-surface/30 border border-custom-border/50 p-2.5 sm:p-3 rounded-xl backdrop-blur-sm col-span-1 sm:col-span-1">
+                  <div className="text-base sm:text-lg font-bold text-accent">Free Pro</div>
+                  <div className="text-[9px] sm:text-[10px] text-muted font-medium uppercase tracking-wider">Public Beta</div>
                 </div>
-                <div className="bg-surface/30 border border-custom-border/50 p-3 rounded-xl backdrop-blur-sm">
-                  <div className="text-lg font-bold text-accent">Free Pro</div>
-                  <div className="text-[10px] text-muted font-medium uppercase tracking-wider">Public Beta</div>
+                <div className="bg-surface/30 border border-custom-border/50 p-2.5 sm:p-3 rounded-xl backdrop-blur-sm col-span-2 sm:col-span-1">
+                  <div className="text-base sm:text-lg font-bold text-accent">HLS Client</div>
+                  <div className="text-[9px] sm:text-[10px] text-muted font-medium uppercase tracking-wider">Adaptive Quality</div>
                 </div>
               </div>
 
               <div className="mt-4 flex flex-col sm:flex-row items-center gap-4 max-w-md">
                 <button
                   onClick={() => openAuth('signup')}
-                  className="w-full sm:w-auto px-8 py-4 bg-accent text-bg hover:opacity-95 font-bold rounded-xl text-base transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto px-8 py-3.5 sm:py-4 bg-accent text-bg hover:opacity-95 font-bold rounded-xl text-sm sm:text-base transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Start Streaming Now</span>
                   <ArrowRight size={18} />
                 </button>
                 <a 
                   href="#how-it-works"
-                  className="w-full sm:w-auto text-center py-4 text-muted hover:text-fg hover:bg-white/5 border border-transparent hover:border-custom-border/80 px-6 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-1.5"
+                  className="w-full sm:w-auto text-center py-3.5 sm:py-4 text-muted hover:text-fg hover:bg-white/5 border border-transparent hover:border-custom-border/80 px-6 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-1.5"
                 >
                   Learn More
                 </a>
               </div>
 
-              <p className="text-[10px] text-muted-500 pl-1 mt-1">
+              <p className="text-[9px] sm:text-[10px] text-muted-500 pl-1 mt-1">
                 ⚡ No credit card required. Stream resolved links in standard browser sandbox safely.
               </p>
             </div>
 
             {/* Hero Right Visual: Interactive Mockup Player */}
             <div className="lg:col-span-5 relative w-full flex justify-center">
-              <div className="w-full max-w-sm aspect-video sm:aspect-square bg-gradient-to-tr from-accent/5 to-accent/20 rounded-3xl p-3 md:p-4 border border-accent/20 shadow-2xl relative overflow-hidden backdrop-blur-sm flex flex-col justify-between">
+              <div className="w-full max-w-sm aspect-[4/3] sm:aspect-square bg-gradient-to-tr from-accent/5 to-accent/20 rounded-3xl p-3 md:p-4 border border-accent/20 shadow-2xl relative overflow-hidden backdrop-blur-sm flex flex-col justify-between">
                 
                 {/* Background Video Simulator image */}
                 <div className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-[10000ms] ease-out scale-105" 
@@ -291,13 +291,13 @@ export default function LandingPage({ onNavigateToAuth }) {
 
                 {/* Mockup Header info */}
                 <div className="relative z-10 flex justify-between items-start">
-                  <div className="bg-black/60 backdrop-blur-md border border-white/10 px-2.5 py-1.5 rounded-lg text-white">
-                    <div className="text-[10px] font-bold tracking-wide flex items-center gap-1.5">
+                  <div className="bg-black/60 backdrop-blur-md border border-white/10 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg text-white">
+                    <div className="text-[9px] sm:text-[10px] font-bold tracking-wide flex items-center gap-1.5">
                       <div className={`w-1.5 h-1.5 rounded-full ${isPlaying ? 'bg-red-500 animate-pulse' : 'bg-zinc-500'}`}></div>
                       <span>{isPlaying ? 'STREAMING ACTIVE' : 'CLIENT IDLE'}</span>
                     </div>
                   </div>
-                  <div className="bg-black/60 backdrop-blur-md border border-white/10 px-2.5 py-1 rounded-lg text-white text-[9px] font-medium flex items-center gap-1">
+                  <div className="bg-black/60 backdrop-blur-md border border-white/10 px-2 py-1 rounded-lg text-white text-[8px] sm:text-[9px] font-medium flex items-center gap-1">
                     <Database size={10} className="text-accent" />
                     <span>CACHE: {isPlaying ? 'HIT' : 'READY'}</span>
                   </div>
@@ -307,19 +307,19 @@ export default function LandingPage({ onNavigateToAuth }) {
                 <div className="relative z-10 flex flex-col items-center justify-center my-auto">
                   <button
                     onClick={togglePlay}
-                    className="w-14 h-14 rounded-full bg-accent text-bg flex items-center justify-center transition-all hover:scale-110 shadow-lg cursor-pointer"
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-accent text-bg flex items-center justify-center transition-all hover:scale-110 shadow-lg cursor-pointer"
                     aria-label={isPlaying ? 'Pause Demo' : 'Play Demo'}
                   >
                     {isBuffering ? (
-                      <div className="w-6 h-6 border-2 border-bg border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-bg border-t-transparent rounded-full animate-spin"></div>
                     ) : isPlaying ? (
-                      <Pause size={24} fill="currentColor" />
+                      <Pause size={20} className="sm:w-6 sm:h-6" fill="currentColor" />
                     ) : (
-                      <Play size={24} fill="currentColor" className="ml-1" />
+                      <Play size={20} className="sm:w-6 sm:h-6 sm:ml-1 ml-0.5" fill="currentColor" />
                     )}
                   </button>
                   {!isPlaying && (
-                    <span className="text-[10px] font-bold text-white/80 mt-3 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/5 uppercase tracking-wider">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-white/80 mt-2 sm:mt-3 bg-black/40 backdrop-blur-md px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full border border-white/5 uppercase tracking-wider">
                       Demo Live HLS Switcher
                     </span>
                   )}
@@ -423,64 +423,64 @@ export default function LandingPage({ onNavigateToAuth }) {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4">
             
-            {/* Bento Grid Card 1: Main feature (Spans 4 col) */}
-            <div className="md:col-span-4 bg-gradient-to-br from-accent/5 via-accent/10 to-accent-muted rounded-3xl p-8 border border-accent/20 min-h-[300px] flex flex-col justify-between text-left relative overflow-hidden group">
-              <div className="absolute top-6 right-6 p-3 bg-accent/20 rounded-2xl text-accent">
-                <CloudLightning size={24} />
+            {/* Bento Grid Card 1: Main feature (Spans 4 col on md, 2 col on sm) */}
+            <div className="sm:col-span-2 md:col-span-4 bg-gradient-to-br from-accent/5 via-accent/10 to-accent-muted rounded-3xl p-6 sm:p-8 border border-accent/20 min-h-[260px] sm:min-h-[300px] flex flex-col justify-between text-left relative overflow-hidden group">
+              <div className="absolute top-6 right-6 p-2.5 sm:p-3 bg-accent/20 rounded-2xl text-accent">
+                <CloudLightning size={22} className="sm:w-6 sm:h-6" />
               </div>
-              <div className="max-w-md mt-16 md:mt-24">
+              <div className="max-w-md mt-12 sm:mt-24">
                 <div className="inline-flex items-center gap-1 bg-accent/10 text-accent text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mb-3">
                   Core tech
                 </div>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-fg mb-2">HLS quality pre-warming</h3>
+                <h3 className="text-lg sm:text-2xl font-extrabold text-fg mb-2">HLS quality pre-warming</h3>
                 <p className="text-muted text-xs sm:text-sm leading-relaxed">
                   Our Flask & Upstash Redis middleware caches valid file streams in parallel. That means when you select quality toggles, segments switch instantly without buffer stuttering.
                 </p>
               </div>
             </div>
 
-            {/* Bento Grid Card 2: Personal Library (Spans 2 col) */}
-            <div className="md:col-span-2 bg-surface/30 border border-custom-border/80 hover:border-accent/40 rounded-3xl p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
-              <div className="w-12 h-12 bg-accent/15 border border-accent/25 rounded-2xl grid place-items-center text-accent">
-                <Bookmark size={20} />
+            {/* Bento Grid Card 2: Personal Library (Spans 2 col on md, 1 col on sm) */}
+            <div className="sm:col-span-1 md:col-span-2 bg-surface/30 border border-custom-border/80 hover:border-accent/40 rounded-3xl p-6 sm:p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-accent/15 border border-accent/25 rounded-2xl grid place-items-center text-accent">
+                <Bookmark size={18} className="sm:w-5 sm:h-5" />
               </div>
-              <div className="mt-8">
-                <h3 className="text-lg font-bold text-fg mb-2">Secure Cloud Library</h3>
+              <div className="mt-6 sm:mt-8">
+                <h3 className="text-base sm:text-lg font-bold text-fg mb-2">Secure Cloud Library</h3>
                 <p className="text-muted text-xs leading-relaxed">
                   Add custom resolved videos, group items into bookmarks, and access watch progress logs on any device automatically.
                 </p>
               </div>
             </div>
 
-            {/* Bento Grid Card 3: Theme Personalization (Spans 2 col) */}
-            <div className="md:col-span-2 bg-surface/30 border border-custom-border/80 hover:border-accent/40 rounded-3xl p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
-              <div className="w-12 h-12 bg-accent/15 border border-accent/25 rounded-2xl grid place-items-center text-accent">
-                <Sliders size={20} />
+            {/* Bento Grid Card 3: Theme Personalization (Spans 2 col on md, 1 col on sm) */}
+            <div className="sm:col-span-1 md:col-span-2 bg-surface/30 border border-custom-border/80 hover:border-accent/40 rounded-3xl p-6 sm:p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-accent/15 border border-accent/25 rounded-2xl grid place-items-center text-accent">
+                <Sliders size={18} className="sm:w-5 sm:h-5" />
               </div>
-              <div className="mt-8">
-                <h3 className="text-lg font-bold text-fg mb-2">Bespoke Styling System</h3>
+              <div className="mt-6 sm:mt-8">
+                <h3 className="text-base sm:text-lg font-bold text-fg mb-2">Bespoke Styling System</h3>
                 <p className="text-muted text-xs leading-relaxed">
                   Tailor visual elements using our theme customizer. Select colors, switch light/dark/OS modes, and manage interface layouts.
                 </p>
               </div>
             </div>
 
-            {/* Bento Grid Card 4: Link compatibility (Spans 4 col) */}
-            <div className="md:col-span-4 bg-gradient-to-tr from-surface/20 to-surface-elevated/40 border border-custom-border/80 hover:border-accent/40 rounded-3xl p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
+            {/* Bento Grid Card 4: Link compatibility (Spans 4 col on md, 2 col on sm) */}
+            <div className="sm:col-span-2 md:col-span-4 bg-gradient-to-tr from-surface/20 to-surface-elevated/40 border border-custom-border/80 hover:border-accent/40 rounded-3xl p-6 sm:p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
               <div className="flex justify-between items-start">
-                <div className="w-12 h-12 bg-accent/15 border border-accent/25 rounded-2xl grid place-items-center text-accent">
-                  <Database size={20} />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-accent/15 border border-accent/25 rounded-2xl grid place-items-center text-accent">
+                  <Database size={18} className="sm:w-5 sm:h-5" />
                 </div>
-                <div className="flex gap-2">
-                  <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[8px] uppercase px-2 py-0.5 rounded-full">terabox</span>
-                  <span className="bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-[8px] uppercase px-2 py-0.5 rounded-full">terashare</span>
-                  <span className="bg-purple-500/10 border border-purple-500/20 text-purple-400 font-bold text-[8px] uppercase px-2 py-0.5 rounded-full">1024terabox</span>
+                <div className="flex gap-1.5 sm:gap-2">
+                  <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[7px] sm:text-[8px] uppercase px-2 py-0.5 rounded-full">terabox</span>
+                  <span className="bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-[7px] sm:text-[8px] uppercase px-2 py-0.5 rounded-full">terashare</span>
+                  <span className="bg-purple-500/10 border border-purple-500/20 text-purple-400 font-bold text-[7px] sm:text-[8px] uppercase px-2 py-0.5 rounded-full">1024terabox</span>
                 </div>
               </div>
-              <div className="mt-8">
-                <h3 className="text-lg font-bold text-fg mb-2">Universal Link Compatibility</h3>
+              <div className="mt-6 sm:mt-8">
+                <h3 className="text-base sm:text-lg font-bold text-fg mb-2">Universal Link Compatibility</h3>
                 <p className="text-muted text-xs sm:text-sm leading-relaxed">
                   Accepts standard formats from TeraBox share domains. Restructured API requests check validation codes and return complete meta tags including duration, resolution list, and file thumbnail cover.
                 </p>
