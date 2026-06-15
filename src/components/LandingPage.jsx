@@ -423,65 +423,65 @@ export default function LandingPage({ onNavigateToAuth }) {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
             
-            {/* Bento Grid Card 1: Main feature (Spans 4 col on md, 2 col on sm) */}
-            <div className="sm:col-span-2 md:col-span-4 bg-gradient-to-br from-accent/5 via-accent/10 to-accent-muted rounded-3xl p-6 sm:p-8 border border-accent/20 min-h-[260px] sm:min-h-[300px] flex flex-col justify-between text-left relative overflow-hidden group">
-              <div className="absolute top-6 right-6 p-2.5 sm:p-3 bg-accent/20 rounded-2xl text-accent">
-                <CloudLightning size={22} className="sm:w-6 sm:h-6" />
+            {/* Bento Grid Card 1: Main feature (Spans 4 col on md, 2 col by default) */}
+            <div className="col-span-2 md:col-span-4 bg-gradient-to-br from-accent/5 via-accent/10 to-accent-muted rounded-3xl p-5 sm:p-8 border border-accent/20 min-h-[240px] sm:min-h-[300px] flex flex-col justify-between text-left relative overflow-hidden group">
+              <div className="absolute top-5 right-5 p-2 sm:p-3 bg-accent/20 rounded-2xl text-accent">
+                <CloudLightning size={20} className="sm:w-6 sm:h-6" />
               </div>
-              <div className="max-w-md mt-12 sm:mt-24">
+              <div className="max-w-md mt-10 sm:mt-24">
                 <div className="inline-flex items-center gap-1 bg-accent/10 text-accent text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mb-3">
                   Core tech
                 </div>
-                <h3 className="text-lg sm:text-2xl font-extrabold text-fg mb-2">HLS quality pre-warming</h3>
-                <p className="text-muted text-xs sm:text-sm leading-relaxed">
+                <h3 className="text-base sm:text-2xl font-extrabold text-fg mb-2">HLS quality pre-warming</h3>
+                <p className="text-muted text-[11px] sm:text-sm leading-relaxed">
                   Our Flask & Upstash Redis middleware caches valid file streams in parallel. That means when you select quality toggles, segments switch instantly without buffer stuttering.
                 </p>
               </div>
             </div>
 
-            {/* Bento Grid Card 2: Personal Library (Spans 2 col on md, 1 col on sm) */}
-            <div className="sm:col-span-1 md:col-span-2 bg-surface/30 border border-custom-border/80 hover:border-accent/40 rounded-3xl p-6 sm:p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-accent/15 border border-accent/25 rounded-2xl grid place-items-center text-accent">
-                <Bookmark size={18} className="sm:w-5 sm:h-5" />
+            {/* Bento Grid Card 2: Personal Library (Spans 2 col on md, 1 col by default) */}
+            <div className="col-span-1 md:col-span-2 bg-surface/30 border border-custom-border/80 hover:border-accent/40 rounded-3xl p-5 sm:p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
+              <div className="w-9 h-9 sm:w-12 sm:h-12 bg-accent/15 border border-accent/25 rounded-2xl grid place-items-center text-accent">
+                <Bookmark size={16} className="sm:w-5 sm:h-5" />
               </div>
-              <div className="mt-6 sm:mt-8">
-                <h3 className="text-base sm:text-lg font-bold text-fg mb-2">Secure Cloud Library</h3>
-                <p className="text-muted text-xs leading-relaxed">
+              <div className="mt-5 sm:mt-8">
+                <h3 className="text-sm sm:text-lg font-bold text-fg mb-1.5 sm:mb-2">Secure Library</h3>
+                <p className="text-muted text-[10px] sm:text-xs leading-normal sm:leading-relaxed">
                   Add custom resolved videos, group items into bookmarks, and access watch progress logs on any device automatically.
                 </p>
               </div>
             </div>
 
-            {/* Bento Grid Card 3: Theme Personalization (Spans 2 col on md, 1 col on sm) */}
-            <div className="sm:col-span-1 md:col-span-2 bg-surface/30 border border-custom-border/80 hover:border-accent/40 rounded-3xl p-6 sm:p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-accent/15 border border-accent/25 rounded-2xl grid place-items-center text-accent">
-                <Sliders size={18} className="sm:w-5 sm:h-5" />
+            {/* Bento Grid Card 3: Theme Personalization (Spans 2 col on md, 1 col by default) */}
+            <div className="col-span-1 md:col-span-2 bg-surface/30 border border-custom-border/80 hover:border-accent/40 rounded-3xl p-5 sm:p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
+              <div className="w-9 h-9 sm:w-12 sm:h-12 bg-accent/15 border border-accent/25 rounded-2xl grid place-items-center text-accent">
+                <Sliders size={16} className="sm:w-5 sm:h-5" />
               </div>
-              <div className="mt-6 sm:mt-8">
-                <h3 className="text-base sm:text-lg font-bold text-fg mb-2">Bespoke Styling System</h3>
-                <p className="text-muted text-xs leading-relaxed">
+              <div className="mt-5 sm:mt-8">
+                <h3 className="text-sm sm:text-lg font-bold text-fg mb-1.5 sm:mb-2">Bespoke Styling</h3>
+                <p className="text-muted text-[10px] sm:text-xs leading-normal sm:leading-relaxed">
                   Tailor visual elements using our theme customizer. Select colors, switch light/dark/OS modes, and manage interface layouts.
                 </p>
               </div>
             </div>
 
-            {/* Bento Grid Card 4: Link compatibility (Spans 4 col on md, 2 col on sm) */}
-            <div className="sm:col-span-2 md:col-span-4 bg-gradient-to-tr from-surface/20 to-surface-elevated/40 border border-custom-border/80 hover:border-accent/40 rounded-3xl p-6 sm:p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
+            {/* Bento Grid Card 4: Link compatibility (Spans 4 col on md, 2 col by default) */}
+            <div className="col-span-2 md:col-span-4 bg-gradient-to-tr from-surface/20 to-surface-elevated/40 border border-custom-border/80 hover:border-accent/40 rounded-3xl p-5 sm:p-8 flex flex-col justify-between text-left backdrop-blur-sm transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-4px]">
               <div className="flex justify-between items-start">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-accent/15 border border-accent/25 rounded-2xl grid place-items-center text-accent">
-                  <Database size={18} className="sm:w-5 sm:h-5" />
+                <div className="w-9 h-9 sm:w-12 sm:h-12 bg-accent/15 border border-accent/25 rounded-2xl grid place-items-center text-accent">
+                  <Database size={16} className="sm:w-5 sm:h-5" />
                 </div>
-                <div className="flex gap-1.5 sm:gap-2">
-                  <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[7px] sm:text-[8px] uppercase px-2 py-0.5 rounded-full">terabox</span>
-                  <span className="bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-[7px] sm:text-[8px] uppercase px-2 py-0.5 rounded-full">terashare</span>
-                  <span className="bg-purple-500/10 border border-purple-500/20 text-purple-400 font-bold text-[7px] sm:text-[8px] uppercase px-2 py-0.5 rounded-full">1024terabox</span>
+                <div className="flex flex-wrap gap-1 sm:gap-2 justify-end max-w-[70%]">
+                  <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[7px] sm:text-[8px] uppercase px-1.5 py-0.5 rounded-full">terabox</span>
+                  <span className="bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-[7px] sm:text-[8px] uppercase px-1.5 py-0.5 rounded-full">terashare</span>
+                  <span className="bg-purple-500/10 border border-purple-500/20 text-purple-400 font-bold text-[7px] sm:text-[8px] uppercase px-1.5 py-0.5 rounded-full">1024terabox</span>
                 </div>
               </div>
-              <div className="mt-6 sm:mt-8">
-                <h3 className="text-base sm:text-lg font-bold text-fg mb-2">Universal Link Compatibility</h3>
-                <p className="text-muted text-xs sm:text-sm leading-relaxed">
+              <div className="mt-5 sm:mt-8">
+                <h3 className="text-base sm:text-lg font-bold text-fg mb-1.5 sm:mb-2">Universal Link Compatibility</h3>
+                <p className="text-muted text-[11px] sm:text-sm leading-normal sm:leading-relaxed">
                   Accepts standard formats from TeraBox share domains. Restructured API requests check validation codes and return complete meta tags including duration, resolution list, and file thumbnail cover.
                 </p>
               </div>
