@@ -46,7 +46,12 @@ export function useFetch(currentUser, navigate, { videosRef, historyRef, userPro
       setFetchStep('Parsing file details...');
       const data = await response.json();
 
-      const videoFiles = (data.files || []).filter(file => !file.is_directory);
+      const VIDEO_EXTENSIONS = ['.mp4', '.mkv', '.webm', '.avi', '.mov', '.flv', '.wmv', '.m4v', '.3gp', '.mpg', '.mpeg', '.ts', '.m3u8'];
+      const videoFiles = (data.files || []).filter(file => {
+        if (file.is_directory) return false;
+        const name = (file.filename || '').toLowerCase();
+        return VIDEO_EXTENSIONS.some(ext => name.endsWith(ext));
+      });
       if (videoFiles.length === 0) {
         throw new Error('No playable video files found in this share link.');
       }
