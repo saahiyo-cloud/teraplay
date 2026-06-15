@@ -1,0 +1,152 @@
+import React, { useState, useRef, useCallback } from 'react';
+import { db } from '../firebase';
+import { ref, set } from 'firebase/database';
+import { API_BASE, API_KEY } from '../config';
+import { formatDuration } from '../utils/formatDuration';
+import { detectResolution } from '../utils/detectResolution';
+import { categorizeVideo } from '../utils/categorizeVideo';
+
+export function useFetch(currentUser, navigate, { videosRef, historyRef, userProfile, setVideosInDb, setHistoryInDb }) {
+  const [isFetching, setIsFetching] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
+  const [fetchStep, setFetchStep] = useState('');
+  const resolveAbortRef = useRef(null);
+
+  const handleFetch = useCallback(async (url) => {
+    if (resolveAbortRef.current) {
+      resolveAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    resolveAbortRef.current = controller;
+
+    setIsFetching(true);
+    setFetchError(null);
+    setFetchStep('Connecting to TeraBridge...');
+
+    try {
+      let headers = {};
+      if (currentUser) {
+        try {
+          const idToken = await currentUser.getIdToken();
+          headers['Authorization'] = `Bearer ${idToken}`;
+        } catch (e) {
+          console.error('Failed to get Firebase ID token: ', e);
+        }
+      }
+
+      const response = await fetch(`${API_BASE}/api/resolve?url=${encodeURIComponent(url)}&mode=stream`, {
+        signal: controller.signal,
+        headers: headers
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server responded with status ${response.status}`);
+      }
+
+      setFetchStep('Parsing file details...');
+      const data = await response.json();
+
+      const videoFiles = (data.files || []).filter(file => !file.is_directory);
+      if (videoFiles.length === 0) {
+        throw new Error('No playable video files found in this share link.');
+      }
+
+      const newVideos = videoFiles.map((file, idx) => {
+        const fileId = file.fs_id || `${Date.now()}_${idx}`;
+        let sizeStr = 'Unknown Size';
+        if (file.size_mb) {
+          sizeStr = `${file.size_mb.toFixed(1)} MB`;
+        } else if (file.size_bytes) {
+          sizeStr = `${(file.size_bytes / (1024 * 1024)).toFixed(1)} MB`;
+        }
+
+        const thumbUrl = file.thumbnails?.url2 || file.thumbnails?.url1 || file.thumbnails?.icon || 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=600';
+
+        const streamUrl = file.stream_url || `${API_BASE}/api/stream/manifest?url=${encodeURIComponent(url)}&index=${idx}&key=${API_KEY}`;
+
+        const detectedRes = detectResolution(file.filename, file.streams);
+        const autoCategory = categorizeVideo(file.filename);
+
+        return {
+          id: fileId,
+          title: file.filename || `TeraBox Video #${fileId.substring(0, 6)}`,
+          description: `Imported from TeraBox URL. High-speed HLS stream proxied via TeraBridge. Original Path: ${file.path || '/'}`,
+          size: sizeStr,
+          duration: typeof file.duration === 'number'
+            ? formatDuration(file.duration)
+            : (typeof file.duration === 'string' && file.duration.trim() ? file.duration : '02:00'),
+          progress: 0,
+          favorite: false,
+          videoUrl: streamUrl,
+          downloadUrl: file.dlink,
+          thumbnail: thumbUrl,
+          relativeTime: 'Just now',
+          addedDate: new Date().toISOString(),
+          resolution: detectedRes,
+          streamReady: true,
+          originalUrl: url,
+          fileIndex: idx,
+          category: autoCategory,
+          views: 0,
+          plays: 0
+        };
+      });
+
+      const currentVideos = videosRef.current;
+      const currentHistory = historyRef.current;
+
+      const existingIds = new Set(currentVideos.map(v => String(v.id)));
+      const filteredNew = newVideos.filter(nv => !existingIds.has(String(nv.id)));
+      const updatedVideos = [...filteredNew, ...currentVideos];
+
+      const historyRecords = newVideos.map(nv => ({
+        id: `h_${Date.now()}_${nv.id}`,
+        videoId: nv.id,
+        title: nv.title,
+        size: nv.size,
+        duration: nv.duration,
+        thumbnail: nv.thumbnail,
+        progress: 0,
+        watchedAt: new Date().toISOString()
+      }));
+      const updatedHistory = [...historyRecords, ...currentHistory].slice(0, 50);
+
+      if (currentUser) {
+        setVideosInDb(updatedVideos);
+        setHistoryInDb(updatedHistory);
+
+        newVideos.forEach(nv => {
+          const uploaderObj = {
+            uid: currentUser.uid,
+            username: userProfile?.username || currentUser.displayName || `User_${currentUser.uid.substring(0, 5)}`,
+            avatar: userProfile?.avatar || currentUser.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
+          };
+          const publicVideo = {
+            ...nv,
+            uploader: uploaderObj
+          };
+          delete publicVideo.progress;
+          delete publicVideo.favorite;
+
+          set(ref(db, `discoverVideos/${nv.id}`), publicVideo)
+            .catch(err => console.error("Failed to post public video:", err));
+        });
+      } else {
+        setVideosInDb(updatedVideos);
+        setHistoryInDb(updatedHistory);
+      }
+
+      const firstFileId = newVideos[0].id;
+      navigate(`/player/${firstFileId}`);
+
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      console.error('API Resolve Error:', err);
+      setFetchError(err.message || 'An unexpected error occurred while resolving your link. Please try again.');
+    } finally {
+      setIsFetching(false);
+    }
+  }, [currentUser, navigate]);
+
+  return { isFetching, fetchError, fetchStep, handleFetch, setFetchError };
+}
