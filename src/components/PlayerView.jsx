@@ -987,6 +987,12 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
             <img 
               src={video.thumbnail} 
               alt={video.title} 
+              onError={(e) => {
+                const fallback = 'https://i.ibb.co/wbdZsJ5/x.jpg';
+                if (e.target.src !== fallback) {
+                  e.target.src = fallback;
+                }
+              }}
               className="w-full h-full object-contain pointer-events-none" 
             />
             <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
@@ -1373,8 +1379,28 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
                 onClick={() => handleRelatedClick(relVideo)}
               >
                 <div className="w-24 aspect-video bg-surface-elevated border border-custom-border rounded-lg overflow-hidden shrink-0 flex items-center justify-center relative">
-                  <img src={relVideo.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover blur-md opacity-35 scale-110 pointer-events-none select-none" />
-                  <img src={relVideo.thumbnail} alt={relVideo.title} className="relative z-10 max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" />
+                  <img 
+                    src={relVideo.thumbnail} 
+                    alt="" 
+                    onError={(e) => {
+                      const fallback = 'https://i.ibb.co/wbdZsJ5/x.jpg';
+                      if (e.target.src !== fallback) {
+                        e.target.src = fallback;
+                      }
+                    }}
+                    className="absolute inset-0 w-full h-full object-cover blur-md opacity-35 scale-110 pointer-events-none select-none" 
+                  />
+                  <img 
+                    src={relVideo.thumbnail} 
+                    alt={relVideo.title} 
+                    onError={(e) => {
+                      const fallback = 'https://i.ibb.co/wbdZsJ5/x.jpg';
+                      if (e.target.src !== fallback) {
+                        e.target.src = fallback;
+                      }
+                    }}
+                    className="relative z-10 max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" 
+                  />
                 </div>
                 <div className="flex flex-col justify-center min-w-0">
                   <h4 className="font-semibold text-xs text-fg leading-snug line-clamp-2 group-hover:text-accent transition-colors duration-100">{relVideo.title}</h4>

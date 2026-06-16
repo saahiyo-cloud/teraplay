@@ -344,7 +344,17 @@ export default function ProfileView({ videos = [], history = [], currentUser, us
                     >
                       {/* Mini Thumbnail */}
                       <div className="w-20 aspect-video bg-surface-elevated rounded-lg overflow-hidden shrink-0 relative select-none">
-                        <img src={item.thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <img 
+                          src={item.thumbnail} 
+                          alt="" 
+                          onError={(e) => {
+                            const fallback = 'https://i.ibb.co/wbdZsJ5/x.jpg';
+                            if (e.target.src !== fallback) {
+                              e.target.src = fallback;
+                            }
+                          }}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                        />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
                           <PlayCircle size={20} className="text-accent" />
                         </div>

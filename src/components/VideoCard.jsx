@@ -12,7 +12,18 @@ export default function VideoCard({
   onPreview, 
   onImport 
 }) {
+  const FALLBACK_THUMBNAIL = 'https://i.ibb.co/wbdZsJ5/x.jpg';
+  const [imgSrc, setImgSrc] = useState(video.thumbnail || FALLBACK_THUMBNAIL);
   const [imageLoaded, setImageLoaded] = useState(false);
+
+  React.useEffect(() => {
+    setImgSrc(video.thumbnail || FALLBACK_THUMBNAIL);
+    setImageLoaded(false);
+  }, [video.thumbnail]);
+
+  const handleImageError = () => {
+    setImgSrc(FALLBACK_THUMBNAIL);
+  };
 
   const handleCardClick = () => {
     if (onSelect) onSelect(video);
@@ -35,7 +46,7 @@ export default function VideoCard({
 
   const handlePreviewClick = (e) => {
     e.stopPropagation();
-    if (onPreview) onPreview({ url: video.thumbnail, title: video.title });
+    if (onPreview) onPreview({ url: imgSrc, title: video.title });
   };
 
   return (
@@ -65,15 +76,17 @@ export default function VideoCard({
         )}
 
         <img 
-          src={video.thumbnail} 
+          src={imgSrc} 
           alt="" 
+          onError={handleImageError}
           className="absolute inset-0 w-full h-full object-cover blur-md opacity-35 scale-110 pointer-events-none select-none" 
         />
         <img 
-          src={video.thumbnail} 
+          src={imgSrc} 
           alt={video.title} 
           loading="lazy"
           onLoad={() => setImageLoaded(true)}
+          onError={handleImageError}
           className={`relative z-10 max-w-full max-h-full object-contain transition-all duration-500 ease-out group-hover:scale-105 ${imageLoaded ? 'opacity-90 group-hover:opacity-100' : 'opacity-0'}`} 
         />
         

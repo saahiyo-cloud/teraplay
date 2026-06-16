@@ -57,7 +57,17 @@ export default function HistoryView({ history, onClearHistory, onRemoveItem, onP
                 className="w-20 md:w-28 aspect-video bg-surface-elevated rounded-lg overflow-hidden shrink-0 relative cursor-pointer select-none"
                 onClick={() => onPlayVideo(item.videoId)}
               >
-                <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                <img 
+                  src={item.thumbnail} 
+                  alt={item.title} 
+                  onError={(e) => {
+                    const fallback = 'https://i.ibb.co/wbdZsJ5/x.jpg';
+                    if (e.target.src !== fallback) {
+                      e.target.src = fallback;
+                    }
+                  }}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
                   <div className="w-8 h-8 rounded-full bg-accent text-bg grid place-items-center shadow-soft">
                     <Play size={14} fill="currentColor" className="ml-0.5" />
