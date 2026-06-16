@@ -28,7 +28,7 @@ Configuration parameters are loaded from Vite environment variables (prefixed wi
 
 ```env
 # Base URL for the TeraBridge API server
-VITE_API_BASE=https://terabridge.onrender.com
+VITE_API_BASE=https://terabridge.vercel.app
 
 # API Authorization key
 VITE_API_KEY=your_apiserver_secret_key
