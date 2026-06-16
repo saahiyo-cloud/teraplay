@@ -28,7 +28,7 @@ export default function ConfirmDialog({
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onCancel(); }}>
       <DialogContent 
         showCloseButton={true} 
-        className="glass-card p-6 rounded-2xl border border-custom-border max-w-sm w-full shadow-glass relative flex flex-col gap-5 bg-popover"
+        className="glass-card p-6 rounded-2xl border border-custom-border max-w-sm w-full shadow-glass flex flex-col gap-5 bg-popover"
       >
         {/* Icon + heading */}
         <div className="flex items-center gap-3 pr-6">

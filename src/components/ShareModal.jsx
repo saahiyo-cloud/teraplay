@@ -88,7 +88,7 @@ export default function ShareModal({ isOpen, onClose, video }) {
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent 
         showCloseButton={true} 
-        className="glass-card p-6 rounded-2xl border border-custom-border max-w-md w-full shadow-glass relative flex flex-col gap-6 bg-popover"
+        className="glass-card p-6 rounded-2xl border border-custom-border max-w-md w-full shadow-glass flex flex-col gap-6 bg-popover"
       >
         {/* Header */}
         <div className="flex items-center justify-between">
