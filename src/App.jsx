@@ -83,6 +83,13 @@ function AppShell() {
   const location = useLocation();
   const { currentUser, authLoading } = useAuth();
 
+  // Redirect logged-in users away from the /auth page to prevent the 404 view
+  useEffect(() => {
+    if (currentUser && location.pathname === '/auth') {
+      navigate('/', { replace: true });
+    }
+  }, [currentUser, location.pathname, navigate]);
+
   // Sidebar (local UI state)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem('teraplay_sidebar_collapsed') === 'true';
