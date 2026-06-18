@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { db } from '../firebase';
 import { ref, set, get } from 'firebase/database';
-import { API_BASE, API_KEY } from '../config';
+import { API_BASE } from '../config';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -36,11 +36,6 @@ class CustomLoader extends Hls.DefaultConfig.loader {
         const apiBaseUrl = new URL(API_BASE);
         urlObj.protocol = apiBaseUrl.protocol;
         urlObj.host = apiBaseUrl.host;
-
-        // Add API_KEY if missing and the request is not already signed
-        if (API_KEY && !urlObj.searchParams.has('key') && !urlObj.searchParams.has('sig')) {
-          urlObj.searchParams.set('key', API_KEY);
-        }
 
         const oldUrl = context.url;
         context.url = urlObj.toString();

@@ -13,13 +13,14 @@ export const ACCENT_COLORS = [
   { name: 'mono', value: 'var(--mono-accent)', muted: 'var(--mono-accent-muted)', hex: '#71717a' }
 ];
 
-export default function SettingsView({ settings = { autoplay: true, rememberProgress: true, resolution: 'auto', accentColor: 'mono', autoFetch: true, themeMode: 'dark' }, onUpdateSettings, onResetData, currentUser }) {
+export default function SettingsView({ settings = { autoplay: true, rememberProgress: true, resolution: 'auto', accentColor: 'mono', autoFetch: true, themeMode: 'dark', shareToDiscover: false }, onUpdateSettings, onResetData, currentUser }) {
   const [selectedColor, setSelectedColor] = useState(settings.accentColor);
   const [autoplay, setAutoplay] = useState(settings.autoplay);
   const [rememberProgress, setRememberProgress] = useState(settings.rememberProgress);
   const [resolution, setResolution] = useState(settings.resolution);
   const [themeMode, setThemeMode] = useState(settings.themeMode || 'dark');
   const [showBackground, setShowBackground] = useState(settings.showBackground !== false);
+  const [shareToDiscover, setShareToDiscover] = useState(settings.shareToDiscover || false);
 
   const [resetFeedback, setResetFeedback] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState(false);
@@ -32,6 +33,7 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
     setResolution(settings.resolution);
     setThemeMode(settings.themeMode || 'dark');
     setShowBackground(settings.showBackground !== false);
+    setShareToDiscover(settings.shareToDiscover || false);
   }, [settings]);
 
   const applyColor = (color) => {
@@ -61,7 +63,8 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
           autoplay,
           rememberProgress,
           resolution,
-          themeMode
+          themeMode,
+          shareToDiscover
         });
         setSaveFeedback(true);
         setTimeout(() => setSaveFeedback(false), 2000);
@@ -255,6 +258,32 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Privacy Settings */}
+        <div className="glass-card p-5 md:p-6 border border-custom-border rounded-2xl">
+          <div className="flex items-center gap-3 mb-6 select-none text-fg font-bold text-base md:text-lg border-b border-custom-border/50 pb-3">
+            <EyeOff size={20} className="text-accent" />
+            <h2>Privacy</h2>
+          </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <label className="font-semibold text-sm text-fg block select-none">Share videos to Discover</label>
+              <span className="text-xs text-muted">When enabled, videos you import are published to the public Discover feed for other users to browse. Off by default to protect your privacy.</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !shareToDiscover;
+                setShareToDiscover(next);
+                if (onUpdateSettings) onUpdateSettings({ shareToDiscover: next });
+              }}
+              className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors duration-200 ${shareToDiscover ? 'bg-accent' : 'bg-surface-elevated border border-custom-border'}`}
+              aria-label="Toggle share videos to Discover"
+            >
+              <div className={`w-4 h-4 rounded-full transition-transform duration-200 ${shareToDiscover ? 'translate-x-6 bg-bg' : 'translate-x-0 bg-muted'}`} />
+            </button>
           </div>
         </div>
 

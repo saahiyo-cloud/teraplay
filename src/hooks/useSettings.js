@@ -10,7 +10,8 @@ const DEFAULT_SETTINGS = {
   accentColor: 'mono',
   autoFetch: true,
   themeMode: 'dark',
-  showBackground: true
+  showBackground: true,
+  shareToDiscover: false
 };
 
 function loadLocalSettings() {
@@ -20,6 +21,7 @@ function loadLocalSettings() {
   const autoFetch = localStorage.getItem('teraplay_autofetch') !== 'false';
   const themeMode = localStorage.getItem('teraplay_theme_mode') || 'dark';
   const showBackground = localStorage.getItem('teraplay_show_background') !== 'false';
+  const shareToDiscover = localStorage.getItem('teraplay_share_to_discover') === 'true';
 
   let accentColor = 'mono';
   const savedAccent = localStorage.getItem('teraplay_accent');
@@ -31,7 +33,7 @@ function loadLocalSettings() {
     }
   }
 
-  return { autoplay, rememberProgress, resolution, accentColor, autoFetch, themeMode, showBackground };
+  return { autoplay, rememberProgress, resolution, accentColor, autoFetch, themeMode, showBackground, shareToDiscover };
 }
 
 export function useSettings(currentUser) {
@@ -54,7 +56,8 @@ export function useSettings(currentUser) {
           accentColor: data.accentColor || 'mono',
           autoFetch: data.autoFetch !== undefined ? data.autoFetch : true,
           themeMode: data.themeMode || 'dark',
-          showBackground: data.showBackground !== undefined ? data.showBackground : true
+          showBackground: data.showBackground !== undefined ? data.showBackground : true,
+          shareToDiscover: data.shareToDiscover !== undefined ? data.shareToDiscover : false
         });
       } else {
         const initialSettings = loadLocalSettings();
@@ -132,6 +135,9 @@ export function useSettings(currentUser) {
         localStorage.setItem('teraplay_remember_progress', updated.rememberProgress.toString());
         localStorage.setItem('teraplay_resolution', updated.resolution);
         localStorage.setItem('teraplay_autofetch', updated.autoFetch.toString());
+        if (updated.shareToDiscover !== undefined) {
+          localStorage.setItem('teraplay_share_to_discover', updated.shareToDiscover.toString());
+        }
       }
       
       // Sync theme mode and background preference to localStorage in either case to prevent boot flash of unstyled content
@@ -155,6 +161,7 @@ export function useSettings(currentUser) {
       localStorage.removeItem('teraplay_autofetch');
       localStorage.removeItem('teraplay_accent');
       localStorage.removeItem('teraplay_theme_mode');
+      localStorage.removeItem('teraplay_share_to_discover');
     }
     setSettings(DEFAULT_SETTINGS);
     if (onResetOtherData) onResetOtherData();

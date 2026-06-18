@@ -115,7 +115,7 @@ function AppShell() {
     handleImportVideo, handleToggleFavorite, handleUpdateVideo, handleIncrementVideoViewsAndPlays
   } = useVideos(currentUser);
   const { isFetching, fetchError, fetchStep, handleFetch, setFetchError } = useFetch(
-    currentUser, navigate, { videosRef, historyRef, userProfile, setVideosInDb, setHistoryInDb }
+    currentUser, navigate, { videosRef, historyRef, userProfile, setVideosInDb, setHistoryInDb, shareToDiscover: settings.shareToDiscover || false }
   );
 
   useDocumentMeta(location, videos, discoverVideos);

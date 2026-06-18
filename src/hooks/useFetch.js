@@ -1,12 +1,12 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { db } from '../firebase';
 import { ref, set } from 'firebase/database';
-import { API_BASE, API_KEY } from '../config';
+import { API_BASE } from '../config';
 import { formatDuration } from '../utils/formatDuration';
 import { detectResolution } from '../utils/detectResolution';
 import { categorizeVideo } from '../utils/categorizeVideo';
 
-export function useFetch(currentUser, navigate, { videosRef, historyRef, userProfile, setVideosInDb, setHistoryInDb }) {
+export function useFetch(currentUser, navigate, { videosRef, historyRef, userProfile, setVideosInDb, setHistoryInDb, shareToDiscover }) {
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState(null);
   const [fetchStep, setFetchStep] = useState('');
@@ -73,7 +73,10 @@ export function useFetch(currentUser, navigate, { videosRef, historyRef, userPro
 
         const thumbUrl = file.thumbnails?.url2 || file.thumbnails?.url1 || file.thumbnails?.icon || 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=600';
 
-        const streamUrl = file.stream_url || `${API_BASE}/api/stream/manifest?url=${encodeURIComponent(url)}&index=${idx}&key=${API_KEY}`;
+        // Use the signed stream URL from the API (contains time-limited HMAC sig).
+        // Never fall back to embedding the static API_KEY in the URL — that leaks
+        // the master key into network tabs, shared links, and the public DB.
+        const streamUrl = file.stream_url || null;
 
         const detectedRes = detectResolution(file.filename, file.streams);
         const autoCategory = categorizeVideo(file.filename);
@@ -126,22 +129,27 @@ export function useFetch(currentUser, navigate, { videosRef, historyRef, userPro
         setVideosInDb(updatedVideos);
         setHistoryInDb(updatedHistory);
 
-        newVideos.forEach(nv => {
-          const uploaderObj = {
-            uid: currentUser.uid,
-            username: userProfile?.username || currentUser.displayName || `User_${currentUser.uid.substring(0, 5)}`,
-            avatar: userProfile?.avatar || currentUser.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
-          };
-          const publicVideo = {
-            ...nv,
-            uploader: uploaderObj
-          };
-          delete publicVideo.progress;
-          delete publicVideo.favorite;
+        // Only publish to the public Discover feed if the user has explicitly
+        // opted in via Settings → Privacy. Default is OFF to protect privacy —
+        // pasting a private TeraBox link must never silently broadcast it.
+        if (shareToDiscover) {
+          newVideos.forEach(nv => {
+            const uploaderObj = {
+              uid: currentUser.uid,
+              username: userProfile?.username || currentUser.displayName || `User_${currentUser.uid.substring(0, 5)}`,
+              avatar: userProfile?.avatar || currentUser.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'
+            };
+            const publicVideo = {
+              ...nv,
+              uploader: uploaderObj
+            };
+            delete publicVideo.progress;
+            delete publicVideo.favorite;
 
-          set(ref(db, `discoverVideos/${nv.id}`), publicVideo)
-            .catch(err => console.error("Failed to post public video:", err));
-        });
+            set(ref(db, `discoverVideos/${nv.id}`), publicVideo)
+              .catch(err => console.error("Failed to post public video:", err));
+          });
+        }
       } else {
         setVideosInDb(updatedVideos);
         setHistoryInDb(updatedHistory);
@@ -157,7 +165,7 @@ export function useFetch(currentUser, navigate, { videosRef, historyRef, userPro
     } finally {
       setIsFetching(false);
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, navigate, shareToDiscover]);
 
   return { isFetching, fetchError, fetchStep, handleFetch, setFetchError };
 }
