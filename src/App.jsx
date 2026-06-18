@@ -1,21 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { createHashRouter, RouterProvider, Routes, Route, useNavigate, Link, useLocation } from 'react-router-dom';
 import { Play, History, User, Settings, Loader2, AlertCircle, X } from 'lucide-react';
 import Sidebar from './components/Sidebar';
-import HomeView from './components/HomeView';
-import DiscoverView from './components/DiscoverView';
-import LibraryView from './components/LibraryView';
-import ProfileView from './components/ProfileView';
-import SettingsView from './components/SettingsView';
-import HistoryView from './components/HistoryView';
 import ErrorBoundary from './components/ErrorBoundary';
-import LandingPage from './components/LandingPage';
-import AuthScreen from './components/AuthScreen';
 import ConfirmDialog from './components/ConfirmDialog';
 import ShareModal from './components/ShareModal';
-import NotFoundView from './components/NotFoundView';
-import PlayerRouteWrapper from './components/PlayerRouteWrapper';
-import FilesView from './components/FilesView';
 import { db } from './firebase';
 import { ref, set } from 'firebase/database';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -26,6 +15,27 @@ import { useDiscover } from './hooks/useDiscover';
 import { useHistory } from './hooks/useHistory';
 import { useVideos } from './hooks/useVideos';
 import { useFetch } from './hooks/useFetch';
+
+// Lazy-load route views to split the bundle. Heavy dependencies like hls.js
+// (via PlayerRouteWrapper/PlayerView), framer-motion, and view-only code are
+// only fetched when the route is accessed.
+const HomeView = lazy(() => import('./components/HomeView'));
+const DiscoverView = lazy(() => import('./components/DiscoverView'));
+const LibraryView = lazy(() => import('./components/LibraryView'));
+const ProfileView = lazy(() => import('./components/ProfileView'));
+const SettingsView = lazy(() => import('./components/SettingsView'));
+const HistoryView = lazy(() => import('./components/HistoryView'));
+const LandingPage = lazy(() => import('./components/LandingPage'));
+const AuthScreen = lazy(() => import('./components/AuthScreen'));
+const NotFoundView = lazy(() => import('./components/NotFoundView'));
+const PlayerRouteWrapper = lazy(() => import('./components/PlayerRouteWrapper'));
+const FilesView = lazy(() => import('./components/FilesView'));
+
+const SuspenseFallback = () => (
+  <div className="fixed inset-0 bg-bg z-[9999] flex items-center justify-center font-body">
+    <Loader2 size={40} className="text-accent animate-spin" />
+  </div>
+);
 
 // Synchronously apply theme and migrate/clear mock data from localStorage
 (() => {
@@ -75,8 +85,6 @@ import { useFetch } from './hooks/useFetch';
     window.location.hash = `/player/${sharedVideoId}`;
   }
 })();
-
-export const DISCOVER_VIDEOS = [];
 
 function AppShell() {
   const navigate = useNavigate();
@@ -131,40 +139,42 @@ function AppShell() {
       return;
     }
 
+    // O(1) lookup by ID instead of O(n) find inside an O(n) map.
+    const discoverById = new Map(discoverVideos.map(pv => [String(pv.id), pv]));
+
     let mutated = false;
     const synced = videos.map(v => {
-      const publicVid = discoverVideos.find(pv => String(pv.id) === String(v.id));
-      if (publicVid) {
-        const updates = {};
-        if (publicVid.duration && publicVid.duration !== '02:00' && publicVid.duration !== v.duration) {
-          updates.duration = publicVid.duration;
-        }
-        if (publicVid.resolution && publicVid.resolution !== 'Auto' && publicVid.resolution !== v.resolution) {
-          updates.resolution = publicVid.resolution;
-        }
-        if (publicVid.category && publicVid.category !== v.category) {
-          updates.category = publicVid.category;
-        }
-        if (typeof publicVid.views === 'number' && publicVid.views !== v.views) {
-          updates.views = publicVid.views;
-        }
-        if (typeof publicVid.plays === 'number' && publicVid.plays !== v.plays) {
-          updates.plays = publicVid.plays;
-        }
+      const publicVid = discoverById.get(String(v.id));
+      if (!publicVid) return v;
 
-        if (Object.keys(updates).length > 0) {
-          mutated = true;
-          return { ...v, ...updates };
-        }
+      const updates = {};
+      if (publicVid.duration && publicVid.duration !== '02:00' && publicVid.duration !== v.duration) {
+        updates.duration = publicVid.duration;
       }
-      return v;
+      if (publicVid.resolution && publicVid.resolution !== 'Auto' && publicVid.resolution !== v.resolution) {
+        updates.resolution = publicVid.resolution;
+      }
+      if (publicVid.category && publicVid.category !== v.category) {
+        updates.category = publicVid.category;
+      }
+      if (typeof publicVid.views === 'number' && publicVid.views !== v.views) {
+        updates.views = publicVid.views;
+      }
+      if (typeof publicVid.plays === 'number' && publicVid.plays !== v.plays) {
+        updates.plays = publicVid.plays;
+      }
+
+      if (Object.keys(updates).length === 0) return v;
+
+      mutated = true;
+      return { ...v, ...updates };
     });
 
     if (mutated) {
       console.log('[App] Syncing public video metadata changes to private library');
-      set(ref(db, `users/${currentUser.uid}/videos`), synced);
+      setVideosInDb(synced);
     }
-  }, [currentUser, videos, discoverVideos]);
+  }, [currentUser, videos, discoverVideos, setVideosInDb]);
 
   // --- Orchestration handlers ---
 
@@ -304,9 +314,17 @@ function AppShell() {
   if (!currentUser) {
     if (location.pathname === '/auth') {
       const initialIsSignUp = location.state?.isSignUp || false;
-      return <AuthScreen onClose={() => navigate('/')} initialIsSignUp={initialIsSignUp} />;
+      return (
+        <Suspense fallback={<SuspenseFallback />}>
+          <AuthScreen onClose={() => navigate('/')} initialIsSignUp={initialIsSignUp} />
+        </Suspense>
+      );
     }
-    return <LandingPage onNavigateToAuth={(isSignUp) => navigate('/auth', { state: { isSignUp } })} />;
+    return (
+      <Suspense fallback={<SuspenseFallback />}>
+        <LandingPage onNavigateToAuth={(isSignUp) => navigate('/auth', { state: { isSignUp } })} />
+      </Suspense>
+    );
   }
 
   return (
@@ -350,76 +368,78 @@ function AppShell() {
 
       <main className={`flex-1 ${sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'} transition-all duration-300 p-4 pt-24 md:p-10 w-full min-h-screen pb-28 md:pb-10 box-border flex flex-col`}>
         <div className="max-w-[1400px] w-full mx-auto flex-1 flex flex-col">
-          <Routes>
-            <Route path="/" element={
-              <HomeView
-                videos={videos}
-                userProfile={userProfile}
-                onVideoSelect={handleVideoSelect}
-                onFetch={handleFetch}
-                onPreviewImage={setPreviewImage}
-                onDeleteVideo={handleDeleteVideo}
-                onShareVideo={setShareVideo}
-                currentUser={currentUser}
-                settings={settings}
-                onUpdateSettings={handleUpdateSettings}
-              />
-            } />
-            <Route path="/player/:id?" element={
-              <PlayerRouteWrapper
-                videos={videos}
-                discoverVideos={discoverVideos}
-                handleToggleFavorite={onToggleFavorite}
-                handleVideoSelect={handleVideoSelect}
-                handleUpdateVideo={handleUpdateVideo}
-                handleIncrementVideoViewsAndPlays={handleIncrementVideoViewsAndPlays}
-                currentUser={currentUser}
-                onDeleteVideo={handleDeleteVideo}
-                onShareVideo={setShareVideo}
-                settings={settings}
-              />
-            } />
-            <Route path="/discover" element={
-              <DiscoverView
-                videos={videos}
-                discoverVideos={discoverVideos}
-                onVideoSelect={handleVideoSelect}
-                onPreviewImage={setPreviewImage}
-                onShareVideo={setShareVideo}
-                onImportVideo={handleImportVideo}
-                currentUser={currentUser}
-                dbCategories={dbCategories}
-                topCreators={topCreators}
-              />
-            } />
-            <Route path="/files" element={
-              <FilesView onPreviewImage={setPreviewImage} />
-            } />
-            <Route path="/library" element={
-              <LibraryView
-                videos={videos}
-                onVideoSelect={handleVideoSelect}
-                onPreviewImage={setPreviewImage}
-                onDeleteVideo={handleDeleteVideo}
-                onShareVideo={setShareVideo}
-              />
-            } />
-            <Route path="/profile" element={
-              <ProfileView videos={videos} history={history} currentUser={currentUser} userProfile={userProfile} onVideoSelect={handleVideoSelect} />
-            } />
-            <Route path="/settings" element={
-              <SettingsView settings={settings} onUpdateSettings={handleUpdateSettings} onResetData={onResetData} currentUser={currentUser} />
-            } />
-            <Route path="/history" element={
-              <HistoryView
-                history={history}
-                onClearHistory={handleClearAllHistory}
-                onRemoveItem={handleRemoveHistoryItem}
-                onPlayVideo={handlePlayFromHistory}
-              />
-            } />
-            <Route path="*" element={<NotFoundView />} />
-          </Routes>
+          <Suspense fallback={<SuspenseFallback />}>
+            <Routes>
+              <Route path="/" element={
+                <HomeView
+                  videos={videos}
+                  userProfile={userProfile}
+                  onVideoSelect={handleVideoSelect}
+                  onFetch={handleFetch}
+                  onPreviewImage={setPreviewImage}
+                  onDeleteVideo={handleDeleteVideo}
+                  onShareVideo={setShareVideo}
+                  currentUser={currentUser}
+                  settings={settings}
+                  onUpdateSettings={handleUpdateSettings}
+                />
+              } />
+              <Route path="/player/:id?" element={
+                <PlayerRouteWrapper
+                  videos={videos}
+                  discoverVideos={discoverVideos}
+                  handleToggleFavorite={onToggleFavorite}
+                  handleVideoSelect={handleVideoSelect}
+                  handleUpdateVideo={handleUpdateVideo}
+                  handleIncrementVideoViewsAndPlays={handleIncrementVideoViewsAndPlays}
+                  currentUser={currentUser}
+                  onDeleteVideo={onDeleteVideo}
+                  onShareVideo={setShareVideo}
+                  settings={settings}
+                />
+              } />
+              <Route path="/discover" element={
+                <DiscoverView
+                  videos={videos}
+                  discoverVideos={discoverVideos}
+                  onVideoSelect={handleVideoSelect}
+                  onPreviewImage={setPreviewImage}
+                  onShareVideo={setShareVideo}
+                  onImportVideo={handleImportVideo}
+                  currentUser={currentUser}
+                  dbCategories={dbCategories}
+                  topCreators={topCreators}
+                />
+              } />
+              <Route path="/files" element={
+                <FilesView onPreviewImage={setPreviewImage} />
+              } />
+              <Route path="/library" element={
+                <LibraryView
+                  videos={videos}
+                  onVideoSelect={handleVideoSelect}
+                  onPreviewImage={setPreviewImage}
+                  onDeleteVideo={handleDeleteVideo}
+                  onShareVideo={setShareVideo}
+                />
+              } />
+              <Route path="/profile" element={
+                <ProfileView videos={videos} history={history} currentUser={currentUser} userProfile={userProfile} onVideoSelect={handleVideoSelect} />
+              } />
+              <Route path="/settings" element={
+                <SettingsView settings={settings} onUpdateSettings={handleUpdateSettings} onResetData={onResetData} currentUser={currentUser} />
+              } />
+              <Route path="/history" element={
+                <HistoryView
+                  history={history}
+                  onClearHistory={handleClearAllHistory}
+                  onRemoveItem={handleRemoveHistoryItem}
+                  onPlayVideo={handlePlayFromHistory}
+                />
+              } />
+              <Route path="*" element={<NotFoundView />} />
+            </Routes>
+          </Suspense>
         </div>
       </main>
 

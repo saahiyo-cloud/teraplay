@@ -2,16 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Settings, Play, Check, EyeOff, RefreshCw, Sliders, ChevronDown, Cloud, Sun, Moon, Monitor, Image } from 'lucide-react';
 import { db } from '../firebase';
 import { ref, set, onValue } from 'firebase/database';
+import { ACCENT_COLORS } from '../lib/accentColors';
 import ConfirmDialog from './ConfirmDialog';
-
-export const ACCENT_COLORS = [
-  { name: 'blue', value: 'oklch(65% 0.18 250)', muted: 'oklch(65% 0.18 250 / 0.15)', hex: '#3b82f6' },
-  { name: 'emerald', value: 'oklch(70% 0.18 140)', muted: 'oklch(70% 0.18 140 / 0.15)', hex: '#10b981' },
-  { name: 'purple', value: 'oklch(65% 0.22 300)', muted: 'oklch(65% 0.22 300 / 0.15)', hex: '#8b5cf6' },
-  { name: 'red', value: 'oklch(62% 0.22 25)', muted: 'oklch(62% 0.22 25 / 0.15)', hex: '#ef4444' },
-  { name: 'orange', value: 'oklch(68% 0.18 55)', muted: 'oklch(68% 0.18 55 / 0.15)', hex: '#f97316' },
-  { name: 'mono', value: 'var(--mono-accent)', muted: 'var(--mono-accent-muted)', hex: '#71717a' }
-];
 
 export default function SettingsView({ settings = { autoplay: true, rememberProgress: true, resolution: 'auto', accentColor: 'mono', autoFetch: true, themeMode: 'dark', shareToDiscover: false }, onUpdateSettings, onResetData, currentUser }) {
   const [selectedColor, setSelectedColor] = useState(settings.accentColor);

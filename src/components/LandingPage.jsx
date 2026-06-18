@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import AuthScreen from './AuthScreen';
 import { useSettings } from '../hooks/useSettings';
-import { ACCENT_COLORS } from './SettingsView';
+import { ACCENT_COLORS } from '../lib/accentColors';
 import { SlotText } from 'slot-text/react';
 import 'slot-text/style.css';
 

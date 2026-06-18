@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { ref, onValue, set } from 'firebase/database';
-import { ACCENT_COLORS } from '../components/SettingsView';
+import { ACCENT_COLORS } from '../lib/accentColors';
 
 const DEFAULT_SETTINGS = {
   autoplay: true,
