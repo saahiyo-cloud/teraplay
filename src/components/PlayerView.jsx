@@ -327,6 +327,15 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           abrEwmaDefaultEstimate: 1000000, // 1Mbps initial bandwidth estimate
           abrBandWidthUpFactor: 0.7,     // Conservative upswitch (70% confidence)
           abrBandWidthFactor: 0.95,      // Aggressive downswitch (keep playback smooth)
+          manifestLoadingTimeOut: 5000,     // Abort & retry if manifest takes > 5s (instead of 10s/20s)
+          manifestLoadingMaxRetry: 4,       // Allow up to 4 retries for robustness
+          manifestLoadingRetryDelay: 500,   // Delay only 500ms between retries (instead of 1000ms)
+          levelLoadingTimeOut: 5000,        // Abort & retry if level loading takes > 5s
+          levelLoadingMaxRetry: 4,
+          levelLoadingRetryDelay: 500,
+          fragLoadingTimeOut: 10000,        // Abort & retry if video segment takes > 10s (instead of 20s)
+          fragLoadingMaxRetry: 6,
+          fragLoadingRetryDelay: 500,
           loader: CustomLoader,
           fLoader: CustomLoader,
           pLoader: CustomLoader
