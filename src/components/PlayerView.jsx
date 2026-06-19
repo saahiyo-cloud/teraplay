@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { db } from '../firebase';
 import { ref, set, get } from 'firebase/database';
-import { API_BASE } from '../config';
 import { useAuth } from '../contexts/AuthContext';
 import {
   DropdownMenu,
@@ -20,7 +19,7 @@ import {
 class CustomLoader extends Hls.DefaultConfig.loader {
   constructor(config) {
     super(config);
-    this.apiBase = config.apiBase || API_BASE;
+    this.apiBase = config.apiBase || '';
   }
 
   load(context, config, callbacks) {
@@ -54,7 +53,7 @@ class CustomLoader extends Hls.DefaultConfig.loader {
 
 export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload, onUpdateVideo, onIncrementViewsAndPlays, currentUser, onDeleteVideo, onShareVideo, settings = { autoplay: true, rememberProgress: true, resolution: 'auto' } }) {
   const { apiBase } = useAuth();
-  const activeApiBase = apiBase || API_BASE;
+  const activeApiBase = apiBase || '';
 
   const videoRef = useRef(null);
   const containerRef = useRef(null);

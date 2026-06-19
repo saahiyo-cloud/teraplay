@@ -5,7 +5,6 @@ import {
   Download, ArrowLeft, Loader2, AlertCircle, Maximize2, ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { API_BASE } from '../config';
 import { useAuth } from '../contexts/AuthContext';
 
 const getFileIconAndColor = (filename) => {
@@ -87,7 +86,7 @@ export default function FilesView({ onPreviewImage }) {
               console.error('Failed to get Firebase ID token:', e);
             }
           }
-          const activeApiBase = apiBase || API_BASE;
+          const activeApiBase = apiBase || '';
           const res = await fetch(`${activeApiBase}/api/resolve?url=${encodeURIComponent(url)}&mode=download`, { headers });
           if (!res.ok) {
             throw new Error(`Server responded with status ${res.status}`);

@@ -1,7 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { db } from '../firebase';
 import { ref, set } from 'firebase/database';
-import { API_BASE } from '../config';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDuration } from '../utils/formatDuration';
 import { detectResolution } from '../utils/detectResolution';
@@ -39,7 +38,7 @@ export function useFetch(currentUser, navigate, { videosRef, historyRef, userPro
         }
       }
 
-      const activeApiBase = apiBase || API_BASE;
+      const activeApiBase = apiBase || '';
       const response = await fetch(`${activeApiBase}/api/resolve?url=${encodeURIComponent(url)}&mode=stream`, {
         signal: controller.signal,
         headers: headers
