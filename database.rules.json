@@ -6,23 +6,35 @@
         ".write": "auth != null && auth.uid == $uid"
       }
     },
+
     "discoverVideos": {
       ".read": "auth != null",
       "$videoId": {
-        ".write": "auth != null && (!data.exists() || data.child('uploader/uid').val() == auth.uid) && (!newData.exists() || newData.child('uploader/uid').val() == auth.uid)"
+        ".write": "auth != null && (auth.token.admin === true || (!data.exists() && newData.child('uploader/uid').val() == auth.uid) || (data.exists() && data.child('uploader/uid').val() == auth.uid))"
       }
     },
+
     "categories": {
       ".read": "auth != null",
-      ".write": "auth != null"
+      ".write": "auth != null && auth.token.admin === true"
     },
+
     "topCreators": {
       ".read": "auth != null",
-      ".write": "auth != null"
+      ".write": "auth != null && auth.token.admin === true"
     },
+
     "config": {
       ".read": "auth != null",
-      ".write": "false"
+      ".write": "auth != null && auth.token.admin === true"
+    },
+
+    "auditLogs": {
+      ".read": "auth != null && auth.token.admin === true",
+      ".write": "auth != null && auth.token.admin === true",
+      "$logId": {
+        ".validate": "newData.hasChildren(['uid', 'email', 'action', 'target', 'timestamp'])"
+      }
     }
   }
 }

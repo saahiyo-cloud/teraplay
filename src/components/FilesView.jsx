@@ -59,7 +59,7 @@ export default function FilesView({ onPreviewImage }) {
   const [searchParams] = useSearchParams();
   const url = searchParams.get('url') || '';
 
-  const { currentUser, apiKey, apiBase } = useAuth();
+  const { currentUser, apiBase } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -70,24 +70,18 @@ export default function FilesView({ onPreviewImage }) {
     if (location.state?.resolvedData) {
       setData(location.state.resolvedData);
     } else if (url) {
-      // Fallback: Fetch resolved data from backend
+      // Fallback: Fetch resolved data from backend.
+      // Authenticates with the signed-in user's Firebase ID token (same
+      // pattern as useFetch.js). Master API key is never used on the client.
       const fetchDetails = async () => {
         setLoading(true);
         setError(null);
         try {
-          const headers = {};
-          if (apiKey) {
-            headers['Authorization'] = `Bearer ${apiKey}`;
-          } else if (currentUser) {
-            try {
-              const idToken = await currentUser.getIdToken();
-              headers['Authorization'] = `Bearer ${idToken}`;
-            } catch (e) {
-              console.error('Failed to get Firebase ID token:', e);
-            }
-          }
+          const idToken = await currentUser.getIdToken();
           const activeApiBase = apiBase || '';
-          const res = await fetch(`${activeApiBase}/api/resolve?url=${encodeURIComponent(url)}&mode=download`, { headers });
+          const res = await fetch(`${activeApiBase}/api/resolve?url=${encodeURIComponent(url)}&mode=download`, {
+            headers: { Authorization: `Bearer ${idToken}` }
+          });
           if (!res.ok) {
             throw new Error(`Server responded with status ${res.status}`);
           }
@@ -107,7 +101,7 @@ export default function FilesView({ onPreviewImage }) {
     } else {
       setError('No URL provided to resolve.');
     }
-  }, [url, location.state, currentUser, apiKey, apiBase]);
+  }, [url, location.state, currentUser, apiBase]);
 
   const handleBack = () => {
     navigate(-1);

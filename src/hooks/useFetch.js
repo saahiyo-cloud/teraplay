@@ -11,8 +11,8 @@ export function useFetch(currentUser, navigate, { videosRef, historyRef, userPro
   const [fetchError, setFetchError] = useState(null);
   const [fetchStep, setFetchStep] = useState('');
   const resolveAbortRef = useRef(null);
-  
-  const { apiKey, apiBase } = useAuth();
+
+  const { apiBase } = useAuth();
 
   const handleFetch = useCallback(async (url) => {
     if (resolveAbortRef.current) {
@@ -25,24 +25,35 @@ export function useFetch(currentUser, navigate, { videosRef, historyRef, userPro
     setFetchError(null);
     setFetchStep('Connecting to TeraBridge...');
 
+    // Always authenticate with the signed-in user's Firebase ID token.
+    // The master TeraBridge API key is deliberately NOT used anywhere on
+    // the client — it used to leak through /config/apiKey. The backend's
+    // check_auth() accepts a Firebase JWT via verify_firebase_token().
+    const doResolve = async (forceRefresh) => {
+      const idToken = await currentUser.getIdToken(forceRefresh);
+      const activeApiBase = apiBase || '';
+      return fetch(`${activeApiBase}/api/resolve?url=${encodeURIComponent(url)}&mode=stream`, {
+        signal: controller.signal,
+        headers: { Authorization: `Bearer ${idToken}` }
+      });
+    };
+
     try {
-      let headers = {};
-      if (apiKey) {
-        headers['Authorization'] = `Bearer ${apiKey}`;
-      } else if (currentUser) {
-        try {
-          const idToken = await currentUser.getIdToken();
-          headers['Authorization'] = `Bearer ${idToken}`;
-        } catch (e) {
-          console.error('Failed to get Firebase ID token: ', e);
-        }
+      let response = await doResolve(false);
+
+      // 401 can mean the cached ID token expired (~1h lifetime). Force a
+      // refresh once and retry before surfacing an auth error to the user.
+      if (response.status === 401) {
+        response = await doResolve(true);
       }
 
-      const activeApiBase = apiBase || '';
-      const response = await fetch(`${activeApiBase}/api/resolve?url=${encodeURIComponent(url)}&mode=stream`, {
-        signal: controller.signal,
-        headers: headers
-      });
+      // Rate-limited: surface a friendly, actionable message rather than a
+      // generic "status 429" string. The backend sends Retry-After (seconds).
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('Retry-After');
+        const wait = retryAfter ? ` Try again in ${retryAfter}s.` : ' Please try again shortly.';
+        throw new Error(`Too many requests — rate limit reached.${wait}`);
+      }
 
       if (!response.ok) {
         throw new Error(`Server responded with status ${response.status}`);
@@ -170,7 +181,7 @@ export function useFetch(currentUser, navigate, { videosRef, historyRef, userPro
     } finally {
       setIsFetching(false);
     }
-  }, [currentUser, navigate, shareToDiscover, apiKey, apiBase]);
+  }, [currentUser, navigate, shareToDiscover, apiBase]);
 
   return { isFetching, fetchError, fetchStep, handleFetch, setFetchError };
 }

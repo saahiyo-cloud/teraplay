@@ -25,3 +25,10 @@ dist-ssr
 
 .env
 .agents
+
+# Firebase service account keys
+scripts/service-account-key.json
+
+# Sync file
+SYNC.md
+sync.md
