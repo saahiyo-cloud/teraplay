@@ -337,7 +337,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           levelLoadingTimeOut: 5000,        // Abort & retry if level loading takes > 5s
           levelLoadingMaxRetry: 4,
           levelLoadingRetryDelay: 500,
-          fragLoadingTimeOut: 10000,        // Abort & retry if video segment takes > 10s (instead of 20s)
+          fragLoadingTimeOut: 3500,         // Abort & retry if video segment takes > 3.5s (faster fallback)
           fragLoadingMaxRetry: 6,
           fragLoadingRetryDelay: 500,
           loader: CustomLoader,
