@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE } from '../config';
+import { useAuth } from '../contexts/AuthContext';
 
 const getFileIconAndColor = (filename) => {
   const ext = filename.split('.').pop().toLowerCase();
@@ -59,6 +60,8 @@ export default function FilesView({ onPreviewImage }) {
   const [searchParams] = useSearchParams();
   const url = searchParams.get('url') || '';
 
+  const { currentUser, apiKey } = useAuth();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
@@ -73,7 +76,18 @@ export default function FilesView({ onPreviewImage }) {
         setLoading(true);
         setError(null);
         try {
-          const res = await fetch(`${API_BASE}/api/resolve?url=${encodeURIComponent(url)}&mode=download`);
+          const headers = {};
+          if (apiKey) {
+            headers['Authorization'] = `Bearer ${apiKey}`;
+          } else if (currentUser) {
+            try {
+              const idToken = await currentUser.getIdToken();
+              headers['Authorization'] = `Bearer ${idToken}`;
+            } catch (e) {
+              console.error('Failed to get Firebase ID token:', e);
+            }
+          }
+          const res = await fetch(`${API_BASE}/api/resolve?url=${encodeURIComponent(url)}&mode=download`, { headers });
           if (!res.ok) {
             throw new Error(`Server responded with status ${res.status}`);
           }
@@ -93,7 +107,7 @@ export default function FilesView({ onPreviewImage }) {
     } else {
       setError('No URL provided to resolve.');
     }
-  }, [url, location.state]);
+  }, [url, location.state, currentUser, apiKey]);
 
   const handleBack = () => {
     navigate(-1);

@@ -5,14 +5,14 @@ import { ref, set, onValue } from 'firebase/database';
 import { ACCENT_COLORS } from '../lib/accentColors';
 import ConfirmDialog from './ConfirmDialog';
 
-export default function SettingsView({ settings = { autoplay: true, rememberProgress: true, resolution: 'auto', accentColor: 'mono', autoFetch: true, themeMode: 'dark', shareToDiscover: false }, onUpdateSettings, onResetData, currentUser }) {
+export default function SettingsView({ settings = { autoplay: true, rememberProgress: true, resolution: 'auto', accentColor: 'mono', autoFetch: true, themeMode: 'dark', shareToDiscover: true }, onUpdateSettings, onResetData, currentUser }) {
   const [selectedColor, setSelectedColor] = useState(settings.accentColor);
   const [autoplay, setAutoplay] = useState(settings.autoplay);
   const [rememberProgress, setRememberProgress] = useState(settings.rememberProgress);
   const [resolution, setResolution] = useState(settings.resolution);
   const [themeMode, setThemeMode] = useState(settings.themeMode || 'dark');
   const [showBackground, setShowBackground] = useState(settings.showBackground !== false);
-  const [shareToDiscover, setShareToDiscover] = useState(settings.shareToDiscover || false);
+  const [shareToDiscover, setShareToDiscover] = useState(settings.shareToDiscover !== false);
 
   const [resetFeedback, setResetFeedback] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState(false);
@@ -25,7 +25,7 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
     setResolution(settings.resolution);
     setThemeMode(settings.themeMode || 'dark');
     setShowBackground(settings.showBackground !== false);
-    setShareToDiscover(settings.shareToDiscover || false);
+    setShareToDiscover(settings.shareToDiscover !== false);
   }, [settings]);
 
   const applyColor = (color) => {
@@ -117,10 +117,10 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
               <button 
                 type="button" 
                 onClick={() => setAutoplay(!autoplay)}
-                className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors duration-200 ${autoplay ? 'bg-accent' : 'bg-surface-elevated border border-custom-border'}`}
+                className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors duration-200 ${autoplay ? 'bg-accent' : 'bg-black/15 dark:bg-white/10 border border-custom-border'}`}
                 aria-label="Toggle auto-play next video"
               >
-                <div className={`w-4 h-4 rounded-full transition-transform duration-200 ${autoplay ? 'translate-x-6 bg-bg' : 'translate-x-0 bg-muted'}`} />
+                <div className={`w-4 h-4 rounded-full transition-transform duration-200 ${autoplay ? 'translate-x-6 bg-white shadow-sm' : 'translate-x-0 bg-white shadow-sm'}`} />
               </button>
             </div>
 
@@ -132,10 +132,10 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
               <button 
                 type="button" 
                 onClick={() => setRememberProgress(!rememberProgress)}
-                className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors duration-200 ${rememberProgress ? 'bg-accent' : 'bg-surface-elevated border border-custom-border'}`}
+                className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors duration-200 ${rememberProgress ? 'bg-accent' : 'bg-black/15 dark:bg-white/10 border border-custom-border'}`}
                 aria-label="Toggle remember watch progress"
               >
-                <div className={`w-4 h-4 rounded-full transition-transform duration-200 ${rememberProgress ? 'translate-x-6 bg-bg' : 'translate-x-0 bg-muted'}`} />
+                <div className={`w-4 h-4 rounded-full transition-transform duration-200 ${rememberProgress ? 'translate-x-6 bg-white shadow-sm' : 'translate-x-0 bg-white shadow-sm'}`} />
               </button>
             </div>
 
@@ -243,10 +243,10 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
                     setShowBackground(next);
                     if (onUpdateSettings) onUpdateSettings({ showBackground: next });
                   }}
-                  className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors duration-200 ${showBackground ? 'bg-accent' : 'bg-surface-elevated border border-custom-border'}`}
+                  className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors duration-200 ${showBackground ? 'bg-accent' : 'bg-black/15 dark:bg-white/10 border border-custom-border'}`}
                   aria-label="Toggle custom background"
                 >
-                  <div className={`w-4 h-4 rounded-full transition-transform duration-200 ${showBackground ? 'translate-x-6 bg-bg' : 'translate-x-0 bg-muted'}`} />
+                  <div className={`w-4 h-4 rounded-full transition-transform duration-200 ${showBackground ? 'translate-x-6 bg-white shadow-sm' : 'translate-x-0 bg-white shadow-sm'}`} />
                 </button>
               </div>
             </div>
@@ -271,10 +271,10 @@ export default function SettingsView({ settings = { autoplay: true, rememberProg
                 setShareToDiscover(next);
                 if (onUpdateSettings) onUpdateSettings({ shareToDiscover: next });
               }}
-              className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors duration-200 ${shareToDiscover ? 'bg-accent' : 'bg-surface-elevated border border-custom-border'}`}
+              className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors duration-200 ${shareToDiscover ? 'bg-accent' : 'bg-black/15 dark:bg-white/10 border border-custom-border'}`}
               aria-label="Toggle share videos to Discover"
             >
-              <div className={`w-4 h-4 rounded-full transition-transform duration-200 ${shareToDiscover ? 'translate-x-6 bg-bg' : 'translate-x-0 bg-muted'}`} />
+              <div className={`w-4 h-4 rounded-full transition-transform duration-200 ${shareToDiscover ? 'translate-x-6 bg-white shadow-sm' : 'translate-x-0 bg-white shadow-sm'}`} />
             </button>
           </div>
         </div>

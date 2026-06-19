@@ -27,6 +27,8 @@
 
   --animate-fade-in: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-hud-ping: hudPing 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-latency-tick: latencyTick 0.12s ease-out forwards;
+  --animate-spotlight-drift: spotlightDrift 8s ease-in-out infinite alternate;
 }
 
 @keyframes fadeIn {
@@ -40,19 +42,30 @@
   100% { transform: scale(1.2); opacity: 0; }
 }
 
+@keyframes latencyTick {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@keyframes spotlightDrift {
+  0% { transform: translate(-5%, 0); opacity: 0.4; }
+  100% { transform: translate(5%, 0); opacity: 0.6; }
+}
+
 @layer base {
   :root, .dark {
-    --bg: oklch(12% 0.01 250);
-    --surface: oklch(18% 0.01 250);
-    --surface-elevated: oklch(22% 0.01 250);
-    --fg: oklch(98% 0.01 250);
-    --muted: oklch(65% 0.01 250);
-    --custom-border: oklch(25% 0.02 250);
+    --bg: oklch(6% 0.005 260);
+    --surface: oklch(14% 0.008 260);
+    --surface-elevated: oklch(18% 0.01 260);
+    --fg: oklch(92% 0.01 80);
+    --muted: oklch(55% 0.015 80);
+    --custom-border: oklch(22% 0.005 260);
     --accent: oklch(62% 0.01 250);
     --accent-muted: oklch(62% 0.01 250 / 0.15);
     --mono-accent: oklch(62% 0.01 250);
     --mono-accent-muted: oklch(62% 0.01 250 / 0.15);
-    --glass: oklch(18% 0.01 250 / 0.65);
+    --glass: oklch(14% 0.005 260 / 0.65);
 
     --glass-card-bg: oklch(100% 0 0 / 0.03);
     --glass-card-hover-bg: oklch(100% 0 0 / 0.05);
@@ -65,12 +78,12 @@
   }
 
   .light {
-    --bg: oklch(97% 0.01 250);
+    --bg: oklch(97% 0.008 80);
     --surface: oklch(100% 0 0);
-    --surface-elevated: oklch(93% 0.01 250);
-    --fg: oklch(15% 0.01 250);
-    --muted: oklch(48% 0.01 250);
-    --custom-border: oklch(88% 0.01 250);
+    --surface-elevated: oklch(93% 0.008 80);
+    --fg: oklch(15% 0.01 260);
+    --muted: oklch(48% 0.015 80);
+    --custom-border: oklch(88% 0.005 80);
     --accent: oklch(45% 0.01 250);
     --accent-muted: oklch(45% 0.01 250 / 0.15);
     --mono-accent: oklch(45% 0.01 250);
@@ -328,4 +341,65 @@
 .light .premium-wave-bg {
   filter: invert(0.92) brightness(1.05) contrast(0.95);
   opacity: 0.25;
+}
+
+/* Cinema strip feature cards — film strip perforations on left edge */
+.cinema-strip {
+  position: relative;
+  background: var(--glass-card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-custom-border);
+  border-radius: var(--radius-lg);
+  padding-left: 2.5rem;
+  transition: background 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cinema-strip::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 2rem;
+  height: calc(100% - 2rem);
+  background: repeating-linear-gradient(
+    to bottom,
+    color-mix(in oklch, var(--color-accent) 15%, transparent) 0px,
+    color-mix(in oklch, var(--color-accent) 15%, transparent) 8px,
+    transparent 8px,
+    transparent 20px
+  );
+  mask-image: radial-gradient(circle at 12px center, black 5px, transparent 5px);
+  -webkit-mask-image: radial-gradient(circle at 12px center, black 5px, transparent 5px);
+  mask-size: 24px 20px;
+  -webkit-mask-size: 24px 20px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  opacity: 0.6;
+  transition: opacity 0.5s ease;
+}
+
+.cinema-strip:hover {
+  background: var(--glass-card-hover-bg);
+  border-color: color-mix(in oklch, var(--color-accent) 30%, var(--color-custom-border));
+  box-shadow: 0 8px 40px color-mix(in oklch, var(--color-accent) 8%, transparent);
+  transform: translateX(4px);
+}
+
+.cinema-strip:hover::before {
+  opacity: 1;
+}
+
+/* Latency readout — monospace number with pulse on update */
+.latency-readout {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.latency-readout.pulse {
+  animation: latencyTick 0.12s ease-out;
 }

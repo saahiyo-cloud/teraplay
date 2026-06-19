@@ -11,7 +11,7 @@ const DEFAULT_SETTINGS = {
   autoFetch: true,
   themeMode: 'dark',
   showBackground: true,
-  shareToDiscover: false
+  shareToDiscover: true
 };
 
 function loadLocalSettings() {
@@ -21,7 +21,7 @@ function loadLocalSettings() {
   const autoFetch = localStorage.getItem('teraplay_autofetch') !== 'false';
   const themeMode = localStorage.getItem('teraplay_theme_mode') || 'dark';
   const showBackground = localStorage.getItem('teraplay_show_background') !== 'false';
-  const shareToDiscover = localStorage.getItem('teraplay_share_to_discover') === 'true';
+  const shareToDiscover = localStorage.getItem('teraplay_share_to_discover') !== 'false';
 
   let accentColor = 'mono';
   const savedAccent = localStorage.getItem('teraplay_accent');
@@ -57,7 +57,7 @@ export function useSettings(currentUser) {
           autoFetch: data.autoFetch !== undefined ? data.autoFetch : true,
           themeMode: data.themeMode || 'dark',
           showBackground: data.showBackground !== undefined ? data.showBackground : true,
-          shareToDiscover: data.shareToDiscover !== undefined ? data.shareToDiscover : false
+          shareToDiscover: data.shareToDiscover !== undefined ? data.shareToDiscover : true
         });
       } else {
         const initialSettings = loadLocalSettings();

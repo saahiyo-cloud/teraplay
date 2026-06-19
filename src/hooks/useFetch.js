@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { db } from '../firebase';
 import { ref, set } from 'firebase/database';
 import { API_BASE } from '../config';
+import { useAuth } from '../contexts/AuthContext';
 import { formatDuration } from '../utils/formatDuration';
 import { detectResolution } from '../utils/detectResolution';
 import { categorizeVideo } from '../utils/categorizeVideo';
@@ -11,6 +12,8 @@ export function useFetch(currentUser, navigate, { videosRef, historyRef, userPro
   const [fetchError, setFetchError] = useState(null);
   const [fetchStep, setFetchStep] = useState('');
   const resolveAbortRef = useRef(null);
+  
+  const { apiKey } = useAuth();
 
   const handleFetch = useCallback(async (url) => {
     if (resolveAbortRef.current) {
@@ -25,7 +28,9 @@ export function useFetch(currentUser, navigate, { videosRef, historyRef, userPro
 
     try {
       let headers = {};
-      if (currentUser) {
+      if (apiKey) {
+        headers['Authorization'] = `Bearer ${apiKey}`;
+      } else if (currentUser) {
         try {
           const idToken = await currentUser.getIdToken();
           headers['Authorization'] = `Bearer ${idToken}`;
@@ -165,7 +170,7 @@ export function useFetch(currentUser, navigate, { videosRef, historyRef, userPro
     } finally {
       setIsFetching(false);
     }
-  }, [currentUser, navigate, shareToDiscover]);
+  }, [currentUser, navigate, shareToDiscover, apiKey]);
 
   return { isFetching, fetchError, fetchStep, handleFetch, setFetchError };
 }
