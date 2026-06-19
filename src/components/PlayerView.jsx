@@ -9,6 +9,7 @@ import {
 import { db } from '../firebase';
 import { ref, set, get } from 'firebase/database';
 import { API_BASE } from '../config';
+import { useAuth } from '../contexts/AuthContext';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -19,6 +20,7 @@ import {
 class CustomLoader extends Hls.DefaultConfig.loader {
   constructor(config) {
     super(config);
+    this.apiBase = config.apiBase || API_BASE;
   }
 
   load(context, config, callbacks) {
@@ -29,11 +31,11 @@ class CustomLoader extends Hls.DefaultConfig.loader {
         try {
           urlObj = new URL(context.url);
         } catch {
-          urlObj = new URL(context.url, API_BASE);
+          urlObj = new URL(context.url, this.apiBase);
         }
 
         // Rewrite to use the configured API_BASE protocol and host
-        const apiBaseUrl = new URL(API_BASE);
+        const apiBaseUrl = new URL(this.apiBase);
         urlObj.protocol = apiBaseUrl.protocol;
         urlObj.host = apiBaseUrl.host;
 
@@ -51,6 +53,9 @@ class CustomLoader extends Hls.DefaultConfig.loader {
 }
 
 export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack, onToggleFavorite, onStartDownload, onUpdateVideo, onIncrementViewsAndPlays, currentUser, onDeleteVideo, onShareVideo, settings = { autoplay: true, rememberProgress: true, resolution: 'auto' } }) {
+  const { apiBase } = useAuth();
+  const activeApiBase = apiBase || API_BASE;
+
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const navigate = useNavigate();
@@ -214,14 +219,14 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
     const measurePing = async () => {
       const start = performance.now();
       try {
-        await fetch(`${API_BASE}/`, { method: 'HEAD', cache: 'no-store' });
+        await fetch(`${activeApiBase}/`, { method: 'HEAD', cache: 'no-store' });
         const end = performance.now();
         if (active) {
           setPing(Math.round(end - start));
         }
       } catch (e) {
         try {
-          await fetch(`${API_BASE}/`, { cache: 'no-store' });
+          await fetch(`${activeApiBase}/`, { cache: 'no-store' });
           const end = performance.now();
           if (active) {
             setPing(Math.round(end - start));
@@ -239,7 +244,7 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
       active = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [activeApiBase]);
 
   const handleVolumeAdjustRef = useRef(null);
 
@@ -338,7 +343,8 @@ export default function PlayerView({ video, relatedVideos, onVideoSelect, onBack
           fragLoadingRetryDelay: 500,
           loader: CustomLoader,
           fLoader: CustomLoader,
-          pLoader: CustomLoader
+          pLoader: CustomLoader,
+          apiBase: activeApiBase
         });
         hls.loadSource(video.videoUrl);
         hls.attachMedia(videoElement);

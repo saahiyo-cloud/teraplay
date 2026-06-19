@@ -13,7 +13,7 @@ export function useFetch(currentUser, navigate, { videosRef, historyRef, userPro
   const [fetchStep, setFetchStep] = useState('');
   const resolveAbortRef = useRef(null);
   
-  const { apiKey } = useAuth();
+  const { apiKey, apiBase } = useAuth();
 
   const handleFetch = useCallback(async (url) => {
     if (resolveAbortRef.current) {
@@ -39,7 +39,8 @@ export function useFetch(currentUser, navigate, { videosRef, historyRef, userPro
         }
       }
 
-      const response = await fetch(`${API_BASE}/api/resolve?url=${encodeURIComponent(url)}&mode=stream`, {
+      const activeApiBase = apiBase || API_BASE;
+      const response = await fetch(`${activeApiBase}/api/resolve?url=${encodeURIComponent(url)}&mode=stream`, {
         signal: controller.signal,
         headers: headers
       });
@@ -170,7 +171,7 @@ export function useFetch(currentUser, navigate, { videosRef, historyRef, userPro
     } finally {
       setIsFetching(false);
     }
-  }, [currentUser, navigate, shareToDiscover, apiKey]);
+  }, [currentUser, navigate, shareToDiscover, apiKey, apiBase]);
 
   return { isFetching, fetchError, fetchStep, handleFetch, setFetchError };
 }

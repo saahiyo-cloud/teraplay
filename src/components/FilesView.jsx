@@ -60,7 +60,7 @@ export default function FilesView({ onPreviewImage }) {
   const [searchParams] = useSearchParams();
   const url = searchParams.get('url') || '';
 
-  const { currentUser, apiKey } = useAuth();
+  const { currentUser, apiKey, apiBase } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -87,7 +87,8 @@ export default function FilesView({ onPreviewImage }) {
               console.error('Failed to get Firebase ID token:', e);
             }
           }
-          const res = await fetch(`${API_BASE}/api/resolve?url=${encodeURIComponent(url)}&mode=download`, { headers });
+          const activeApiBase = apiBase || API_BASE;
+          const res = await fetch(`${activeApiBase}/api/resolve?url=${encodeURIComponent(url)}&mode=download`, { headers });
           if (!res.ok) {
             throw new Error(`Server responded with status ${res.status}`);
           }
@@ -107,7 +108,7 @@ export default function FilesView({ onPreviewImage }) {
     } else {
       setError('No URL provided to resolve.');
     }
-  }, [url, location.state, currentUser, apiKey]);
+  }, [url, location.state, currentUser, apiKey, apiBase]);
 
   const handleBack = () => {
     navigate(-1);
